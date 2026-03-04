@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python: for i in range() – Einführung</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f6f4f0;
+            --surface: #ffffff;
+            --text: #1a1a1a;
+            --text-muted: #5a5a5a;
+            --accent: #2563eb;
+            --accent-light: #dbeafe;
+            --green: #16a34a;
+            --green-light: #dcfce7;
+            --orange: #ea580c;
+            --orange-light: #fff7ed;
+            --red: #dc2626;
+            --red-light: #fef2f2;
+            --purple: #7c3aed;
+            --purple-light: #f3e8ff;
+            --code-bg: #1e293b;
+            --code-text: #e2e8f0;
+            --border: #e2e0dc;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 3rem 0 2rem;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 3rem;
+        }
+        header .tag {
+            display: inline-block;
+            background: var(--accent-light);
+            color: var(--accent);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        header h1 {
+            font-family: 'Source Serif 4', serif;
+            font-size: 2.4rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+        header h1 code {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+            font-size: 0.9em;
+            background: var(--accent-light);
+            padding: 0.05em 0.2em;
+            border-radius: 6px;
+        }
+        header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 3rem;
+        }
+        h2 {
+            font-family: 'Source Serif 4', serif;
+            font-size: 1.6rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border);
+        }
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.5rem;
+        }
+        p { margin-bottom: 0.8rem; }
+
+        /* Inline code */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.88em;
+            background: #eee;
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: var(--code-bg);
+            border-radius: 10px;
+            margin: 1rem 0 1.2rem;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+        .code-block .code-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .code-block .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+        }
+        .code-block .dot.r { background: #ef4444; }
+        .code-block .dot.y { background: #eab308; }
+        .code-block .dot.g { background: #22c55e; }
+        .code-block .code-label {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .code-block pre {
+            padding: 1rem 1.2rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--code-text);
+        }
+        .code-block pre code {
+            background: none;
+            padding: 0;
+            font-size: inherit;
+        }
+
+        /* Output block */
+        .output-block {
+            background: #f0fdf4;
+            border-left: 3px solid var(--green);
+            border-radius: 0 8px 8px 0;
+            padding: 0.8rem 1rem;
+            margin: -0.5rem 0 1.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #166534;
+        }
+        .output-block .output-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #15803d;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+        }
+
+        /* Info boxes */
+        .info-box {
+            border-radius: 10px;
+            padding: 1.2rem 1.4rem;
+            margin: 1.2rem 0;
+            border-left: 4px solid;
+        }
+        .info-box.concept {
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+        .info-box.warning {
+            background: var(--orange-light);
+            border-color: var(--orange);
+        }
+        .info-box.tip {
+            background: var(--green-light);
+            border-color: var(--green);
+        }
+        .info-box .box-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.4rem;
+        }
+        .info-box.concept .box-title { color: var(--accent); }
+        .info-box.warning .box-title { color: var(--orange); }
+        .info-box.tip .box-title { color: var(--green); }
+
+        /* Comparison table */
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.2rem 0;
+        }
+        .comparison .col {
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 1.2rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .comparison .col h4 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid;
+        }
+        .comparison .col:first-child h4 { color: var(--accent); border-color: var(--accent); }
+        .comparison .col:last-child h4 { color: var(--purple); border-color: var(--purple); }
+
+        /* Exercises */
+        .exercise {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.2rem 0;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+        .exercise .difficulty {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            margin-bottom: 0.6rem;
+        }
+        .exercise .difficulty.easy { background: var(--green-light); color: var(--green); }
+        .exercise .difficulty.medium { background: var(--orange-light); color: var(--orange); }
+        .exercise .difficulty.hard { background: var(--red-light); color: var(--red); }
+        .exercise .difficulty.expert { background: var(--purple-light); color: var(--purple); }
+        .exercise .ex-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Solution toggle */
+        .solution-toggle {
+            display: inline-block;
+            margin-top: 0.8rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .solution-toggle:hover {
+            background: var(--accent-light);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+        .solution {
+            display: none;
+            margin-top: 0.8rem;
+            padding-top: 0.8rem;
+            border-top: 1px dashed var(--border);
+        }
+        .solution.visible { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* range visual */
+        .range-visual {
+            display: flex;
+            gap: 0.4rem;
+            margin: 0.8rem 0;
+            flex-wrap: wrap;
+        }
+        .range-visual .num {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: 2px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .range-visual .num:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .range-visual .num.included {
+            background: var(--accent-light);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .range-visual .num.excluded {
+            background: #f5f5f5;
+            border-color: #ddd;
+            color: #bbb;
+        }
+
+        /* Interactive demo */
+        .demo-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.2rem 0;
+            box-shadow: var(--shadow);
+        }
+        .demo-box h4 {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+        .demo-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .demo-controls label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+        .demo-controls input {
+            width: 70px;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .demo-controls input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+        .demo-result {
+            background: var(--code-bg);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--code-text);
+            min-height: 2.5rem;
+        }
+
+        ul, ol { padding-left: 1.5rem; margin-bottom: 0.8rem; }
+        li { margin-bottom: 0.3rem; }
+
+        @media (max-width: 640px) {
+            .comparison { grid-template-columns: 1fr; }
+            header h1 { font-size: 1.8rem; }
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <header>
+            <div class="tag">Python Grundlagen</div>
+            <h1>Die Schleife <code>for i in range()</code></h1>
+            <p>Zählen, wiederholen, automatisieren – mit <code>range()</code> haben Sie die volle Kontrolle.</p>
+        </header>
+
+        <!-- ===== TEIL 1: Wiederholung ===== -->
+        <section>
+            <h2>1 &nbsp; Kurze Wiederholung: <code>for x in liste</code></h2>
+            <p>Sie kennen bereits die <code>for</code>-Schleife, die über eine Liste iteriert. Dabei wird jedes Element der Liste der Reihe nach einer Variablen zugewiesen:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+                    <span class="code-label">python</span>
+                </div>
+                <pre><code>farben = ["rot", "grün", "blau"]
+
+for farbe in farben:
+    print(farbe)</code></pre>
+            </div>
+            <div class="output-block">
+                <div class="output-label">Ausgabe</div>
+                rot<br>grün<br>blau
+            </div>
+
+            <p>Die Variable <code>farbe</code> nimmt nacheinander jeden Wert aus der Liste an. Man braucht keinen Index und keinen Zähler – Python erledigt das automatisch.</p>
+
+            <div class="info-box concept">
+                <div class="box-title">Kernidee</div>
+                <code>for x in liste</code> sagt: <em>«Nimm jedes Element und mach etwas damit.»</em><br>
+                Man interessiert sich direkt für die <strong>Werte</strong>.
+            </div>
+        </section>
+
+        <!-- ===== TEIL 2: range() ===== -->
+        <section>
+            <h2>2 &nbsp; Neu: <code>range()</code> – Zahlenfolgen erzeugen</h2>
+            <p>Manchmal möchte man nicht über eine vorhandene Liste iterieren, sondern einfach <strong>eine bestimmte Anzahl Durchläufe</strong> machen oder mit <strong>Zahlen als Index</strong> arbeiten. Dafür gibt es <code>range()</code>.</p>
+
+            <h3>Variante 1: <code>range(stop)</code></h3>
+            <p>Erzeugt die Zahlen von <strong>0</strong> bis <strong>stop − 1</strong>.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+                    <span class="code-label">python</span>
+                </div>
+                <pre><code>for i in range(5):
+    print(i)</code></pre>
+            </div>
+            <div class="output-block">
+                <div class="output-label">Ausgabe</div>
+                0<br>1<br>2<br>3<br>4
+            </div>
+
+            <p>Visualisierung von <code>range(5)</code>:</p>
+            <div class="range-visual">
+                <div class="num included">0</div>
+                <div class="num included">1</div>
+                <div class="num included">2</div>
+                <div class="num included">3</div>
+                <div class="num included">4</div>
+                <div class="num excluded">5</div>
+            </div>
+
+            <div class="info-box warning">
+                <div class="box-title">Achtung</div>
+                <code>range(5)</code> erzeugt <strong>5 Zahlen</strong>, aber die <strong>5 selbst ist nicht dabei</strong>! Der Endwert ist immer <em>exklusiv</em>.
+            </div>
+
+            <h3>Variante 2: <code>range(start, stop)</code></h3>
+            <p>Erzeugt Zahlen von <strong>start</strong> bis <strong>stop − 1</strong>.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+                    <span class="code-label">python</span>
+                </div>
+                <pre><code>for i in range(2, 7):
+    print(i)</code></pre>
+            </div>
+            <div class="output-block">
+                <div class="output-label">Ausgabe</div>
+                2<br>3<br>4<br>5<br>6
+            </div>
+
+            <p>Visualisierung von <code>range(2, 7)</code>:</p>
+            <div class="range-visual">
+                <div class="num excluded">0</div>
+                <div class="num excluded">1</div>
+                <div class="num included">2</div>
+                <div class="num included">3</div>
+                <div class="num included">4</div>
+                <div class="num included">5</div>
+                <div class="num included">6</div>
+                <div class="num excluded">7</div>
+            </div>
+
+            <h3>Variante 3: <code>range(start, stop, step)</code></h3>
+            <p>Der dritte Parameter bestimmt die <strong>Schrittweite</strong>.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+                    <span class="code-label">python</span>
+                </div>
+                <pre><code># Nur gerade Zahlen von 0 bis 10
+for i in range(0, 11, 2):
+    print(i)</code></pre>
+            </div>
+            <div class="output-block">
+                <div class="output-label">Ausgabe</div>
+                0<br>2<br>4<br>6<br>8<br>10
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+                    <span class="code-label">python</span>
+                </div>
+                <pre><code># Rückwärts zählen
+for i in range(10, 0, -1):
+    print(i)</code></pre>
+            </div>
+            <div class="output-block">
+                <div class="output-label">Ausgabe</div>
+                10<br>9<br>8<br>7<br>6<br>5<br>4<br>3<br>2<br>1
+            </div>
+        </section>
+
+        <!-- ===== TEIL 3: Interaktive Demo ===== -->
+        <section>
+            <h2>3 &nbsp; Interaktive Demo</h2>
+            <p>Probieren Sie verschiedene Werte aus und beobachten Sie, welche Zahlen <code>range()</code> erzeugt:</p>
+
+            <div class="demo-box">
+                <h4>range( <span id="demo-display">start, stop, step</span> ) ausprobieren</h4>
+                <div class="demo-controls">
+                    <div>
+                        <label>start</label>
+                        <input type="number" id="demo-start" value="0">
+                    </div>
+                    <div>
+                        <label>stop</label>
+                        <input type="number" id="demo-stop" value="10">
+                    </div>
+                    <div>
+                        <label>step</label>
+                        <input type="number" id="demo-step" value="1">
+                    </div>
+                </div>
+                <div class="range-visual" id="demo-visual"></div>
+                <div class="demo-result" id="demo-result"></div>
+            </div>
+        </section>
+
+        <!-- ===== TEIL 4: Vergleich ===== -->
+        <section>
+            <h2>4 &nbsp; Vergleich der beiden Schleifen-Arten</h2>
+
+            <div class="comparison">
+                <div class="col">
+                    <h4>for x in liste</h4>
+                    <p>Iteriert direkt über <strong>Werte</strong>.</p>
+                    <p>Geeignet, wenn man die Werte selbst braucht und die Position egal ist.</p>
+                    <div class="code-block" style="margin:0.8rem 0 0">
+                        <pre><code>tiere = ["Hund", "Katze"]
+for tier in tiere:
+    print(tier)</code></pre>
+                    </div>
+                </div>
+                <div class="col">
+                    <h4>for i in range()</h4>
+                    <p>Iteriert über <strong>Zahlen / Indizes</strong>.</p>
+                    <p>Geeignet, wenn man die Position braucht oder eine bestimmte Anzahl Durchläufe will.</p>
+                    <div class="code-block" style="margin:0.8rem 0 0">
+                        <pre><code>tiere = ["Hund", "Katze"]
+for i in range(len(tiere)):
+    print(i, tiere[i])</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box tip">
+                <div class="box-title">Tipp</div>
+                Brauchen Sie <strong>beides</strong> – Index und Wert? Dann ist <code>enumerate()</code> die eleganteste Lösung:<br>
+                <code>for i, tier in enumerate(tiere):</code>
+            </div>
+
+            <h3>Wann welche Variante?</h3>
+            <table style="width:100%; border-collapse:collapse; margin:0.8rem 0; font-size:0.92rem;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--border); text-align:left;">
+                        <th style="padding:0.6rem 0.8rem;">Situation</th>
+                        <th style="padding:0.6rem 0.8rem;">Empfehlung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:0.5rem 0.8rem;">Alle Elemente einer Liste verarbeiten</td>
+                        <td style="padding:0.5rem 0.8rem;"><code>for x in liste</code></td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:0.5rem 0.8rem;">Etwas n-mal wiederholen</td>
+                        <td style="padding:0.5rem 0.8rem;"><code>for i in range(n)</code></td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:0.5rem 0.8rem;">Mit Index auf Elemente zugreifen</td>
+                        <td style="padding:0.5rem 0.8rem;"><code>for i in range(len(liste))</code></td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:0.5rem 0.8rem;">Zahlenfolgen erzeugen (z.B. 1–100)</td>
+                        <td style="padding:0.5rem 0.8rem;"><code>for i in range(1, 101)</code></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0.5rem 0.8rem;">Index <em>und</em> Wert gleichzeitig</td>
+                        <td style="padding:0.5rem 0.8rem;"><code>for i, x in enumerate(liste)</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ===== TEIL 5: Aufgaben ===== -->
+        <section>
+            <h2>5 &nbsp; Aufgaben</h2>
+
+            <!-- Aufgabe 1 -->
+            <div class="exercise">
+                <span class="difficulty easy">⭐ Leicht</span>
+                <div class="ex-title">Aufgabe 1: Zahlen ausgeben</div>
+                <p>Schreiben Sie ein Programm, das die Zahlen <strong>1 bis 10</strong> untereinander ausgibt.</p>
+                <div class="solution-toggle" onclick="toggleSolution('sol1')">Lösung anzeigen</div>
+                <div class="solution" id="sol1">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>for i in range(1, 11):
+    print(i)</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aufgabe 2 -->
+            <div class="exercise">
+                <span class="difficulty easy">⭐ Leicht</span>
+                <div class="ex-title">Aufgabe 2: Quadratzahlen</div>
+                <p>Geben Sie die Quadratzahlen von 1 bis 10 aus, also: <code>1, 4, 9, 16, …, 100</code></p>
+                <div class="solution-toggle" onclick="toggleSolution('sol2')">Lösung anzeigen</div>
+                <div class="solution" id="sol2">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>for i in range(1, 11):
+    print(i ** 2)</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aufgabe 3 -->
+            <div class="exercise">
+                <span class="difficulty easy">⭐ Leicht</span>
+                <div class="ex-title">Aufgabe 3: Countdown</div>
+                <p>Schreiben Sie einen Countdown von <strong>10 bis 1</strong>, gefolgt von <code>"Start!"</code>.</p>
+                <div class="solution-toggle" onclick="toggleSolution('sol3')">Lösung anzeigen</div>
+                <div class="solution" id="sol3">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>for i in range(10, 0, -1):
+    print(i)
+print("Start!")</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aufgabe 4 -->
+            <div class="exercise">
+                <span class="difficulty medium">⭐⭐ Mittel</span>
+                <div class="ex-title">Aufgabe 4: Summe berechnen</div>
+                <p>Berechnen Sie die Summe aller Zahlen von 1 bis 100 und geben Sie das Ergebnis aus.<br>
+                <em>Hinweis: Erstellen Sie eine Variable <code>summe</code> vor der Schleife.</em></p>
+                <div class="solution-toggle" onclick="toggleSolution('sol4')">Lösung anzeigen</div>
+                <div class="solution" id="sol4">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>summe = 0
+for i in range(1, 101):
+    summe = summe + i
+print("Die Summe ist:", summe)</code></pre>
+                    </div>
+                    <p>Ergebnis: 5050 (die berühmte Gauss-Formel!)</p>
+                </div>
+            </div>
+
+            <!-- Aufgabe 5 -->
+            <div class="exercise">
+                <span class="difficulty medium">⭐⭐ Mittel</span>
+                <div class="ex-title">Aufgabe 5: Nummerierte Liste</div>
+                <p>Gegeben ist eine Liste:</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">python</span></div>
+                    <pre><code>staedte = ["Zürich", "Bern", "Basel", "Genf", "Luzern"]</code></pre>
+                </div>
+                <p>Geben Sie die Städte <strong>nummeriert</strong> aus (beginnend bei 1):</p>
+                <div class="output-block">
+                    <div class="output-label">Erwartete Ausgabe</div>
+                    1. Zürich<br>2. Bern<br>3. Basel<br>4. Genf<br>5. Luzern
+                </div>
+                <div class="solution-toggle" onclick="toggleSolution('sol5')">Lösung anzeigen</div>
+                <div class="solution" id="sol5">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>staedte = ["Zürich", "Bern", "Basel", "Genf", "Luzern"]
+
+for i in range(len(staedte)):
+    print(str(i + 1) + ". " + staedte[i])</code></pre>
+                    </div>
+                    <p><em>Hier zeigt sich der Vorteil von <code>range()</code> mit <code>len()</code> – man hat den Index und kann damit rechnen.</em></p>
+                </div>
+            </div>
+
+            <!-- Aufgabe 6 -->
+            <div class="exercise">
+                <span class="difficulty medium">⭐⭐ Mittel</span>
+                <div class="ex-title">Aufgabe 6: FizzBuzz (vereinfacht)</div>
+                <p>Geben Sie die Zahlen von 1 bis 20 aus. Ersetzen Sie dabei:</p>
+                <ul>
+                    <li>Durch 3 teilbare Zahlen durch <code>"Fizz"</code></li>
+                    <li>Durch 5 teilbare Zahlen durch <code>"Buzz"</code></li>
+                    <li>Alle anderen Zahlen normal</li>
+                </ul>
+                <p><em>Hinweis: <code>%</code> ist der Modulo-Operator (Rest der Division).</em></p>
+                <div class="solution-toggle" onclick="toggleSolution('sol6')">Lösung anzeigen</div>
+                <div class="solution" id="sol6">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>for i in range(1, 21):
+    if i % 3 == 0:
+        print("Fizz")
+    elif i % 5 == 0:
+        print("Buzz")
+    else:
+        print(i)</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aufgabe 7 -->
+            <div class="exercise">
+                <span class="difficulty hard">⭐⭐⭐ Schwer</span>
+                <div class="ex-title">Aufgabe 7: Dreieck zeichnen</div>
+                <p>Geben Sie folgendes Muster aus (für <code>n = 5</code> Zeilen):</p>
+                <div class="output-block">
+                    <div class="output-label">Erwartete Ausgabe</div>
+                    *<br>**<br>***<br>****<br>*****
+                </div>
+                <p><em>Hinweis: <code>"*" * 3</code> ergibt <code>"***"</code>.</em></p>
+                <div class="solution-toggle" onclick="toggleSolution('sol7')">Lösung anzeigen</div>
+                <div class="solution" id="sol7">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>n = 5
+for i in range(1, n + 1):
+    print("*" * i)</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aufgabe 8 -->
+            <div class="exercise">
+                <span class="difficulty hard">⭐⭐⭐ Schwer</span>
+                <div class="ex-title">Aufgabe 8: Multiplikationstabelle</div>
+                <p>Erstellen Sie das kleine Einmaleins (1×1 bis 10×10) als Tabelle. Jede Zeile soll eine Reihe sein, z.B.:</p>
+                <div class="output-block">
+                    <div class="output-label">Erwartete Ausgabe (Auszug)</div>
+                    1  2  3  4  5  6  7  8  9  10<br>
+                    2  4  6  8  10 12 14 16 18 20<br>
+                    3  6  9  12 15 18 21 24 27 30<br>
+                    ...
+                </div>
+                <p><em>Hinweis: Verwenden Sie verschachtelte Schleifen und <code>print(..., end=" ")</code>.</em></p>
+                <div class="solution-toggle" onclick="toggleSolution('sol8')">Lösung anzeigen</div>
+                <div class="solution" id="sol8">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>for i in range(1, 11):
+    for j in range(1, 11):
+        print(f"{i*j:4}", end="")
+    print()  # Zeilenumbruch</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aufgabe 9 -->
+            <div class="exercise">
+                <span class="difficulty expert">⭐⭐⭐⭐ Experte</span>
+                <div class="ex-title">Aufgabe 9: Primzahlen finden</div>
+                <p>Geben Sie alle Primzahlen zwischen 2 und 50 aus.</p>
+                <p><em>Hinweis: Eine Zahl ist eine Primzahl, wenn sie durch keine Zahl ausser 1 und sich selbst teilbar ist. Verwenden Sie eine verschachtelte Schleife und eine Boolean-Variable.</em></p>
+                <div class="solution-toggle" onclick="toggleSolution('sol9')">Lösung anzeigen</div>
+                <div class="solution" id="sol9">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>for zahl in range(2, 51):
+    ist_primzahl = True
+    for teiler in range(2, zahl):
+        if zahl % teiler == 0:
+            ist_primzahl = False
+            break
+    if ist_primzahl:
+        print(zahl)</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aufgabe 10 -->
+            <div class="exercise">
+                <span class="difficulty expert">⭐⭐⭐⭐ Experte</span>
+                <div class="ex-title">Aufgabe 10: Passwort-Generator</div>
+                <p>Schreiben Sie ein Programm, das ein zufälliges Passwort mit einer bestimmten Länge generiert. Das Passwort soll aus Gross- und Kleinbuchstaben sowie Ziffern bestehen.</p>
+                <p><em>Hinweis: Nutzen Sie <code>import random</code> und <code>random.choice()</code>.</em></p>
+                <div class="solution-toggle" onclick="toggleSolution('sol10')">Lösung anzeigen</div>
+                <div class="solution" id="sol10">
+                    <div class="code-block">
+                        <div class="code-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="code-label">lösung</span></div>
+                        <pre><code>import random
+
+zeichen = "abcdefghijklmnopqrstuvwxyz"
+zeichen += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+zeichen += "0123456789"
+
+laenge = 12
+passwort = ""
+
+for i in range(laenge):
+    passwort += random.choice(zeichen)
+
+print("Generiertes Passwort:", passwort)</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ZUSAMMENFASSUNG ===== -->
+        <section>
+            <h2>6 &nbsp; Zusammenfassung</h2>
+            <div class="info-box concept">
+                <div class="box-title">Das Wichtigste auf einen Blick</div>
+                <p><code>range(stop)</code> → Zahlen von 0 bis stop−1</p>
+                <p><code>range(start, stop)</code> → Zahlen von start bis stop−1</p>
+                <p><code>range(start, stop, step)</code> → mit Schrittweite</p>
+                <p style="margin-top:0.6rem"><strong>Faustregel:</strong> Brauchen Sie die Werte? → <code>for x in liste</code><br>
+                Brauchen Sie Zahlen oder Indizes? → <code>for i in range()</code></p>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Solution toggle
+        function toggleSolution(id) {
+            const sol = document.getElementById(id);
+            const btn = sol.previousElementSibling;
+            if (sol.classList.contains('visible')) {
+                sol.classList.remove('visible');
+                btn.textContent = 'Lösung anzeigen';
+            } else {
+                sol.classList.add('visible');
+                btn.textContent = 'Lösung verbergen';
+            }
+        }
+
+        // Interactive demo
+        const startInput = document.getElementById('demo-start');
+        const stopInput = document.getElementById('demo-stop');
+        const stepInput = document.getElementById('demo-step');
+        const visual = document.getElementById('demo-visual');
+        const result = document.getElementById('demo-result');
+        const display = document.getElementById('demo-display');
+
+        function updateDemo() {
+            const start = parseInt(startInput.value) || 0;
+            const stop = parseInt(stopInput.value) || 0;
+            const step = parseInt(stepInput.value) || 1;
+
+            if (step === 0) {
+                result.textContent = 'Fehler: step darf nicht 0 sein!';
+                visual.innerHTML = '';
+                return;
+            }
+
+            display.textContent = `${start}, ${stop}, ${step}`;
+
+            // Generate the range
+            const values = [];
+            if (step > 0) {
+                for (let i = start; i < stop; i += step) values.push(i);
+            } else {
+                for (let i = start; i > stop; i += step) values.push(i);
+            }
+
+            // Limit display
+            if (values.length > 30) {
+                result.textContent = `${values.length} Werte: ${values.slice(0, 15).join(', ')}, …, ${values.slice(-3).join(', ')}`;
+                visual.innerHTML = '';
+                return;
+            }
+
+            // Visual blocks
+            const allNums = [];
+            const minV = Math.min(start, stop, values.length > 0 ? values[0] : start);
+            const maxV = Math.max(start, stop);
+
+            if (values.length <= 20 && maxV - minV <= 20 && maxV - minV >= 0) {
+                visual.innerHTML = '';
+                for (let n = minV; n <= maxV; n++) {
+                    const div = document.createElement('div');
+                    div.className = 'num ' + (values.includes(n) ? 'included' : 'excluded');
+                    div.textContent = n;
+                    visual.appendChild(div);
+                }
+            } else {
+                visual.innerHTML = '';
+            }
+
+            // Text result
+            if (values.length === 0) {
+                result.textContent = 'Keine Werte (leere Sequenz)';
+            } else {
+                result.textContent = `${values.length} Werte: ${values.join(', ')}`;
+            }
+        }
+
+        startInput.addEventListener('input', updateDemo);
+        stopInput.addEventListener('input', updateDemo);
+        stepInput.addEventListener('input', updateDemo);
+
+        updateDemo();
+    </script>
+</body>
+</html>
