@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funktionen in Python — def, Parameter &amp; return</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e1420;
+  --surface: #161e2e;
+  --surface-2: #1c2638;
+  --code-bg: #0a0f1a;
+  --line: #283349;
+  --text: #e6ebf4;
+  --muted: #8b98ac;
+  --py-blue: #69a7e0;
+  --py-blue-deep: #3776ab;
+  --py-yellow: #ffd43b;
+  --green: #7ee787;
+  --orange: #ff9e64;
+  --red: #f47067;
+  --radius: 14px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 16.5px;
+  line-height: 1.65;
+}
+code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 22px; }
+
+/* ---------- Hero ---------- */
+header {
+  padding: 64px 0 48px;
+  background:
+    radial-gradient(900px 380px at 18% -10%, rgba(55,118,171,.28), transparent 65%),
+    radial-gradient(700px 320px at 85% 0%, rgba(255,212,59,.10), transparent 60%);
+  border-bottom: 1px solid var(--line);
+}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8rem;
+  letter-spacing: .12em;
+  color: var(--py-yellow);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+h1 .kw { color: var(--py-blue); }
+header p.lead {
+  margin-top: 18px;
+  max-width: 620px;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+.toc {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.toc a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .82rem;
+  color: var(--py-blue);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: rgba(22,30,46,.6);
+  transition: border-color .2s, color .2s;
+}
+.toc a:hover, .toc a:focus-visible { border-color: var(--py-blue); color: var(--text); }
+
+/* ---------- Sections ---------- */
+section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+h2 {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.4rem, 3.4vw, 1.9rem);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+h2 .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .85rem;
+  color: var(--py-yellow);
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 400;
+  letter-spacing: .1em;
+}
+.sub { color: var(--muted); max-width: 640px; margin-bottom: 28px; }
+p + p { margin-top: 12px; }
+
+/* ---------- Code blocks ---------- */
+.codebox {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 18px 0;
+}
+.codebox .bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  color: var(--muted);
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.codebox pre {
+  padding: 16px 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .92rem;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+.k { color: var(--py-blue); font-weight: 600; }       /* keyword */
+.fn { color: var(--py-yellow); }                       /* function name */
+.s { color: var(--green); }                            /* string */
+.n { color: #d2a8ff; }                                 /* number */
+.c { color: var(--muted); font-style: italic; }        /* comment */
+
+/* ---------- Anatomy diagram ---------- */
+.anatomy {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 30px 22px;
+  margin-top: 24px;
+}
+.anatomy .codeline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(.95rem, 2.8vw, 1.35rem);
+  text-align: center;
+  white-space: nowrap;
+  overflow-x: auto;
+  padding: 6px 0;
+}
+.tag {
+  position: relative;
+  border-radius: 6px;
+  padding: 2px 5px;
+  cursor: help;
+  transition: background .2s;
+}
+.tag-def { background: rgba(105,167,224,.16); outline: 1px solid rgba(105,167,224,.5); }
+.tag-name { background: rgba(255,212,59,.13); outline: 1px solid rgba(255,212,59,.45); }
+.tag-param { background: rgba(126,231,135,.12); outline: 1px solid rgba(126,231,135,.45); }
+.tag-return { background: rgba(255,158,100,.14); outline: 1px solid rgba(255,158,100,.5); }
+.legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-top: 26px;
+}
+.legend > div {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 13px 15px;
+  font-size: .88rem;
+}
+.legend b {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .82rem;
+  margin-bottom: 5px;
+}
+.legend .l-def b { color: var(--py-blue); }
+.legend .l-name b { color: var(--py-yellow); }
+.legend .l-param b { color: var(--green); }
+.legend .l-return b { color: var(--orange); }
+.legend p { color: var(--muted); line-height: 1.5; }
+
+/* ---------- Machine (signature element) ---------- */
+.machine-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 26px 22px;
+  margin-top: 10px;
+}
+.machine-flow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 14px;
+  align-items: center;
+  margin: 10px 0 4px;
+}
+.m-inputs { display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
+.m-input label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem;
+  color: var(--green);
+  margin-bottom: 4px;
+  text-align: right;
+}
+.m-input input {
+  width: 110px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  padding: 9px 12px;
+  text-align: center;
+}
+.m-input input:focus { outline: 2px solid var(--py-blue); border-color: transparent; }
+.m-body {
+  position: relative;
+  background: linear-gradient(160deg, var(--surface-2), #131b2b);
+  border: 1.5px solid var(--py-blue-deep);
+  border-radius: 18px;
+  padding: 22px 26px;
+  text-align: center;
+  min-width: 220px;
+  box-shadow: 0 0 0 6px rgba(55,118,171,.08);
+}
+.m-body .gear {
+  font-size: 1.6rem;
+  display: inline-block;
+}
+.m-body.working .gear { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.m-body h3 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  color: var(--py-yellow);
+  margin-top: 6px;
+  font-weight: 600;
+}
+.m-body .m-code {
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8rem;
+  color: var(--muted);
+}
+.m-output { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.m-output .olabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem;
+  color: var(--orange);
+}
+.m-result {
+  min-width: 110px;
+  min-height: 46px;
+  background: var(--code-bg);
+  border: 1.5px dashed var(--line);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.15rem;
+  color: var(--muted);
+  padding: 6px 14px;
+  transition: border-color .3s, color .3s;
+}
+.m-result.filled {
+  border-style: solid;
+  border-color: var(--orange);
+  color: var(--orange);
+  animation: pop .35s ease;
+}
+@keyframes pop { 0% { transform: scale(.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.m-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 22px;
+}
+button.btn {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: .92rem;
+  background: var(--py-blue-deep);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+}
+button.btn:hover { background: #4587bf; }
+button.btn:active { transform: scale(.97); }
+button.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+button.btn.ghost:hover { color: var(--text); border-color: var(--py-blue); }
+.fn-select {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: .88rem;
+}
+
+/* ---------- Step-through ---------- */
+.stepper {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 18px;
+  margin-top: 20px;
+}
+@media (max-width: 720px) { .stepper { grid-template-columns: 1fr; } .machine-flow { grid-template-columns: 1fr; justify-items: center; } .m-inputs { align-items: center; } .m-output { align-items: center; } .m-input label { text-align: center; } }
+.steps-code { margin: 0; }
+.steps-code pre span.line {
+  display: block;
+  padding: 1px 10px;
+  margin: 0 -10px;
+  border-radius: 6px;
+  transition: background .25s;
+}
+.steps-code pre span.line.active {
+  background: rgba(255,212,59,.12);
+  outline: 1px solid rgba(255,212,59,.4);
+}
+.step-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+.step-panel .explain {
+  flex: 1;
+  font-size: .95rem;
+  color: var(--text);
+}
+.step-panel .explain b { color: var(--py-yellow); }
+.varbox {
+  margin-top: 14px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .85rem;
+  min-height: 88px;
+}
+.varbox .vt { color: var(--muted); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
+.varbox .v { color: var(--green); }
+.varbox .v .val { color: var(--text); }
+.step-nav { display: flex; gap: 10px; margin-top: 16px; align-items: center; }
+.step-nav .count { font-family: 'JetBrains Mono', monospace; font-size: .8rem; color: var(--muted); margin-left: auto; }
+
+/* ---------- Console / print-trap ---------- */
+.duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 22px;
+}
+@media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+.trap-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.trap-card .head {
+  padding: 12px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .8rem;
+  border-bottom: 1px solid var(--line);
+}
+.trap-card.bad .head { color: var(--red); }
+.trap-card.good .head { color: var(--green); }
+.trap-card pre {
+  padding: 14px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .88rem;
+  line-height: 1.7;
+  flex: 1;
+}
+.console {
+  background: #000;
+  border-top: 1px solid var(--line);
+  padding: 12px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .85rem;
+  min-height: 78px;
+}
+.console .clabel { color: #555; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+.console .out { color: var(--green); white-space: pre-wrap; }
+.console .nix { color: #555; font-style: italic; }
+.trap-run { padding: 12px 16px; border-top: 1px solid var(--line); }
+
+.callout {
+  display: flex;
+  gap: 14px;
+  background: rgba(255,158,100,.08);
+  border: 1px solid rgba(255,158,100,.4);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-top: 26px;
+}
+.callout .icon { font-size: 1.4rem; line-height: 1.3; }
+.callout b { color: var(--orange); }
+.callout p { font-size: .95rem; }
+
+.info {
+  background: rgba(105,167,224,.07);
+  border: 1px solid rgba(105,167,224,.35);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-top: 22px;
+  font-size: .95rem;
+}
+.info b { color: var(--py-blue); }
+
+/* ---------- Compare table ---------- */
+table.cmp {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 22px;
+  font-size: .93rem;
+}
+table.cmp th, table.cmp td {
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+table.cmp th {
+  background: var(--surface-2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .85rem;
+}
+table.cmp th.pr { color: var(--green); }
+table.cmp th.re { color: var(--orange); }
+table.cmp td { background: var(--surface); color: var(--muted); }
+table.cmp td b { color: var(--text); }
+
+/* ---------- Quiz ---------- */
+.quiz { display: flex; flex-direction: column; gap: 22px; margin-top: 10px; }
+.q {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.q .qt {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.q .qt .qnum {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--py-yellow);
+  font-size: .85rem;
+  margin-right: 8px;
+}
+.q pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .88rem;
+  line-height: 1.7;
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opts button {
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .88rem;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.opts button:hover { border-color: var(--py-blue); }
+.opts button.right { border-color: var(--green); background: rgba(126,231,135,.1); }
+.opts button.wrong { border-color: var(--red); background: rgba(244,112,103,.1); }
+.q .fb { margin-top: 12px; font-size: .9rem; display: none; }
+.q .fb.show { display: block; }
+.q .fb.ok { color: var(--green); }
+.q .fb.no { color: var(--red); }
+
+footer {
+  padding: 36px 0 48px;
+  color: var(--muted);
+  font-size: .85rem;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+:focus-visible { outline: 2px solid var(--py-yellow); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Informatik · Python Grundlagen</div>
+    <h1><span class="kw">def</span> — Funktionen in Python<br>mit Parametern und <span class="kw">return</span></h1>
+    <p class="lead">Eine Funktion ist wie eine Maschine: Sie nimmt Werte entgegen (Parameter), verarbeitet sie und gibt ein Resultat zurück (return). Auf dieser Seite probieren Sie das interaktiv aus — und lernen die häufigste Stolperfalle kennen.</p>
+    <nav class="toc" aria-label="Inhalt">
+      <a href="#anatomie">1 · Aufbau</a>
+      <a href="#maschine">2 · Funktionsmaschine</a>
+      <a href="#schritte">3 · Schritt für Schritt</a>
+      <a href="#falle">4 · Die print-Falle</a>
+      <a href="#vergleich">5 · print vs. return</a>
+      <a href="#quiz">6 · Quiz</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ 1 ANATOMIE ============ -->
+<section id="anatomie">
+  <div class="wrap">
+    <h2><span class="num">01 / AUFBAU</span>Wie ist eine Funktion aufgebaut?</h2>
+    <p class="sub">Jede Funktion in Python besteht aus denselben vier Bausteinen. Fahren Sie mit der Maus über die farbigen Teile.</p>
+
+    <div class="anatomy">
+      <div class="codeline">
+        <span class="tag tag-def" title="Schlüsselwort: definiert eine neue Funktion">def</span>&nbsp;<span class="tag tag-name" title="Der Name der Funktion — frei wählbar">addiere</span><span class="tag tag-param" title="Parameter: Platzhalter für die Eingabewerte">(a, b)</span>:
+      </div>
+      <div class="codeline" style="margin-top:4px;">
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag tag-return" title="return gibt das Resultat an den Aufrufer zurück und beendet die Funktion">return a + b</span>
+      </div>
+
+      <div class="legend">
+        <div class="l-def">
+          <b>def</b>
+          <p>Das Schlüsselwort, mit dem jede Funktionsdefinition beginnt. Es bedeutet: «Hier wird eine neue Funktion definiert.»</p>
+        </div>
+        <div class="l-name">
+          <b>addiere</b>
+          <p>Der Funktionsname. Sie wählen ihn selbst — er sollte beschreiben, was die Funktion tut.</p>
+        </div>
+        <div class="l-param">
+          <b>(a, b)</b>
+          <p>Die Parameter: Platzhalter für die Werte, die beim Aufruf übergeben werden. Sie verhalten sich wie Variablen innerhalb der Funktion.</p>
+        </div>
+        <div class="l-return">
+          <b>return a + b</b>
+          <p>Gibt das Resultat zurück an die Stelle, an der die Funktion aufgerufen wurde — und beendet die Funktion sofort.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">
+      <b>Wichtig:</b> Die Definition allein führt noch nichts aus. Erst der <b>Aufruf</b> — z.&nbsp;B. <code>addiere(3, 4)</code> — startet die Funktion. Die Werte <code>3</code> und <code>4</code> heissen dann <b>Argumente</b> und landen in den Parametern <code>a</code> und <code>b</code>.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 MASCHINE ============ -->
+<section id="maschine">
+  <div class="wrap">
+    <h2><span class="num">02 / AUSPROBIEREN</span>Die Funktionsmaschine</h2>
+    <p class="sub">Geben Sie Werte ein und rufen Sie die Funktion auf. Beobachten Sie, wie die Argumente in die Maschine wandern und das Resultat herauskommt.</p>
+
+    <div class="machine-card">
+      <div class="m-controls" style="margin-top:0; margin-bottom:22px;">
+        <label for="fnsel" style="font-size:.88rem; color:var(--muted);">Funktion wählen:</label>
+        <select id="fnsel" class="fn-select" aria-label="Funktion wählen">
+          <option value="addiere">def addiere(a, b): return a + b</option>
+          <option value="multipliziere">def multipliziere(a, b): return a * b</option>
+          <option value="potenz">def potenz(a, b): return a ** b</option>
+        </select>
+      </div>
+
+      <div class="machine-flow">
+        <div class="m-inputs">
+          <div class="m-input">
+            <label for="inA">Argument für a</label>
+            <input id="inA" type="number" value="3">
+          </div>
+          <div class="m-input">
+            <label for="inB">Argument für b</label>
+            <input id="inB" type="number" value="4">
+          </div>
+        </div>
+
+        <div class="m-body" id="machineBody">
+          <span class="gear" aria-hidden="true">⚙️</span>
+          <h3 id="mName">addiere(a, b)</h3>
+          <div class="m-code" id="mCode">return a + b</div>
+        </div>
+
+        <div class="m-output">
+          <span class="olabel">return-Wert</span>
+          <div class="m-result" id="mResult">?</div>
+        </div>
+      </div>
+
+      <div class="m-controls">
+        <button class="btn" id="runMachine">Funktion aufrufen</button>
+        <span id="callPreview" class="mono" style="font-size:.85rem; color:var(--muted);">addiere(3, 4)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 SCHRITTE ============ -->
+<section id="schritte">
+  <div class="wrap">
+    <h2><span class="num">03 / NACHVOLLZIEHEN</span>Was passiert beim Aufruf — Schritt für Schritt?</h2>
+    <p class="sub">Klicken Sie sich durch die Ausführung von <code class="mono">ergebnis = addiere(3, 4)</code> und beobachten Sie, welche Zeile gerade läuft und welche Werte die Variablen haben.</p>
+
+    <div class="stepper">
+      <div class="codebox steps-code">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span> beispiel.py</div>
+        <pre><span class="line" data-l="1"><span class="k">def</span> <span class="fn">addiere</span>(a, b):</span><span class="line" data-l="2">    summe = a + b</span><span class="line" data-l="3">    <span class="k">return</span> summe</span><span class="line" data-l="4"></span><span class="line" data-l="5">ergebnis = <span class="fn">addiere</span>(<span class="n">3</span>, <span class="n">4</span>)</span><span class="line" data-l="6"><span class="fn">print</span>(ergebnis)</span></pre>
+      </div>
+
+      <div class="step-panel">
+        <div class="explain" id="stepText"></div>
+        <div class="varbox">
+          <div class="vt">Variablen</div>
+          <div id="stepVars"></div>
+        </div>
+        <div class="step-nav">
+          <button class="btn ghost" id="stepPrev">← Zurück</button>
+          <button class="btn" id="stepNext">Weiter →</button>
+          <span class="count" id="stepCount"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 FALLE ============ -->
+<section id="falle">
+  <div class="wrap">
+    <h2><span class="num">04 / ACHTUNG, STOLPERFALLE</span>return zeigt nichts an!</h2>
+    <p class="sub">Der häufigste Anfängerfehler: Man ruft eine Funktion auf, das Programm läuft — aber auf dem Bildschirm erscheint nichts. Warum? Probieren Sie beide Varianten aus.</p>
+
+    <div class="duo">
+      <div class="trap-card bad">
+        <div class="head">✗ Variante A — ohne print</div>
+        <pre><span class="k">def</span> <span class="fn">quadrat</span>(x):
+    <span class="k">return</span> x * x
+
+<span class="fn">quadrat</span>(<span class="n">5</span>)</pre>
+        <div class="trap-run">
+          <button class="btn ghost" data-trap="bad">▶ Ausführen</button>
+        </div>
+        <div class="console">
+          <div class="clabel">Konsole</div>
+          <div id="consoleBad"><span class="nix">— noch nicht ausgeführt —</span></div>
+        </div>
+      </div>
+
+      <div class="trap-card good">
+        <div class="head">✓ Variante B — mit print</div>
+        <pre><span class="k">def</span> <span class="fn">quadrat</span>(x):
+    <span class="k">return</span> x * x
+
+<span class="fn">print</span>(<span class="fn">quadrat</span>(<span class="n">5</span>))</pre>
+        <div class="trap-run">
+          <button class="btn ghost" data-trap="good">▶ Ausführen</button>
+        </div>
+        <div class="console">
+          <div class="clabel">Konsole</div>
+          <div id="consoleGood"><span class="nix">— noch nicht ausgeführt —</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="icon">⚠️</div>
+      <div>
+        <p><b>Merksatz:</b> <code>return</code> gibt den Wert nur <b>an das Programm</b> zurück — nicht an Sie! In Variante A wird <code>25</code> zwar berechnet, aber niemand fängt den Wert auf, und er verschwindet. Erst <code>print()</code> bringt den Wert <b>auf den Bildschirm</b>. Wer das Resultat einer Funktion sehen will, schreibt also <code>print(quadrat(5))</code> oder speichert es zuerst: <code>r = quadrat(5)</code> und dann <code>print(r)</code>.</p>
+      </div>
+    </div>
+
+    <div class="info">
+      <b>Und umgekehrt?</b> Eine Funktion, die nur <code>print()</code> benutzt und kein <code>return</code> hat, gibt automatisch <code>None</code> («nichts») zurück. Mit ihrem «Resultat» kann man dann nicht weiterrechnen:
+      <div class="codebox" style="margin-bottom:0;">
+        <pre><span class="k">def</span> <span class="fn">quadrat_print</span>(x):
+    <span class="fn">print</span>(x * x)        <span class="c"># zeigt nur an, gibt nichts zurück</span>
+
+a = <span class="fn">quadrat_print</span>(<span class="n">5</span>)    <span class="c"># Konsole: 25</span>
+<span class="fn">print</span>(a + <span class="n">1</span>)            <span class="c"># 💥 TypeError: None + 1 geht nicht!</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 VERGLEICH ============ -->
+<section id="vergleich">
+  <div class="wrap">
+    <h2><span class="num">05 / GEGENÜBERSTELLUNG</span>print() vs. return — wer macht was?</h2>
+    <p class="sub">Die beiden werden oft verwechselt, machen aber völlig verschiedene Dinge.</p>
+
+    <table class="cmp">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="pr">print()</th>
+          <th class="re">return</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Zweck</b></td>
+          <td><b>Anzeigen:</b> schreibt einen Wert in die Konsole, damit ein Mensch ihn sieht.</td>
+          <td><b>Zurückgeben:</b> liefert einen Wert an das Programm, damit es damit weiterrechnen kann.</td>
+        </tr>
+        <tr>
+          <td><b>Wer «sieht» den Wert?</b></td>
+          <td>Sie — auf dem Bildschirm.</td>
+          <td>Das Programm — der Wert kann in einer Variablen gespeichert werden.</td>
+        </tr>
+        <tr>
+          <td><b>Weiterrechnen möglich?</b></td>
+          <td>Nein. Was gedruckt ist, ist «weg» — nur sichtbar, nicht speicherbar.</td>
+          <td>Ja: <code class="mono">r = addiere(3, 4)</code>, danach <code class="mono">r * 2</code> usw.</td>
+        </tr>
+        <tr>
+          <td><b>Beendet die Funktion?</b></td>
+          <td>Nein — der Code läuft danach weiter.</td>
+          <td>Ja — sofort. Code nach <code class="mono">return</code> wird nie ausgeführt.</td>
+        </tr>
+        <tr>
+          <td><b>Typische Verwendung</b></td>
+          <td>Resultate ausgeben, Zwischenwerte beim Fehlersuchen anzeigen.</td>
+          <td>In fast jeder «Rechen-Funktion» — die Anzeige übernimmt dann der Aufrufer mit <code class="mono">print()</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 6 QUIZ ============ -->
+<section id="quiz">
+  <div class="wrap">
+    <h2><span class="num">06 / TESTEN SIE SICH</span>Mini-Quiz: Was zeigt die Konsole?</h2>
+    <p class="sub">Sagen Sie für jedes Programm voraus, was in der Konsole erscheint.</p>
+
+    <div class="quiz">
+
+      <div class="q" data-q="1">
+        <div class="qt"><span class="qnum">FRAGE 1</span>Was erscheint in der Konsole?</div>
+        <pre><span class="k">def</span> <span class="fn">verdoppeln</span>(x):
+    <span class="k">return</span> x * <span class="n">2</span>
+
+<span class="fn">verdoppeln</span>(<span class="n">4</span>)</pre>
+        <div class="opts">
+          <button data-a="0">8</button>
+          <button data-a="1">Nichts</button>
+          <button data-a="0">x * 2</button>
+        </div>
+        <div class="fb"></div>
+      </div>
+
+      <div class="q" data-q="2">
+        <div class="qt"><span class="qnum">FRAGE 2</span>Und jetzt?</div>
+        <pre><span class="k">def</span> <span class="fn">verdoppeln</span>(x):
+    <span class="k">return</span> x * <span class="n">2</span>
+
+<span class="fn">print</span>(<span class="fn">verdoppeln</span>(<span class="n">4</span>))</pre>
+        <div class="opts">
+          <button data-a="1">8</button>
+          <button data-a="0">Nichts</button>
+          <button data-a="0">verdoppeln(4)</button>
+        </div>
+        <div class="fb"></div>
+      </div>
+
+      <div class="q" data-q="3">
+        <div class="qt"><span class="qnum">FRAGE 3</span>Was zeigt die letzte Zeile an?</div>
+        <pre><span class="k">def</span> <span class="fn">gruss</span>(name):
+    <span class="fn">print</span>(<span class="s">"Hallo"</span>, name)
+
+x = <span class="fn">gruss</span>(<span class="s">"Mia"</span>)
+<span class="fn">print</span>(x)</pre>
+        <div class="opts">
+          <button data-a="0">Hallo Mia</button>
+          <button data-a="1">None</button>
+          <button data-a="0">x</button>
+        </div>
+        <div class="fb"></div>
+      </div>
+
+      <div class="q" data-q="4">
+        <div class="qt"><span class="qnum">FRAGE 4</span>Welche Zeilen werden ausgeführt?</div>
+        <pre><span class="k">def</span> <span class="fn">test</span>():
+    <span class="k">return</span> <span class="n">1</span>
+    <span class="fn">print</span>(<span class="s">"Hallo!"</span>)   <span class="c"># Zeile 3</span>
+
+<span class="fn">print</span>(<span class="fn">test</span>())</pre>
+        <div class="opts">
+          <button data-a="0">Hallo! und dann 1</button>
+          <button data-a="1">Nur 1 — Zeile 3 läuft nie</button>
+          <button data-a="0">1 und dann Hallo!</button>
+        </div>
+        <div class="fb"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Informatik · Python: Funktionen mit def, Parametern und return</div>
+</footer>
+
+<script>
+/* ---------- Funktionsmaschine ---------- */
+const fns = {
+  addiere:       { sig: 'addiere(a, b)',       code: 'return a + b',  f: (a,b) => a + b,  op: '+' },
+  multipliziere: { sig: 'multipliziere(a, b)', code: 'return a * b',  f: (a,b) => a * b,  op: '*' },
+  potenz:        { sig: 'potenz(a, b)',        code: 'return a ** b', f: (a,b) => a ** b, op: '**' }
+};
+const fnsel = document.getElementById('fnsel');
+const inA = document.getElementById('inA');
+const inB = document.getElementById('inB');
+const mName = document.getElementById('mName');
+const mCode = document.getElementById('mCode');
+const mResult = document.getElementById('mResult');
+const machineBody = document.getElementById('machineBody');
+const callPreview = document.getElementById('callPreview');
+
+function refreshMachine() {
+  const f = fns[fnsel.value];
+  mName.textContent = f.sig;
+  mCode.textContent = f.code;
+  callPreview.textContent = fnsel.value + '(' + (inA.value || 0) + ', ' + (inB.value || 0) + ')';
+  mResult.textContent = '?';
+  mResult.classList.remove('filled');
+}
+fnsel.addEventListener('change', refreshMachine);
+inA.addEventListener('input', refreshMachine);
+inB.addEventListener('input', refreshMachine);
+
+document.getElementById('runMachine').addEventListener('click', () => {
+  const f = fns[fnsel.value];
+  const a = Number(inA.value || 0), b = Number(inB.value || 0);
+  mResult.textContent = '?';
+  mResult.classList.remove('filled');
+  machineBody.classList.add('working');
+  setTimeout(() => {
+    machineBody.classList.remove('working');
+    const r = f.f(a, b);
+    mResult.textContent = Number.isFinite(r) ? String(r) : '∞';
+    mResult.classList.add('filled');
+  }, 750);
+});
+refreshMachine();
+
+/* ---------- Step-through ---------- */
+const steps = [
+  { line: 5, text: 'Python startet beim <b>Aufruf</b> in Zeile 5: <b>addiere(3, 4)</b>. Die Definition (Zeilen 1–3) wurde vorher nur «gemerkt», aber nicht ausgeführt.', vars: {} },
+  { line: 1, text: 'Python springt in die Funktion. Die Argumente werden den Parametern zugewiesen: <b>a = 3</b> und <b>b = 4</b>.', vars: { a: 3, b: 4 } },
+  { line: 2, text: 'Die Funktion rechnet: <b>summe = 3 + 4 = 7</b>.', vars: { a: 3, b: 4, summe: 7 } },
+  { line: 3, text: '<b>return summe</b> schickt den Wert <b>7</b> zurück zum Aufruf in Zeile 5 — und beendet die Funktion sofort.', vars: { a: 3, b: 4, summe: 7 } },
+  { line: 5, text: 'Der Aufruf <b>addiere(3, 4)</b> wird durch <b>7</b> ersetzt. Also: <b>ergebnis = 7</b>. Die lokalen Variablen a, b und summe existieren jetzt nicht mehr!', vars: { ergebnis: 7 } },
+  { line: 6, text: '<b>print(ergebnis)</b> zeigt den Wert auf dem Bildschirm an. Konsole: <b>7</b> ✓', vars: { ergebnis: 7 } }
+];
+let stepIdx = 0;
+const lines = document.querySelectorAll('.steps-code .line');
+const stepText = document.getElementById('stepText');
+const stepVars = document.getElementById('stepVars');
+const stepCount = document.getElementById('stepCount');
+
+function renderStep() {
+  const s = steps[stepIdx];
+  lines.forEach(l => l.classList.toggle('active', Number(l.dataset.l) === s.line));
+  stepText.innerHTML = s.text;
+  const keys = Object.keys(s.vars);
+  stepVars.innerHTML = keys.length
+    ? keys.map(k => '<div class="v">' + k + ' = <span class="val">' + s.vars[k] + '</span></div>').join('')
+    : '<span style="color:var(--muted);">— keine —</span>';
+  stepCount.textContent = 'Schritt ' + (stepIdx + 1) + ' / ' + steps.length;
+  document.getElementById('stepPrev').disabled = stepIdx === 0;
+  document.getElementById('stepNext').disabled = stepIdx === steps.length - 1;
+}
+document.getElementById('stepPrev').addEventListener('click', () => { if (stepIdx > 0) { stepIdx--; renderStep(); } });
+document.getElementById('stepNext').addEventListener('click', () => { if (stepIdx < steps.length - 1) { stepIdx++; renderStep(); } });
+renderStep();
+
+/* ---------- print-Falle ---------- */
+document.querySelectorAll('[data-trap]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const kind = btn.dataset.trap;
+    const target = document.getElementById(kind === 'bad' ? 'consoleBad' : 'consoleGood');
+    target.innerHTML = '';
+    setTimeout(() => {
+      if (kind === 'bad') {
+        target.innerHTML = '<span class="nix">(leer — die 25 wurde berechnet, aber nie angezeigt!)</span>';
+      } else {
+        target.innerHTML = '<span class="out">25</span>';
+      }
+    }, 350);
+  });
+});
+
+/* ---------- Quiz ---------- */
+const feedback = {
+  1: { ok: 'Richtig! Die Funktion gibt 8 zurück — aber niemand zeigt den Wert an. Die Konsole bleibt leer.',
+       no: 'Nicht ganz. Die 8 wird zwar berechnet und zurückgegeben, aber ohne print() erscheint nichts in der Konsole.' },
+  2: { ok: 'Genau! print() fängt den return-Wert 8 auf und zeigt ihn an.',
+       no: 'Schauen Sie genau hin: print(verdoppeln(4)) zeigt den return-Wert an — also 8.' },
+  3: { ok: 'Richtig! gruss() druckt zwar «Hallo Mia», hat aber kein return — also erhält x den Wert None, und print(x) zeigt None.',
+       no: 'Knifflig: «Hallo Mia» kommt von der Funktion selbst. Aber gruss() hat kein return, also ist x = None — und die letzte Zeile zeigt None.' },
+  4: { ok: 'Genau! return beendet die Funktion sofort — Zeile 3 ist unerreichbar.',
+       no: 'Denken Sie daran: return beendet die Funktion sofort. Das print("Hallo!") danach wird nie ausgeführt — nur 1 erscheint.' }
+};
+document.querySelectorAll('.q').forEach(q => {
+  const id = q.dataset.q;
+  const fb = q.querySelector('.fb');
+  q.querySelectorAll('.opts button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      q.querySelectorAll('.opts button').forEach(b => b.classList.remove('right', 'wrong'));
+      const correct = btn.dataset.a === '1';
+      btn.classList.add(correct ? 'right' : 'wrong');
+      if (correct) q.querySelectorAll('.opts button[data-a="1"]').forEach(b => b.classList.add('right'));
+      fb.textContent = correct ? '✓ ' + feedback[id].ok : '✗ ' + feedback[id].no;
+      fb.className = 'fb show ' + (correct ? 'ok' : 'no');
+    });
+  });
+});
+</script>
+</body>
+</html>
