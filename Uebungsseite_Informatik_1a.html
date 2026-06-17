@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Übungsseite Informatik 1a · Prüfung 19.6.2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF8F3;
+    --grid:#E5E3DA;
+    --ink:#1B2A4A;
+    --ink-soft:#5A6478;
+    --red:#D64541;
+    --red-soft:#FBEAE9;
+    --green:#2E8B6F;
+    --green-soft:#E4F1EC;
+    --amber:#D99022;
+    --amber-soft:#FBF0DC;
+    --surface:#FFFFFF;
+    --line:#E7E3D8;
+    --shadow:0 1px 2px rgba(27,42,74,.05),0 4px 16px rgba(27,42,74,.06);
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --disp:"Bricolage Grotesque",system-ui,sans-serif;
+    --body:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, var(--grid) 27px, var(--grid) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, var(--grid) 27px, var(--grid) 28px),
+      var(--paper);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px}
+  h1,h2,h3{font-family:var(--disp);line-height:1.12;letter-spacing:-.01em;margin:0}
+  a{color:var(--red)}
+  ::selection{background:#FCE7B0}
+
+  /* ---------- HERO ---------- */
+  header.hero{padding:64px 0 40px}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:18px}
+  h1{font-size:clamp(34px,6.4vw,60px);font-weight:800}
+  h1 .b{color:var(--red)}
+  .lead{font-size:18px;color:var(--ink-soft);max-width:60ch;margin:18px 0 0}
+  .stamp{
+    display:inline-flex;align-items:center;gap:10px;margin-top:26px;
+    border:2.5px solid var(--red);color:var(--red);border-radius:8px;
+    padding:9px 16px;font-family:var(--mono);font-weight:700;font-size:14px;
+    letter-spacing:.04em;transform:rotate(-1.4deg);background:var(--red-soft);
+  }
+  .stamp svg{width:16px;height:16px}
+
+  /* live cipher transform */
+  .transform{
+    margin-top:34px;background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:22px 24px;overflow:hidden;
+  }
+  .transform .tlabel{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px}
+  .transform .method{color:var(--ink);font-weight:700}
+  .glyphrow{display:flex;flex-wrap:wrap;gap:6px;font-family:var(--mono);font-weight:700;font-size:clamp(20px,4.4vw,30px)}
+  .glyphrow.plain{color:var(--ink-soft);margin-bottom:6px;font-size:clamp(15px,3vw,18px)}
+  .glyph{display:inline-flex;width:1.35em;height:1.5em;align-items:center;justify-content:center;border-bottom:2px solid var(--grid)}
+  .glyph.lit{color:var(--red)}
+  .arrowdown{font-family:var(--mono);color:var(--grid);margin:2px 0 8px;font-size:14px}
+
+  /* ---------- NAV ---------- */
+  nav.toc{position:sticky;top:0;z-index:30;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding:9px 20px;scrollbar-width:none}
+  nav.toc .wrap::-webkit-scrollbar{display:none}
+  nav.toc a{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);text-decoration:none;white-space:nowrap;padding:7px 12px;border-radius:7px}
+  nav.toc a:hover,nav.toc a.active{background:var(--ink);color:var(--paper)}
+
+  /* ---------- SECTIONS ---------- */
+  section{padding:52px 0;border-top:1px dashed var(--line)}
+  .sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+  .secnum{font-family:var(--mono);font-size:13px;color:var(--red);font-weight:700;letter-spacing:.05em}
+  h2{font-size:clamp(24px,3.8vw,32px);font-weight:700}
+  .secsub{color:var(--ink-soft);margin:6px 0 28px;max-width:64ch}
+
+  /* ---------- CHECKLIST ---------- */
+  .progress{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:26px}
+  .progress .nums{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;margin-bottom:14px}
+  .pstat{display:flex;flex-direction:column;gap:2px}
+  .pstat b{font-family:var(--disp);font-size:30px;font-weight:800;line-height:1}
+  .pstat span{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .pstat.green b{color:var(--green)} .pstat.amber b{color:var(--amber)} .pstat.open b{color:var(--ink-soft)}
+  .bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;display:flex}
+  .bar i{display:block;height:100%}
+  .bar .g{background:var(--green)} .bar .a{background:var(--amber)}
+  .barhint{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);margin-top:9px}
+
+  .theme{margin-bottom:24px}
+  .theme h3{font-size:18px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+  .theme h3 .tdot{width:9px;height:9px;border-radius:50%;background:var(--red);flex:none}
+  .theme .tcount{font-family:var(--mono);font-size:12px;color:var(--ink-soft);font-weight:400}
+  .item{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-top:10px;display:flex;gap:14px;align-items:flex-start;transition:border-color .15s}
+  .item.s-green{border-color:var(--green);background:linear-gradient(0deg,var(--green-soft),var(--green-soft)),var(--surface)}
+  .item.s-amber{border-color:var(--amber);background:linear-gradient(0deg,var(--amber-soft),var(--amber-soft)),var(--surface)}
+  .item .txt{flex:1;min-width:0}
+  .item .goal{font-weight:600}
+  .item .exp{color:var(--ink-soft);font-size:14.5px;margin-top:3px}
+  .tri{display:flex;gap:5px;flex:none}
+  .tri button{font-family:var(--mono);font-size:11px;letter-spacing:.03em;border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);border-radius:7px;padding:6px 9px;cursor:pointer;transition:all .12s;white-space:nowrap}
+  .tri button:hover{border-color:var(--ink-soft)}
+  .tri button.on-a{background:var(--amber);border-color:var(--amber);color:#fff}
+  .tri button.on-g{background:var(--green);border-color:var(--green);color:#fff}
+  .tri button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  /* ---------- TOOLS ---------- */
+  .tool{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:22px 22px;margin-bottom:22px}
+  .tool h3{font-size:18px;font-weight:700;margin-bottom:3px}
+  .tool .thint{color:var(--ink-soft);font-size:14px;margin-bottom:16px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+  input[type=text]{width:100%;font-family:var(--mono);font-size:15px;letter-spacing:.06em;padding:11px 13px;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);text-transform:uppercase}
+  input[type=text]:focus{outline:2px solid var(--ink);outline-offset:0;border-color:var(--ink)}
+  .row{display:flex;gap:14px;flex-wrap:wrap}
+  .row .field{flex:1;min-width:150px}
+  .sliderrow{display:flex;align-items:center;gap:14px}
+  input[type=range]{flex:1;accent-color:var(--red)}
+  .kbadge{font-family:var(--mono);font-weight:700;background:var(--ink);color:var(--paper);border-radius:7px;padding:4px 11px;min-width:46px;text-align:center}
+  .modetabs{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-bottom:14px}
+  .modetabs button{font-family:var(--mono);font-size:12.5px;border:0;background:var(--paper);color:var(--ink-soft);padding:8px 16px;cursor:pointer}
+  .modetabs button.active{background:var(--ink);color:var(--paper)}
+  .out{font-family:var(--mono);font-weight:700;font-size:18px;letter-spacing:.08em;word-break:break-all;background:var(--paper);border:1px dashed var(--line);border-radius:9px;padding:13px 14px;min-height:48px;color:var(--red)}
+  .keyline{font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin-top:10px;word-break:break-all}
+  .keyline b{color:var(--ink)}
+
+  /* frequency chart */
+  .freqchart{display:flex;align-items:flex-end;gap:3px;height:140px;margin-top:8px;border-bottom:2px solid var(--line);padding-bottom:0}
+  .freqchart .colb{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%}
+  .freqchart .colb .barv{width:100%;background:var(--ink);border-radius:3px 3px 0 0;min-height:1px;transition:height .25s}
+  .freqchart .colb.peak .barv{background:var(--red)}
+  .freqchart .colb .lbl{font-family:var(--mono);font-size:10px;color:var(--ink-soft)}
+  .freqnote{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);margin-top:12px}
+  .freqnote b{color:var(--red)}
+
+  /* ---------- CHALLENGES ---------- */
+  .chal{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+  .chal .ctag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);background:var(--red-soft);border-radius:6px;padding:3px 9px;margin-bottom:9px}
+  .chal .q{font-weight:600}
+  .chal .cipher{font-family:var(--mono);font-weight:700;letter-spacing:.12em;color:var(--ink);background:var(--paper);border-radius:6px;padding:2px 7px}
+  .chal .reveal{margin-top:12px}
+  .chal summary{cursor:pointer;font-family:var(--mono);font-size:13px;color:var(--ink-soft);list-style:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;padding:7px 13px;user-select:none}
+  .chal summary::-webkit-details-marker{display:none}
+  .chal summary:hover{border-color:var(--ink-soft)}
+  .chal details[open] summary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .chal .ans{margin-top:12px;padding:13px 15px;background:var(--green-soft);border-left:3px solid var(--green);border-radius:0 8px 8px 0;font-size:14.5px}
+  .chal .ans b{font-family:var(--mono);letter-spacing:.06em}
+
+  /* pigpen grids */
+  .ppgrids{display:flex;gap:24px;flex-wrap:wrap;margin-top:10px}
+  table.pp{border-collapse:collapse;font-family:var(--mono);font-weight:700}
+  table.pp td{border:1.5px solid var(--ink);width:34px;height:30px;text-align:center;font-size:14px}
+  .ppcap{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-bottom:6px}
+
+  /* ---------- QUIZ ---------- */
+  .quiz{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+  .quiz .qn{font-family:var(--mono);font-size:11.5px;color:var(--red);letter-spacing:.06em;margin-bottom:6px}
+  .quiz .q{font-weight:600;margin-bottom:12px}
+  .quiz .opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:9px;padding:11px 13px;margin-bottom:8px;cursor:pointer;font:inherit;transition:all .12s}
+  .quiz .opt:hover{border-color:var(--ink-soft)}
+  .quiz .opt:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .quiz .opt.correct{background:var(--green-soft);border-color:var(--green);color:#1d5a48}
+  .quiz .opt.wrong{background:var(--red-soft);border-color:var(--red);color:#9c2c29}
+  .quiz .opt.locked{cursor:default;opacity:.75}
+  .quiz .fb{font-size:14px;margin-top:6px;color:var(--ink-soft)}
+  .quizscore{font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin-bottom:18px}
+  .quizscore b{color:var(--ink)}
+
+  /* ---------- FOOTER ---------- */
+  footer{padding:46px 0 70px;border-top:1px dashed var(--line)}
+  .tip{background:var(--ink);color:var(--paper);border-radius:14px;padding:24px 26px}
+  .tip h3{color:#fff;font-size:19px;margin-bottom:10px}
+  .tip p{color:#C9D0DE;margin:0 0 10px}
+  .tip a{color:#FFB4B1}
+  .printbtn{margin-top:18px;font-family:var(--mono);font-size:13px;background:transparent;border:1px solid var(--line);color:var(--ink-soft);border-radius:9px;padding:9px 15px;cursor:pointer}
+  .printbtn:hover{border-color:var(--ink-soft)}
+
+  @media (max-width:560px){
+    .item{flex-direction:column;gap:10px}
+    .tri{align-self:stretch}
+    .tri button{flex:1}
+  }
+  @media print{
+    nav.toc,.transform,.printbtn,.tri{display:none}
+    body{background:#fff}
+    section{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Informatik · Klasse 1a · Habegger</div>
+    <h1>Übungsseite<br><span class="b">Kryptografie &amp; Internet</span></h1>
+    <p class="lead">Alles, was du für die Prüfung brauchst, an einem Ort: eine ehrliche Checkliste, Werkzeuge zum Ausprobieren und Übungsaufgaben mit Lösung. Klick dich durch und finde heraus, wo du schon sicher bist.</p>
+    <div class="stamp">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+      PRÜFUNG · DO 19. 06. 2026
+    </div>
+
+    <div class="transform" id="transform" aria-hidden="true">
+      <div class="tlabel"><span>Klartext wird zu Geheimtext</span><span>Verfahren: <span class="method" id="tmethod">Caesar</span></span></div>
+      <div class="glyphrow plain" id="tplain"></div>
+      <div class="arrowdown">▼</div>
+      <div class="glyphrow" id="tcipher"></div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" id="toc">
+  <div class="wrap">
+    <a href="#check">Selbsteinschätzung</a>
+    <a href="#tools">Werkzeuge</a>
+    <a href="#crypto">Knack-Aufgaben</a>
+    <a href="#theorie">Theorie-Quiz</a>
+    <a href="#tipp">Vorbereitung</a>
+  </div>
+</nav>
+
+<!-- ===================== SELBSTEINSCHÄTZUNG ===================== -->
+<section id="check">
+  <div class="wrap">
+    <div class="sechead"><span class="secnum">01</span><h2>Selbsteinschätzung</h2></div>
+    <p class="secsub">Geh jedes Lernziel durch und sei ehrlich zu dir. Tippe auf «üben», wenn du noch unsicher bist, und auf «sicher», wenn du es jemandem erklären könntest. Oben siehst du, wie weit du bist.</p>
+
+    <div class="progress">
+      <div class="nums">
+        <div class="pstat green"><b id="cntGreen">0</b><span>sicher</span></div>
+        <div class="pstat amber"><b id="cntAmber">0</b><span>muss üben</span></div>
+        <div class="pstat open"><b id="cntOpen">33</b><span>offen</span></div>
+      </div>
+      <div class="bar"><i class="g" id="barG" style="width:0%"></i><i class="a" id="barA" style="width:0%"></i></div>
+      <div class="barhint" id="barHint">Noch nichts markiert · 33 Lernziele insgesamt</div>
+    </div>
+
+    <div id="checklist"></div>
+  </div>
+</section>
+
+<!-- ===================== WERKZEUGE ===================== -->
+<section id="tools">
+  <div class="wrap">
+    <div class="sechead"><span class="secnum">02</span><h2>Werkzeuge zum Ausprobieren</h2></div>
+    <p class="secsub">Die beste Vorbereitung auf die Knack-Aufgaben: spiel selbst mit den Verfahren. Tippe ein Wort ein und schau zu, wie sich der Geheimtext verändert.</p>
+
+    <!-- Caesar -->
+    <div class="tool">
+      <h3>Caesar-Verschlüsselung</h3>
+      <p class="thint">Jeder Buchstabe wird um k Stellen verschoben. Stell den Schlüssel ein und wechsle zwischen Ver- und Entschlüsseln.</p>
+      <div class="modetabs" id="caesarMode">
+        <button class="active" data-m="enc">Verschlüsseln</button>
+        <button data-m="dec">Entschlüsseln</button>
+      </div>
+      <div class="field"><label>Text</label><input type="text" id="caesarIn" value="GYMNASIUM" autocomplete="off"></div>
+      <div class="field"><label>Schlüssel k</label>
+        <div class="sliderrow"><input type="range" id="caesarK" min="0" max="25" value="3"><span class="kbadge" id="caesarKv">3</span></div>
+      </div>
+      <div class="field"><label>Ergebnis</label><div class="out" id="caesarOut"></div></div>
+    </div>
+
+    <!-- ROT13 -->
+    <div class="tool">
+      <h3>ROT13 · der selbstinverse Sonderfall</h3>
+      <p class="thint">ROT13 ist Caesar mit k = 13. Weil 13 die Hälfte von 26 ist, bringt dich zweimaliges Anwenden wieder zum Start.</p>
+      <div class="field"><label>Text</label><input type="text" id="rotIn" value="GEHEIMNIS" autocomplete="off"></div>
+      <div class="row">
+        <div class="field"><label>einmal ROT13</label><div class="out" id="rotOnce"></div></div>
+        <div class="field"><label>nochmals ROT13 (= Original)</label><div class="out" id="rotTwice" style="color:var(--green)"></div></div>
+      </div>
+    </div>
+
+    <!-- Vigenère -->
+    <div class="tool">
+      <h3>Vigenère-Verschlüsselung</h3>
+      <p class="thint">Ein Schlüsselwort steuert für jeden Buchstaben eine eigene Verschiebung. Es wird so oft wiederholt, bis es so lang ist wie der Text.</p>
+      <div class="modetabs" id="vigMode">
+        <button class="active" data-m="enc">Verschlüsseln</button>
+        <button data-m="dec">Entschlüsseln</button>
+      </div>
+      <div class="row">
+        <div class="field"><label>Text</label><input type="text" id="vigIn" value="SCHULE" autocomplete="off"></div>
+        <div class="field"><label>Schlüsselwort</label><input type="text" id="vigKey" value="KEY" autocomplete="off"></div>
+      </div>
+      <div class="field"><label>Ergebnis</label><div class="out" id="vigOut"></div></div>
+      <div class="keyline" id="vigAlign"></div>
+    </div>
+
+    <!-- Häufigkeit -->
+    <div class="tool">
+      <h3>Häufigkeitsanalyse</h3>
+      <p class="thint">Zähle, wie oft jeder Buchstabe vorkommt. Im Deutschen ist E mit Abstand am häufigsten, das verrät bei Caesar die Verschiebung.</p>
+      <div class="field"><label>Text (Klar- oder Geheimtext)</label><input type="text" id="freqIn" value="KPLZLHBMNHILPZASLPJOAGBSVLZLU" autocomplete="off"></div>
+      <div class="freqchart" id="freqChart"></div>
+      <div class="freqnote" id="freqNote"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== KNACK-AUFGABEN ===================== -->
+<section id="crypto">
+  <div class="wrap">
+    <div class="sechead"><span class="secnum">03</span><h2>Knack- und Rechen-Aufgaben</h2></div>
+    <p class="secsub">Löse jede Aufgabe zuerst von Hand oder mit den Werkzeugen oben, und klappe danach die Lösung auf. Genau diese Verfahren kommen in der Prüfung dran.</p>
+    <div id="challenges"></div>
+  </div>
+</section>
+
+<!-- ===================== THEORIE-QUIZ ===================== -->
+<section id="theorie">
+  <div class="wrap">
+    <div class="sechead"><span class="secnum">04</span><h2>Theorie-Quiz</h2></div>
+    <p class="secsub">Internet, Sicherheit und Datenschutz. Wähle die richtige Antwort und du siehst sofort, ob sie stimmt, samt kurzer Begründung.</p>
+    <div class="quizscore" id="quizScore">Beantwortet: <b>0</b> von <b id="quizTotal">0</b> · richtig: <b id="quizRight">0</b></div>
+    <div id="quiz"></div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer id="tipp">
+  <div class="wrap">
+    <div class="tip">
+      <h3>So gehst du es an</h3>
+      <p>Geh die Liste oben Punkt für Punkt durch und markiere, was du schon sicher kannst und wo du noch üben musst. Bei den Rechen- und Knack-Aufgaben hilft es, jedes Verfahren einmal selbst mit einem kurzen Wort auszuprobieren.</p>
+      <p>Bei Fragen und Unklarheiten wende dich frühzeitig per Teams an mich. Viel Erfolg bei der Vorbereitung auf den 19. Juni.</p>
+      <button class="printbtn" onclick="window.print()">Seite als PDF drucken</button>
+    </div>
+  </div>
+</footer>
+
+<script>
+"use strict";
+const A=65;
+const clean=s=>s.toUpperCase().replace(/[^A-Z]/g,"");
+function caesar(t,k){return clean(t).split("").map(c=>String.fromCharCode((c.charCodeAt(0)-A+k+260)%26+A)).join("");}
+function vigenere(t,key,dec){t=clean(t);key=clean(key);if(!key)return t;let r="";for(let i=0;i<t.length;i++){const kv=key.charCodeAt(i%key.length)-A;const pv=t.charCodeAt(i)-A;r+=String.fromCharCode((pv+(dec?-kv:kv)+260)%26+A);}return r;}
+
+/* ---------- DATA: Lernziele ---------- */
+const THEMES=[
+  {t:"Internet und Infrastruktur",items:[
+    ["Du kannst erklären, dass das Internet auf physischer Infrastruktur beruht.","Kabel, Glasfasern, Server und Rechenzentren bilden das Rückgrat des Netzes, die Daten reisen also nicht durch die Luft, sondern grösstenteils durch Leitungen am Boden und im Meer."],
+    ["Du kannst beschreiben, welche Rolle Unterseekabel spielen.","Der allergrösste Teil des weltweiten Datenverkehrs läuft über dicke Glasfaserkabel am Meeresboden, die ganze Kontinente verbinden."],
+    ["Du kannst erklären, warum die Bezeichnung «Cloud» irreführend ist.","Die Cloud klingt nach Wolken und Schwerelosigkeit, in Wirklichkeit stehen dahinter handfeste Rechenzentren an einem festen Ort."],
+    ["Du kannst begründen, warum Kabelrouten politisch und wirtschaftlich wichtig sind.","Wer die Kabel kontrolliert oder beschädigt, kann den Datenverkehr ganzer Länder stören, deshalb sind sie ein wertvolles und verletzliches Gut."],
+  ]},
+  {t:"Sicherheit und Datenschutz",items:[
+    ["Du kannst Surface Web, Deep Web und Darknet unterscheiden.","Das Surface Web findest du über Suchmaschinen, das Deep Web liegt hinter Logins und ist völlig normal, das Darknet ist ein bewusst versteckter, anonymer Teil."],
+    ["Du kannst legitime und kriminelle Nutzung des Darknets gegenüberstellen.","Journalistinnen, Whistleblower und Menschen in Diktaturen nutzen die Anonymität ebenso wie Kriminelle auf illegalen Marktplätzen."],
+    ["Du kannst die drei Schutzziele der Informationssicherheit nennen.","Vertraulichkeit, Integrität und Verfügbarkeit: nur Berechtigte lesen, nichts wird heimlich verändert, die Daten bleiben erreichbar."],
+    ["Du kannst beurteilen, was ein sicheres Passwort ausmacht.","Die Länge ist wichtiger als komplizierte Sonderzeichen, weil jedes Zeichen die Zahl der Möglichkeiten vervielfacht. Passphrasen sind lang und trotzdem merkbar."],
+    ["Du kannst die Idee der Zwei-Faktor-Authentifizierung erklären.","Neben dem Wissen (Passwort) kommt ein zweiter Faktor wie Besitz (Smartphone) oder Biometrie (Fingerabdruck) dazu."],
+    ["Du kannst Phishing an typischen Merkmalen erkennen.","Verdächtige Absenderadressen, Zeitdruck, unpersönliche Anreden, Rechtschreibfehler und gefälschte Links sind die Warnsignale."],
+    ["Du kannst die wichtigsten Arten von Schadsoftware unterscheiden.","Virus, Wurm, Trojaner, Spyware und Ransomware schaden je anders, etwa durch Tarnung, Selbstverbreitung oder das Verschlüsseln deiner Dateien."],
+    ["Du kannst Schutzmassnahmen gegen Malware nennen.","Updates schliessen Sicherheitslücken, Backups retten deine Daten, gesundes Misstrauen gegenüber Downloads verhindert viele Angriffe."],
+    ["Du kannst erklären, was Personendaten sind.","Sie beziehen sich auf eine bestimmbare Person. Besonders schützenswerte Daten wie Gesundheit oder politische Ansichten haben strengere Regeln."],
+    ["Du kannst das Recht am eigenen Bild erläutern und Datensparsamkeit begründen.","Fotos erkennbarer Personen darfst du nicht ohne Einverständnis verbreiten, und du solltest nur so viele Daten preisgeben wie nötig."],
+  ]},
+  {t:"Kryptografie: Grundlagen",items:[
+    ["Du kannst die Ziele Vertraulichkeit, Integrität und Authentizität benennen.","Nur der Empfänger liest, die Nachricht bleibt unverändert, und der Absender ist wirklich der, der er vorgibt zu sein."],
+    ["Du kannst die vier Grundbegriffe unterscheiden und zuordnen.","Klartext, Geheimtext, Schlüssel und Algorithmus lassen sich an einem konkreten Beispiel klar trennen."],
+    ["Du kannst den Unterschied zwischen Verfahren und Schlüssel erklären.","Das Verfahren ist die Methode (etwa «verschieben»), der Schlüssel die geheime Zusatzinformation (etwa «um wie viele Stellen»)."],
+    ["Du kannst alltägliche Beispiele für Verschlüsselung nennen.","HTTPS, Messenger wie Signal, das WLAN-Passwort und Online-Banking zeigen: Verschlüsselung läuft ständig im Hintergrund."],
+  ]},
+  {t:"Klassische Verschlüsselungsverfahren",items:[
+    ["Du kannst Substitution und Transposition unterscheiden.","Substitution ersetzt Buchstaben, Transposition verändert nur ihre Reihenfolge, und du kannst Verfahren richtig zuordnen."],
+    ["Du kannst mit der Caesar-Verschlüsselung ver- und entschlüsseln.","Jeder Buchstabe wird um eine feste Zahl k verschoben, beim Entschlüsseln entsprechend zurück."],
+    ["Du kannst ROT13 anwenden und erklären, warum es selbstinvers ist.","ROT13 verschiebt um 13 Stellen, und weil das die Hälfte von 26 ist, führt zweimaliges Anwenden wieder zum Klartext."],
+    ["Du kannst Skytale und Rail Fence als Transpositionsverfahren beschreiben.","Die Buchstaben bleiben gleich, sie werden nur nach einer Regel umsortiert, und du kannst einfache Beispiele lösen."],
+    ["Du kennst die Pigpen-Chiffre (Freimaurer-Chiffre).","Jeder Buchstabe wird durch das Symbol seiner Gitterzelle ersetzt, bei der zweiten Alphabethälfte zusätzlich mit einem Punkt."],
+  ]},
+  {t:"Vigenère-Verschlüsselung",items:[
+    ["Du kannst erklären, dass Vigenère eine Caesar mit wechselnder Verschiebung ist.","Statt einer festen Verschiebung steuert ein Schlüsselwort, um wie viele Stellen jeder Buchstabe verschoben wird."],
+    ["Du kannst ein Schlüsselwort korrekt über den Klartext schreiben.","Das Schlüsselwort wird so oft wiederholt, bis es genauso lang ist wie der Klartext."],
+    ["Du kannst mit Vigenère-Quadrat oder Formel ver- und entschlüsseln.","Du liest den Geheimtext im Quadrat am Schnittpunkt von Zeile und Spalte ab."],
+    ["Du kannst die Stärke und Schwäche von Vigenère begründen.","Derselbe Buchstabe wird je nach Position anders verschlüsselt, das stört die Häufigkeitsanalyse. Ein langes Schlüsselwort macht es sicherer."],
+    ["Du kannst das One-Time-Pad als theoretisch unknackbares Prinzip benennen.","Nur wenn der Schlüssel so lang wie der Text, völlig zufällig und einmalig ist, lässt sich die Verschlüsselung gar nicht mehr brechen."],
+  ]},
+  {t:"Buchstabenhäufigkeit und Kryptoanalyse",items:[
+    ["Du kannst erklären, was Buchstabenhäufigkeit bedeutet.","In jeder Sprache kommen manche Buchstaben viel häufiger vor, im Deutschen ist rund jeder sechste Buchstabe ein E."],
+    ["Du kannst mit der Häufigkeit eine Caesar-Verschlüsselung knacken.","Du suchst den häufigsten Buchstaben, nimmst an, dass er dem E entspricht, und bestimmst daraus die Verschiebung."],
+    ["Du kannst erklären, warum Häufigkeitsanalyse auch bei Vigenère hilft.","Zerlegt man den Text in Spalten gleicher Schlüsselposition, ist jede Spalte wieder eine Caesar-Verschlüsselung und einzeln angreifbar."],
+    ["Du kannst begründen, warum Caesar und einfache Substitution unsicher sind.","Caesar hat nur 25 Schlüssel zum Durchprobieren, und die Substitution verrät sich durch die typische Buchstabenhäufigkeit."],
+  ]},
+];
+
+/* ---------- BUILD CHECKLIST ---------- */
+const TOTAL=THEMES.reduce((n,t)=>n+t.items.length,0);
+const state={}; // id -> 'open'|'amber'|'green'
+let idc=0;
+const clEl=document.getElementById("checklist");
+THEMES.forEach(theme=>{
+  const tw=document.createElement("div");tw.className="theme";
+  tw.innerHTML=`<h3><span class="tdot"></span>${theme.t} <span class="tcount">· ${theme.items.length} Ziele</span></h3>`;
+  theme.items.forEach(([goal,exp])=>{
+    const id="z"+(idc++);state[id]="open";
+    const it=document.createElement("div");it.className="item";it.dataset.id=id;
+    it.innerHTML=`<div class="txt"><div class="goal">${goal}</div><div class="exp">${exp}</div></div>
+      <div class="tri">
+        <button data-v="amber" aria-label="muss ich üben">üben</button>
+        <button data-v="green" aria-label="kann ich sicher">sicher</button>
+      </div>`;
+    tw.appendChild(it);
+  });
+  clEl.appendChild(tw);
+});
+
+clEl.addEventListener("click",e=>{
+  const btn=e.target.closest(".tri button");if(!btn)return;
+  const item=btn.closest(".item");const id=item.dataset.id;const v=btn.dataset.v;
+  state[id]=(state[id]===v)?"open":v;
+  // update buttons
+  item.querySelectorAll(".tri button").forEach(b=>{
+    b.classList.remove("on-a","on-g");
+    if(state[id]===b.dataset.v)b.classList.add(b.dataset.v==="amber"?"on-a":"on-g");
+  });
+  item.classList.remove("s-amber","s-green");
+  if(state[id]==="amber")item.classList.add("s-amber");
+  if(state[id]==="green")item.classList.add("s-green");
+  updateProgress();
+});
+
+function updateProgress(){
+  let g=0,a=0;Object.values(state).forEach(v=>{if(v==="green")g++;else if(v==="amber")a++;});
+  const o=TOTAL-g-a;
+  document.getElementById("cntGreen").textContent=g;
+  document.getElementById("cntAmber").textContent=a;
+  document.getElementById("cntOpen").textContent=o;
+  document.getElementById("barG").style.width=(g/TOTAL*100)+"%";
+  document.getElementById("barA").style.width=(a/TOTAL*100)+"%";
+  const h=document.getElementById("barHint");
+  if(g===TOTAL)h.textContent="Stark! Alle "+TOTAL+" Lernziele sitzen.";
+  else if(g+a===0)h.textContent="Noch nichts markiert · "+TOTAL+" Lernziele insgesamt";
+  else h.textContent=g+" sicher · "+a+" zum Üben · "+o+" noch offen";
+}
+
+/* ---------- TOOLS: Caesar ---------- */
+const cIn=document.getElementById("caesarIn"),cK=document.getElementById("caesarK"),
+      cKv=document.getElementById("caesarKv"),cOut=document.getElementById("caesarOut");
+let caesarDec=false;
+document.getElementById("caesarMode").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  caesarDec=b.dataset.m==="dec";
+  document.querySelectorAll("#caesarMode button").forEach(x=>x.classList.toggle("active",x===b));
+  runCaesar();
+});
+function runCaesar(){const k=+cK.value;cKv.textContent=k;cOut.textContent=caesar(cIn.value,caesarDec?-k:k)||"–";}
+cIn.addEventListener("input",runCaesar);cK.addEventListener("input",runCaesar);runCaesar();
+
+/* ---------- TOOLS: ROT13 ---------- */
+const rIn=document.getElementById("rotIn"),rOnce=document.getElementById("rotOnce"),rTwice=document.getElementById("rotTwice");
+function runRot(){const once=caesar(rIn.value,13);rOnce.textContent=once||"–";rTwice.textContent=caesar(once,13)||"–";}
+rIn.addEventListener("input",runRot);runRot();
+
+/* ---------- TOOLS: Vigenère ---------- */
+const vIn=document.getElementById("vigIn"),vKey=document.getElementById("vigKey"),
+      vOut=document.getElementById("vigOut"),vAlign=document.getElementById("vigAlign");
+let vigDec=false;
+document.getElementById("vigMode").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  vigDec=b.dataset.m==="dec";
+  document.querySelectorAll("#vigMode button").forEach(x=>x.classList.toggle("active",x===b));
+  runVig();
+});
+function runVig(){
+  const t=clean(vIn.value),key=clean(vKey.value);
+  vOut.textContent=vigenere(t,key,vigDec)||"–";
+  if(t&&key){let rep="";for(let i=0;i<t.length;i++)rep+=key[i%key.length];
+    vAlign.innerHTML=`<b>Text:</b> ${t}<br><b>Schlüssel:</b> ${rep}`;}
+  else vAlign.textContent="";
+}
+vIn.addEventListener("input",runVig);vKey.addEventListener("input",runVig);runVig();
+
+/* ---------- TOOLS: Häufigkeit ---------- */
+const fIn=document.getElementById("freqIn"),fChart=document.getElementById("freqChart"),fNote=document.getElementById("freqNote");
+const LETTERS=[...Array(26)].map((_,i)=>String.fromCharCode(A+i));
+function runFreq(){
+  const t=clean(fIn.value);const counts={};LETTERS.forEach(l=>counts[l]=0);
+  for(const c of t)counts[c]++;
+  const max=Math.max(1,...LETTERS.map(l=>counts[l]));
+  let peak="",peakN=0;LETTERS.forEach(l=>{if(counts[l]>peakN){peakN=counts[l];peak=l;}});
+  fChart.innerHTML=LETTERS.map(l=>{
+    const h=counts[l]/max*100;
+    return `<div class="colb${l===peak&&peakN>0?' peak':''}" title="${l}: ${counts[l]}"><div class="barv" style="height:${h}%"></div><div class="lbl">${l}</div></div>`;
+  }).join("");
+  if(peakN>0){
+    const shift=(peak.charCodeAt(0)-A-4+26)%26;
+    fNote.innerHTML=`Häufigster Buchstabe: <b>${peak}</b> (${peakN}×). Wenn das im Klartext ein <b>E</b> ist, wurde um <b>k = ${shift}</b> verschoben. Probier diesen Wert im Caesar-Werkzeug zum Entschlüsseln.`;
+  } else fNote.textContent="Tippe einen Text ein, um die Verteilung zu sehen.";
+}
+fIn.addEventListener("input",runFreq);runFreq();
+
+/* ---------- CHALLENGES ---------- */
+const CHALS=[
+  {tag:"Caesar · verschlüsseln",q:`Verschlüssle das Wort <span class="cipher">SCHULE</span> mit dem Schlüssel k = 4.`,
+   ans:`Jeden Buchstaben 4 Stellen nach rechts: S→W, C→G, H→L, U→Y, L→P, E→I. Geheimtext: <b>WGLYPI</b>.`},
+  {tag:"Caesar · entschlüsseln",q:`Entschlüssle den Geheimtext <span class="cipher">KJWNJS</span>, verschlüsselt mit k = 5. Es ist ein Wort aus dem Schulalltag.`,
+   ans:`5 Stellen zurück: K→F, J→E, W→R, N→I, J→E, S→N. Klartext: <b>FERIEN</b>.`},
+  {tag:"ROT13",q:`Verschlüssle <span class="cipher">GEHEIMNIS</span> mit ROT13. Was passiert, wenn du ROT13 nochmals anwendest?`,
+   ans:`G→T, E→R, H→U, E→R, I→V, M→Z, N→A, I→V, S→F = <b>TRURVZAVF</b>. Wendest du ROT13 erneut an, bist du wieder bei <b>GEHEIMNIS</b>, denn 13 + 13 = 26 = eine volle Umdrehung. ROT13 ist selbstinvers.`},
+  {tag:"Vigenère · entschlüsseln",q:`Du erhältst <span class="cipher">RIJVS</span>, verschlüsselt mit dem Schlüsselwort KEY. Wie lautet das ursprüngliche Wort?`,
+   ans:`Schlüssel wiederholt: K E Y K E. Rückwärts verschieben: R−K=H, I−E=E, J−Y=L, V−K=L, S−E=O. Klartext: <b>HELLO</b>.`},
+  {tag:"Vigenère · verschlüsseln",q:`Verschlüssle <span class="cipher">SCHULE</span> mit dem Schlüsselwort KEY.`,
+   ans:`Schlüssel: K E Y K E Y. S+K=C, C+E=G, H+Y=F, U+K=E, L+E=P, E+Y=C. Geheimtext: <b>CGFEPC</b>. Kontrolliere mit dem Vigenère-Werkzeug.`},
+  {tag:"Atbash · entschlüsseln",q:`Atbash spiegelt das Alphabet (A↔Z, B↔Y, …). Entschlüssle <span class="cipher">HXSFOV</span>.`,
+   ans:`H↔S, X↔C, S↔H, F↔U, O↔L, V↔E. Es entsteht das Wort <b>SCHULE</b>.`},
+  {tag:"Skytale · Transposition",q:`Ein Geheimtext wurde mit einem Stab (2 Reihen, 5 Spalten) erstellt: <span class="cipher">KORGYRPATF</span>. Welches Wort steht im Klartext?`,
+   ans:`Spaltenweise in 2 Reihen einfüllen — Spalte 1: K,O · Spalte 2: R,G · Spalte 3: Y,R · Spalte 4: P,A · Spalte 5: T,F. Zeilenweise gelesen ergibt Reihe 1 = KRYPT, Reihe 2 = OGRAF. Zusammen: <b>KRYPTOGRAF</b> (Beginn von «Kryptografie»).`},
+  {tag:"Rail Fence · verschlüsseln",q:`Verschlüssle <span class="cipher">INFORMATIK</span> im Zickzack mit 3 Schienen. Wie lautet der Geheimtext?`,
+   ans:`Zickzack auf 3 Schienen — Schiene 1: I,R,I · Schiene 2: N,O,M,T,K · Schiene 3: F,A. Reihenweise gelesen: <b>IRINOMTKFA</b>.`},
+  {tag:"Häufigkeitsanalyse",q:`Der folgende deutsche Satz wurde mit Caesar verschlüsselt: <span class="cipher">KPLZLHBMNHILPZASLPJOAGBSVLZLU</span>. Finde mit der Häufigkeit den Schlüssel und den Klartext.`,
+   ans:`Der häufigste Buchstabe ist <b>L</b> (6×). Nimmt man L = E an, ergibt sich eine Verschiebung von L − E = 11 − 4 = <b>k = 7</b>. 7 Stellen zurück entschlüsselt zu: <b>DIESE AUFGABE IST LEICHT ZU LOESEN</b>.`},
+  {tag:"Pigpen · Freimaurer-Chiffre",q:`In welchen Gittern stehen die Buchstaben des Wortes <span class="cipher">GEHEIM</span>? Zeichne die Symbole als Form der Zelle (zweite Alphabethälfte zusätzlich mit Punkt).`,
+   ans:`Im ersten Gitter (ohne Punkt) stehen A–I: <b>G</b> unten links, <b>E</b> in der Mitte, <b>H</b> unten Mitte, <b>I</b> unten rechts. Im zweiten Gitter (mit Punkt) steht <b>M</b> in der Mitte links. Das Symbol jedes Buchstabens ist die Form der Linien um seine Zelle; Buchstaben der zweiten Hälfte bekommen einen Punkt. Nutze die Gitter unten als Vorlage.`,
+   pigpen:true},
+];
+const chEl=document.getElementById("challenges");
+CHALS.forEach(c=>{
+  if(c.skip)return; // skip the ambiguous caesar-crack placeholder
+  const d=document.createElement("div");d.className="chal";
+  let extra="";
+  if(c.pigpen){
+    extra=`<div class="ppgrids">
+      <div><div class="ppcap">Gitter 1 · A–I (ohne Punkt)</div>
+        <table class="pp"><tr><td>A</td><td>B</td><td>C</td></tr><tr><td>D</td><td>E</td><td>F</td></tr><tr><td>G</td><td>H</td><td>I</td></tr></table></div>
+      <div><div class="ppcap">Gitter 2 · J–R (mit Punkt)</div>
+        <table class="pp"><tr><td>J</td><td>K</td><td>L</td></tr><tr><td>M</td><td>N</td><td>O</td></tr><tr><td>P</td><td>Q</td><td>R</td></tr></table></div>
+    </div>`;
+  }
+  d.innerHTML=`<span class="ctag">${c.tag}</span><div class="q">${c.q}</div>
+    <div class="reveal"><details><summary>Lösung anzeigen</summary><div class="ans">${c.ans}${extra}</div></details></div>`;
+  chEl.appendChild(d);
+});
+
+/* ---------- QUIZ ---------- */
+const QUIZ=[
+  {q:"Worüber läuft der allergrösste Teil des weltweiten Internetverkehrs?",
+   opts:["Über Satelliten im Weltraum","Über Glasfaser-Unterseekabel am Meeresboden","Über Funkmasten an der Küste"],c:1,
+   fb:"Satelliten spielen nur eine kleine Rolle. Die Hauptlast tragen Unterseekabel."},
+  {q:"Was beschreibt das «Deep Web» am besten?",
+   opts:["Den illegalen, anonymen Teil des Internets","Inhalte hinter Logins, die Suchmaschinen nicht finden, völlig normal","Eine besonders schnelle Variante des Surface Web"],c:1,
+   fb:"Dein E-Mail-Postfach oder E-Banking gehört zum Deep Web und ist völlig legal. Der versteckte, anonyme Teil ist das Darknet."},
+  {q:"Welche drei Schutzziele nennt die Informationssicherheit?",
+   opts:["Vertraulichkeit, Integrität, Verfügbarkeit","Geschwindigkeit, Speicher, Reichweite","Passwort, Firewall, Backup"],c:0,
+   fb:"Nur Berechtigte lesen (Vertraulichkeit), nichts wird heimlich verändert (Integrität), die Daten bleiben erreichbar (Verfügbarkeit)."},
+  {q:"Was macht ein Passwort am stärksten?",
+   opts:["Viele Sonderzeichen","Eine grosse Länge","Ein häufiger Wechsel"],c:1,
+   fb:"Jedes zusätzliche Zeichen vervielfacht die Möglichkeiten. Eine lange Passphrase schlägt ein kurzes, kompliziertes Passwort."},
+  {q:"Welche Faktoren kombiniert die Zwei-Faktor-Authentifizierung?",
+   opts:["Zwei verschiedene Passwörter","Wissen, Besitz oder Biometrie","Zwei Geräte derselben Person"],c:1,
+   fb:"Zum Beispiel Passwort (Wissen) plus ein Code aufs Smartphone (Besitz). Ein gestohlenes Passwort allein genügt dann nicht."},
+  {q:"Woran erkennst du eine typische Phishing-Mail NICHT?",
+   opts:["Zeitdruck und Drohungen","Eine verschlüsselte HTTPS-Verbindung der Seite","Eine seltsame Absenderadresse"],c:1,
+   fb:"Auch Phishing-Seiten benutzen HTTPS. Das Schloss bedeutet nur «abhörsichere Verbindung», nicht «vertrauenswürdig»."},
+  {q:"Welche Schadsoftware verbreitet sich selbstständig über das Netzwerk, ohne Klick?",
+   opts:["Trojaner","Wurm","Spyware"],c:1,
+   fb:"Der Wurm verbreitet sich von allein. Der Trojaner tarnt sich, Spyware spioniert heimlich aus."},
+  {q:"Was zählt zu den besonders schützenswerten Personendaten?",
+   opts:["Angaben zur Gesundheit oder zu politischen Ansichten","Der Vorname","Die Hausnummer"],c:0,
+   fb:"Für sensible Daten wie Gesundheit, Religion oder politische Ansichten gelten strengere Regeln."},
+  {q:"Du willst ein Gruppenfoto, auf dem Mitschüler erkennbar sind, in den Klassenchat stellen. Was gilt?",
+   opts:["Erlaubt, der Chat ist ja privat","Nur mit Einverständnis der abgebildeten Personen","Immer verboten"],c:1,
+   fb:"Das Recht am eigenen Bild verlangt grundsätzlich das Einverständnis der erkennbaren Personen, auch in Gruppenchats."},
+  {q:"Wann ist eine Verschlüsselung theoretisch unknackbar (One-Time-Pad)?",
+   opts:["Wenn der Schlüssel sehr lang ist","Wenn der Schlüssel so lang wie der Text, zufällig und einmalig ist","Wenn man ein langes Schlüsselwort wiederholt"],c:1,
+   fb:"Nur die Kombination aus voller Länge, Zufall und einmaliger Nutzung macht es unbrechbar."},
+];
+const qEl=document.getElementById("quiz");
+document.getElementById("quizTotal").textContent=QUIZ.length;
+let answered=0,right=0;
+QUIZ.forEach((item,qi)=>{
+  const box=document.createElement("div");box.className="quiz";
+  box.innerHTML=`<div class="qn">Frage ${qi+1} / ${QUIZ.length}</div><div class="q">${item.q}</div>`;
+  item.opts.forEach((opt,oi)=>{
+    const b=document.createElement("button");b.className="opt";b.type="button";b.textContent=opt;
+    b.addEventListener("click",()=>{
+      if(box.dataset.done)return;box.dataset.done="1";answered++;
+      const correct=oi===item.c;if(correct)right++;
+      [...box.querySelectorAll(".opt")].forEach((ob,k)=>{
+        ob.classList.add("locked");
+        if(k===item.c)ob.classList.add("correct");
+        else if(k===oi)ob.classList.add("wrong");
+      });
+      const fb=document.createElement("div");fb.className="fb";
+      fb.innerHTML=(correct?"✓ Richtig. ":"✗ Nicht ganz. ")+item.fb;
+      box.appendChild(fb);
+      document.getElementById("quizScore").querySelector("b").textContent=answered;
+      document.getElementById("quizRight").textContent=right;
+    });
+    box.appendChild(b);
+  });
+  qEl.appendChild(box);
+});
+
+/* ---------- HERO TRANSFORM ANIMATION ---------- */
+(function(){
+  const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const samples=[
+    {m:"Caesar (k = 3)",p:"GEHEIM",fn:s=>caesar(s,3)},
+    {m:"ROT13",p:"SCHULE",fn:s=>caesar(s,13)},
+    {m:"Vigenère (KEY)",p:"NACHRICHT",fn:s=>vigenere(s,"KEY",false)},
+    {m:"Atbash",p:"GYMNASIUM",fn:s=>s.split("").map(c=>String.fromCharCode(25-(c.charCodeAt(0)-A)+A)).join("")},
+  ];
+  const elM=document.getElementById("tmethod"),elP=document.getElementById("tplain"),elC=document.getElementById("tcipher");
+  let idx=0;
+  function render(sample,lit){
+    elM.textContent=sample.m;
+    const p=sample.p,c=sample.fn(p);
+    elP.innerHTML=[...p].map(ch=>`<span class="glyph">${ch}</span>`).join("");
+    elC.innerHTML=[...c].map((ch,i)=>`<span class="glyph${lit>i?' lit':''}">${lit>i?ch:'·'}</span>`).join("");
+  }
+  function cycle(){
+    const s=samples[idx];
+    if(reduce){render(s,s.p.length);idx=(idx+1)%samples.length;setTimeout(cycle,3200);return;}
+    let lit=0;render(s,0);
+    const step=setInterval(()=>{lit++;render(s,lit);if(lit>=s.p.length){clearInterval(step);setTimeout(()=>{idx=(idx+1)%samples.length;cycle();},2000);}},150);
+  }
+  cycle();
+})();
+
+/* ---------- TOC ACTIVE STATE ---------- */
+(function(){
+  const links=[...document.querySelectorAll("nav.toc a")];
+  const map=links.map(a=>({a,sec:document.querySelector(a.getAttribute("href"))}));
+  const obs=new IntersectionObserver(es=>{
+    es.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.classList.remove("active"));
+      const hit=map.find(m=>m.sec===en.target);if(hit)hit.a.classList.add("active");}});
+  },{rootMargin:"-45% 0px -50% 0px"});
+  map.forEach(m=>m.sec&&obs.observe(m.sec));
+})();
+</script>
+</body>
+</html>
