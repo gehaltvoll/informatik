@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kryptologie</title>
+<meta name="description" content="Übersicht der interaktiven Lernmaterialien zur Kryptologie: von Caesar und Skytale bis RSA und Diffie-Hellman.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;600&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --nord0:#2E3440; --nord1:#3B4252; --nord2:#434C5E; --nord3:#4C566A;
+    --nord4:#D8DEE9; --nord5:#E5E9F0; --nord6:#ECEFF4;
+    --nord7:#8FBCBB; --nord8:#88C0D0; --nord9:#81A1C1; --nord10:#5E81AC;
+    --nord11:#BF616A; --nord12:#D08770; --nord13:#EBCB8B; --nord14:#A3BE8C; --nord15:#B48EAD;
+
+    --bg: var(--nord6);
+    --surface: #fff;
+    --line: var(--nord4);
+    --text: var(--nord0);
+    --muted: var(--nord3);
+    --accent: var(--nord10);
+    --accent-wash: rgba(94,129,172,.10);
+    --font: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Google Sans Code", ui-monospace, "SF Mono", Consolas, monospace;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: var(--nord0);
+      --surface: var(--nord1);
+      --line: var(--nord2);
+      --text: var(--nord6);
+      --muted: var(--nord4);
+      --accent: var(--nord8);
+      --accent-wash: rgba(136,192,208,.10);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    padding: 48px 16px 64px;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+
+  header { margin-bottom: 40px; }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: .8rem;
+    color: var(--accent);
+    letter-spacing: .04em;
+    margin-bottom: 8px;
+  }
+  h1 { font-size: clamp(2rem, 5vw, 2.6rem); line-height: 1.15; margin-bottom: 12px; }
+  .lead { color: var(--muted); max-width: 60ch; }
+
+  section { margin-bottom: 36px; }
+  .group-head {
+    display: flex; align-items: baseline; gap: 12px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px; margin-bottom: 14px;
+  }
+  .group-head .num {
+    font-family: var(--font-mono); font-size: .85rem; color: var(--accent);
+  }
+  h2 { font-size: 1.2rem; }
+  .group-desc { color: var(--muted); font-size: .95rem; margin-bottom: 14px; }
+
+  .cards {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .cards a {
+    display: block; height: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    color: inherit; text-decoration: none;
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .cards a:hover, .cards a:focus-visible {
+    border-color: var(--accent);
+    background: var(--accent-wash);
+    transform: translateY(-1px);
+    outline: none;
+  }
+  .cards strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+  .cards span { color: var(--muted); font-size: .9rem; }
+
+  footer { margin-top: 48px; color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">Informatik · Kryptologie</p>
+    <h1>Kryptologie</h1>
+    <p class="lead">Interaktive Materialien zum Verschlüsseln, Entschlüsseln und Knacken – von antiken Verfahren bis zu den Grundlagen moderner Internetsicherheit.</p>
+  </header>
+
+  <section>
+    <div class="group-head"><span class="num">01</span><h2>Grundlagen</h2></div>
+    <p class="group-desc">Wie Computer Zeichen als Zahlen und Bits darstellen.</p>
+    <ul class="cards">
+      <li><a href="ASCII-Bin%C3%A4r-Wandler.html"><strong>ASCII-Binär-Wandler</strong><span>Text in ASCII-Codes und Binärzahlen umwandeln</span></a></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="group-head"><span class="num">02</span><h2>Klassische Verfahren</h2></div>
+    <p class="group-desc">Transposition (Buchstaben umstellen) und Substitution (Buchstaben ersetzen).</p>
+    <ul class="cards">
+      <li><a href="Skytale%20und%20Gartenzaun.html"><strong>Skytale und Gartenzaun</strong><span>Transpositionsverfahren</span></a></li>
+      <li><a href="Caesar-Verschl%C3%BCsselung.html"><strong>Caesar-Verschlüsselung</strong><span>Monoalphabetische Substitution</span></a></li>
+      <li><a href="Vigen%C3%A8re-Verschl%C3%BCsselung.html"><strong>Vigenère-Verschlüsselung</strong><span>Polyalphabetische Substitution mit Schlüsselwort</span></a></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="group-head"><span class="num">03</span><h2>Kryptoanalyse</h2></div>
+    <p class="group-desc">Verschlüsselte Texte ohne Schlüssel knacken.</p>
+    <ul class="cards">
+      <li><a href="Kasiski-Labor.html"><strong>Kasiski-Labor</strong><span>Die Schlüssellänge einer Vigenère-Chiffre bestimmen</span></a></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="group-head"><span class="num">04</span><h2>Symmetrische Verfahren</h2></div>
+    <p class="group-desc">Sender und Empfänger teilen denselben geheimen Schlüssel.</p>
+    <ul class="cards">
+      <li><a href="Das%20One-Time-Pad.html"><strong>Das One-Time-Pad</strong><span>Das beweisbar sichere Verfahren</span></a></li>
+      <li><a href="S-DES%20Schritt%20f%C3%BCr%20Schritt.html"><strong>S-DES Schritt für Schritt</strong><span>Eine moderne Blockchiffre im Kleinformat</span></a></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="group-head"><span class="num">05</span><h2>Asymmetrische Verfahren &amp; Schlüsselaustausch</h2></div>
+    <p class="group-desc">Öffentliche und private Schlüssel – sicher kommunizieren, ohne vorher ein Geheimnis zu teilen.</p>
+    <ul class="cards">
+      <li><a href="Diffie-Hellman%20zum%20Anfassen.html"><strong>Diffie-Hellman zum Anfassen</strong><span>Ein Geheimnis vereinbaren, obwohl alle mithören</span></a></li>
+      <li><a href="RSA%20Schritt%20f%C3%BCr%20Schritt.html"><strong>RSA Schritt für Schritt</strong><span>Schlüssel erzeugen, verschlüsseln, entschlüsseln</span></a></li>
+      <li><a href="Wie%20lange%20h%C3%A4lt%20RSA_.html"><strong>Wie lange hält RSA?</strong><span>Schlüssellänge und Sicherheit</span></a></li>
+    </ul>
+  </section>
+
+  <footer>Kantonsschule Zürcher Unterland · Informatik</footer>
+</main>
+</body>
+</html>
