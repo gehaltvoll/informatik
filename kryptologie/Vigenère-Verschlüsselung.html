@@ -1,0 +1,617 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik, Zielgruppe Schüler:innen, selbstständige Arbeit (gemischt Desktop/Handy), Beamer-Modus-Schalter
+  Inhalte: Prinzip mit Schlüsselwort-Band und Vigenère-Quadrat (Schritt für Schritt), Live Ver-/Entschlüsseln mit Rechenschritten, Vergleich mit Caesar (Häufigkeitsdiagramme, "Was wird aus dem E?")
+  Nicht enthalten: Knacken (Kasiski) – auf Wunsch ergänzbar, dann geführt in Schritten
+  Übungen: 6 Aufgaben, Lösungen einblendbar
+  Textformat: Klar-, Geheimtext und Schlüsselwort nur Grossbuchstaben A-Z ohne Leerzeichen; Umlaute -> AE/OE/UE, ß -> SS
+  Datenhaltung: nur localStorage für Variante und Beamer-Modus (Komfort)
+  Design: Nord-Farbschema, Open Sans + Google Sans Code, Hell/Dunkel folgt System, gleiche Gestaltung wie Caesar-Seite
+  Variante A "Klar": hell, ruhig, feine Linien
+  Variante B "Terminal": Polar-Night-Flächen für Quadrat und Ausgaben, eckig, Mono-Labels
+  Sprache: Deutsch (CH), Sie-Form
+-->
+<title>Vigenère-Verschlüsselung</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: einspaltige Lernseite, vier Kapitel; Kapitel 1 und 2 zweispaltig ab Tablet */
+:root {
+  --nord0:#2E3440; --nord1:#3B4252; --nord2:#434C5E; --nord3:#4C566A;
+  --nord4:#D8DEE9; --nord5:#E5E9F0; --nord6:#ECEFF4;
+  --nord7:#8FBCBB; --nord8:#88C0D0; --nord9:#81A1C1; --nord10:#5E81AC;
+  --nord11:#BF616A; --nord12:#D08770; --nord13:#EBCB8B; --nord14:#A3BE8C; --nord15:#B48EAD;
+
+  --bg: var(--nord6);
+  --surface: var(--nord5);
+  --line: var(--nord4);
+  --text: var(--nord0);
+  --muted: var(--nord3);
+  --accent: var(--nord10);
+  --accent-soft: var(--nord9);
+  --accent-wash: rgba(94,129,172,.14);
+
+  --font: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Google Sans Code", ui-monospace, "Cascadia Code", Consolas, "SF Mono", monospace;
+
+  --radius: 10px;
+  --panel-bg: var(--surface);
+  --panel-fg: var(--text);
+  --panel-muted: var(--muted);
+  --panel-line: var(--line);
+  --panel-accent: var(--accent);
+  --panel-wash: rgba(94,129,172,.14);
+  --code-bg: var(--surface);
+  --code-fg: var(--text);
+  --label-font: var(--font);
+  --label-case: none;
+  --label-track: .01em;
+  --h-weight: 600;
+  --base: 17px;
+  --body-weight: 400;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--nord0); --surface: var(--nord1); --line: var(--nord2);
+    --text: var(--nord6); --muted: var(--nord4);
+    --accent: var(--nord8); --accent-wash: rgba(136,192,208,.15);
+    --panel-wash: rgba(136,192,208,.15);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: var(--nord0); --surface: var(--nord1); --line: var(--nord2);
+  --text: var(--nord6); --muted: var(--nord4);
+  --accent: var(--nord8); --accent-wash: rgba(136,192,208,.15);
+  --panel-wash: rgba(136,192,208,.15);
+  color-scheme: dark;
+}
+:root[data-variant="b"] {
+  --radius: 3px;
+  --panel-bg: var(--nord0);
+  --panel-fg: var(--nord6);
+  --panel-muted: var(--nord4);
+  --panel-line: var(--nord2);
+  --panel-accent: var(--nord8);
+  --panel-wash: rgba(136,192,208,.16);
+  --code-bg: var(--nord0);
+  --code-fg: var(--nord6);
+  --label-font: var(--font-mono);
+  --label-case: uppercase;
+  --label-track: .08em;
+  --h-weight: 700;
+}
+:root.beamer { --base: 23px; --body-weight: 600; }
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size: var(--base); font-weight: var(--body-weight); line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+button, input, textarea { font: inherit; color: inherit; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; font-weight: var(--h-weight); margin: 0; }
+h1 { font-size: 2.1em; font-weight: 700; }
+h2 { font-size: 1.45em; }
+h3 { font-size: 1.05em; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; border-radius: 4px; }
+code, .mono { font-family: var(--font-mono); }
+code { font-size: .9em; background: var(--surface); padding: .08em .35em; border-radius: 4px; }
+
+.wrap { max-width: 1080px; margin: 0 auto; }
+.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; padding-block: 18px; border-bottom: 1px solid var(--line); }
+.brand { font-family: var(--label-font); text-transform: var(--label-case); letter-spacing: var(--label-track); font-size: .78em; color: var(--muted); font-weight: 600; }
+.toggles { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; cursor: pointer; font-size: .82em; font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+.switch { display: inline-flex; gap: 8px; align-items: center; font-size: .82em; font-weight: 600; cursor: pointer; }
+.switch input { width: 18px; height: 18px; accent-color: var(--nord10); }
+
+.intro { display: grid; gap: 14px; padding-block: 40px 28px; }
+.intro p { color: var(--muted); font-size: 1.08em; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: .9em; }
+
+section { padding-block: 40px; border-top: 1px solid var(--line); display: grid; gap: 22px; }
+.kicker, .label, th { font-family: var(--label-font); text-transform: var(--label-case); letter-spacing: var(--label-track); color: var(--muted); font-size: .78em; font-weight: 600; }
+.head { display: grid; gap: 8px; }
+.head p { color: var(--muted); }
+
+.two { display: grid; gap: 28px; grid-template-columns: 1fr; }
+.two > * { min-width: 0; }
+@media (min-width: 900px) { .two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+
+.card { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; background: var(--bg); display: grid; gap: 12px; min-width: 0; }
+.panel { background: var(--panel-bg); color: var(--panel-fg); border: 1px solid var(--panel-line); border-radius: var(--radius); padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.panel .label { color: var(--panel-muted); }
+
+.btn { border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; font-weight: 600; font-size: .9em; }
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.fields { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 560px) { .fields { grid-template-columns: 2fr 1fr; } }
+.field { display: grid; gap: 6px; min-width: 0; }
+input.txt, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); font-family: var(--font-mono); font-size: .95em; line-height: 1.5; }
+textarea { min-height: 110px; resize: vertical; }
+input.txt:focus, textarea:focus { border-color: var(--accent); outline: none; }
+.err { color: var(--text); font-size: .85em; }
+.err::before { content: "✗ "; color: var(--nord11); font-weight: 700; }
+.out { background: var(--code-bg); color: var(--code-fg); border-radius: var(--radius); padding: 14px; font-family: var(--font-mono); font-size: .95em; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 52px; border: 1px solid var(--line); }
+.hint { font-size: .85em; color: var(--muted); }
+
+/* Band */
+.band-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+.band { border-collapse: collapse; font-family: var(--font-mono); font-variant-numeric: tabular-nums; width: max-content; min-width: 100%; }
+.band th { text-align: left; padding: 6px 10px; white-space: nowrap; background: var(--surface); width: 1%; }
+.band td { text-align: center; padding: 6px 0; min-width: 30px; border-left: 1px solid var(--line); cursor: pointer; }
+.band tr + tr td, .band tr + tr th { border-top: 1px solid var(--line); }
+.band .r-key td { color: var(--accent); font-weight: 600; }
+.band .r-shift td { font-size: .78em; color: var(--muted); }
+.band .r-ci td { font-weight: 600; }
+.band td.hl { background: var(--nord13); color: var(--nord0); }
+.say { font-size: 1.02em; }
+.say b { font-family: var(--font-mono); }
+.stepper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pos { font-family: var(--font-mono); font-size: .9em; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Quadrat */
+.sq-wrap { overflow-x: auto; }
+.sq { display: grid; grid-template-columns: repeat(27, minmax(18px, 1fr)); font-family: var(--font-mono); font-size: 12px; line-height: 1; width: max-content; min-width: 100%; font-variant-numeric: tabular-nums; }
+.sq div { display: grid; place-items: center; height: 20px; min-width: 18px; color: var(--panel-fg); }
+.sq .h { color: var(--panel-muted); font-weight: 600; }
+.sq .h.on { color: var(--panel-fg); background: var(--panel-wash); }
+.sq .rw, .sq .cl { background: var(--panel-wash); }
+.sq .hit { background: var(--nord13); color: var(--nord0); font-weight: 600; outline: 2px solid var(--nord13); }
+.sq .corner { color: var(--panel-muted); font-size: 10px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .8em; color: var(--panel-muted); }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; border: 1px solid var(--panel-line); }
+
+.merke { border-left: 4px solid var(--nord15); background: var(--surface); padding: 12px 16px; border-radius: 0 var(--radius) var(--radius) 0; display: grid; gap: 6px; }
+.formula { font-family: var(--font-mono); font-size: 1.02em; }
+
+/* Live */
+.mode { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: max-content; max-width: 100%; }
+.mode label { padding: 6px 14px; cursor: pointer; font-weight: 600; font-size: .9em; position: relative; }
+.mode input { position: absolute; opacity: 0; pointer-events: none; }
+.mode label:has(input:checked) { background: var(--accent); color: var(--bg); }
+.mode label:has(input:focus-visible) { outline: 3px solid var(--accent-soft); outline-offset: -3px; }
+.tbl-wrap { overflow-x: auto; }
+table.steps { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.steps th, .steps td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.steps td { font-family: var(--font-mono); }
+
+/* Vergleich */
+.charts { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .charts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.chart-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 8px; min-width: 0; align-content: start; }
+.chart-card h3 { font-size: .98em; }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { font-family: var(--font-mono); font-size: 9px; fill: var(--muted); }
+.chart .grid { stroke: var(--line); }
+.chart .bar { fill: var(--accent-soft); }
+.chart .bar.max { fill: var(--nord12); }
+.stat { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: .88em; }
+.stat .v { font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.efate { display: grid; align-items: start; gap: 10px; grid-template-columns: 1fr; }
+@media (min-width: 700px) { .efate { grid-template-columns: 1fr 1fr; } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; align-content: flex-start; }
+.chip { font-family: var(--font-mono); font-size: .85em; padding: 2px 8px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); white-space: nowrap; }
+.chip b { font-weight: 600; }
+
+/* Übungen */
+.tasks { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .tasks { grid-template-columns: 1fr 1fr; } }
+.task { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; align-content: start; }
+details summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: .92em; }
+details .sol { margin-top: 8px; padding: 10px 12px; background: var(--surface); border-radius: var(--radius); border-left: 4px solid var(--nord14); }
+.ex { font-family: var(--font-mono); font-weight: 600; overflow-wrap: anywhere; }
+
+:root.beamer .sq { font-size: 15px; }
+:root.beamer .sq div { height: 26px; min-width: 24px; }
+:root.beamer .out, :root.beamer textarea, :root.beamer input.txt, :root.beamer .band { font-size: 20px; }
+:root.beamer .chart text { font-size: 11px; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Informatik · Kryptologie</div>
+    <div class="toggles">
+      <div class="seg" role="group" aria-label="Design-Variante">
+        <button id="varA" type="button" aria-pressed="true">Variante A</button>
+        <button id="varB" type="button" aria-pressed="false">Variante B</button>
+      </div>
+      <label class="switch" for="beamer"><input id="beamer" type="checkbox"> Beamer-Modus</label>
+    </div>
+  </header>
+
+  <div class="intro">
+    <h1>Vigenère-Verschlüsselung</h1>
+    <p>Die Caesar-Verschlüsselung verschiebt jeden Buchstaben um denselben Betrag und lässt sich deshalb mit einer Häufigkeitsanalyse knacken. Blaise de Vigenère beschrieb 1586 ein Verfahren, das stattdessen ein Schlüsselwort verwendet: Jeder Buchstabe wird um einen anderen Betrag verschoben. Fast 300 Jahre lang galt es als unknackbar.</p>
+    <nav class="toc" aria-label="Kapitel">
+      <a href="#prinzip">1 Prinzip</a><a href="#live">2 Ver- und Entschlüsseln</a><a href="#vergleich">3 Vergleich mit Caesar</a><a href="#uebungen">4 Übungen</a>
+    </nav>
+  </div>
+
+  <!-- 1 Prinzip -->
+  <section id="prinzip">
+    <div class="head">
+      <div class="kicker">Kapitel 1</div>
+      <h2>Das Prinzip: ein Schlüsselwort statt einer Zahl</h2>
+      <p>Das Schlüsselwort wird so oft wiederholt, bis es gleich lang ist wie der Klartext. Jeder Schlüsselbuchstabe gibt die Verschiebung für den Buchstaben darunter an: A verschiebt um 0, B um 1, C um 2 und so weiter. Jeder Buchstabe wird also mit einer eigenen Caesar-Verschiebung verschlüsselt.</p>
+    </div>
+
+    <div class="fields">
+      <div class="field">
+        <label class="label" for="pPlain">Klartext (max. 24 Buchstaben)</label>
+        <input class="txt" id="pPlain" type="text" maxlength="40" spellcheck="false" autocapitalize="characters" value="TREFFPUNKTBAHNHOF">
+      </div>
+      <div class="field">
+        <label class="label" for="pKey">Schlüsselwort</label>
+        <input class="txt" id="pKey" type="text" maxlength="16" spellcheck="false" autocapitalize="characters" value="BLAISE">
+      </div>
+    </div>
+
+    <div class="band-wrap">
+      <table class="band" id="band" aria-label="Klartext, wiederholtes Schlüsselwort, Verschiebung und Geheimtext"></table>
+    </div>
+
+    <div class="two">
+      <div style="display:grid; gap:16px; min-width:0">
+        <div class="stepper">
+          <button class="btn" type="button" id="prev" aria-label="Vorheriger Buchstabe">← Zurück</button>
+          <button class="btn primary" type="button" id="next" aria-label="Nächster Buchstabe">Weiter →</button>
+          <span class="pos" id="pos"></span>
+        </div>
+        <p class="say" id="say" aria-live="polite"></p>
+        <div class="merke">
+          <span class="label">Merke</span>
+          <p>Mit den Positionen A = 0 bis Z = 25 gilt für den i-ten Buchstaben:</p>
+          <p class="formula">Verschlüsseln: c<sub>i</sub> = (p<sub>i</sub> + k<sub>i</sub>) mod 26<br>Entschlüsseln: p<sub>i</sub> = (c<sub>i</sub> − k<sub>i</sub>) mod 26</p>
+          <p>Dabei ist k<sub>i</sub> der Schlüsselbuchstabe an derselben Stelle. Ein Schlüsselwort aus nur einem Buchstaben ergibt wieder die Caesar-Verschlüsselung.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="row">
+          <h3>Vigenère-Quadrat</h3>
+          <span class="label">Zeile = Schlüssel · Spalte = Klartext</span>
+        </div>
+        <div class="sq-wrap"><div class="sq" id="sq" role="img" aria-label="Vigenère-Quadrat mit hervorgehobener Zeile, Spalte und Geheimtext-Buchstabe"></div></div>
+        <div class="legend">
+          <span><span class="sw" style="background:var(--panel-wash)"></span>Zeile des Schlüsselbuchstabens, Spalte des Klartextbuchstabens</span>
+          <span><span class="sw" style="background:var(--nord13)"></span>Geheimtext-Buchstabe im Schnittpunkt</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 Live -->
+  <section id="live">
+    <div class="head">
+      <div class="kicker">Kapitel 2</div>
+      <h2>Selbst ver- und entschlüsseln</h2>
+      <p>Klar- und Geheimtext bestehen nur aus Grossbuchstaben ohne Leerzeichen. Kleinbuchstaben werden zu Grossbuchstaben, Ä, Ö, Ü zu AE, OE, UE und ß zu SS. Leerzeichen, Satzzeichen und Ziffern werden entfernt. Das gilt auch für das Schlüsselwort.</p>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <div class="mode" role="radiogroup" aria-label="Richtung">
+          <label><input type="radio" name="mode" id="modeEnc" value="enc" checked>Verschlüsseln</label>
+          <label><input type="radio" name="mode" id="modeDec" value="dec">Entschlüsseln</label>
+        </div>
+        <label class="label" for="inText">Eingabe</label>
+        <textarea id="inText" spellcheck="false" autocapitalize="characters">GEHEIMEBOTSCHAFTANDIEKLASSEDIEPRUEFUNGFINDETAMFREITAGSTATT</textarea>
+        <label class="label" for="keyIn">Schlüsselwort</label>
+        <input class="txt" id="keyIn" type="text" spellcheck="false" autocapitalize="characters" value="INFORMATIK">
+        <p class="err" id="keyErr" hidden>Bitte geben Sie ein Schlüsselwort mit mindestens einem Buchstaben ein.</p>
+        <div class="row">
+          <span class="label" id="outLabel">Geheimtext</span>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <button class="btn" type="button" id="swap">Ergebnis als Eingabe verwenden</button>
+            <button class="btn" type="button" id="copy">Kopieren</button>
+          </div>
+        </div>
+        <div class="out" id="outText" aria-live="polite"></div>
+      </div>
+
+      <div class="card">
+        <h3>Rechenschritte für die ersten Buchstaben</h3>
+        <div class="tbl-wrap">
+          <table class="steps">
+            <thead><tr><th>i</th><th>Text</th><th>Schlüssel</th><th>Positionen</th><th>mod 26</th><th>Ergebnis</th></tr></thead>
+            <tbody id="steps"></tbody>
+          </table>
+        </div>
+        <p class="hint">Achten Sie auf gleiche Klartextbuchstaben: Sie werden je nach Stelle zu verschiedenen Geheimtextbuchstaben.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 Vergleich -->
+  <section id="vergleich">
+    <div class="head">
+      <div class="kicker">Kapitel 3</div>
+      <h2>Vergleich mit Caesar: Warum die Häufigkeitsanalyse versagt</h2>
+      <p>Derselbe Klartext wird einmal mit Caesar (k = 3) und einmal mit Vigenère verschlüsselt. Bei Caesar wandert das typische Profil der deutschen Sprache nur zur Seite, der Spitzenbuchstabe bleibt erkennbar. Bei Vigenère wird das E auf mehrere Buchstaben verteilt, die Balken werden flacher. Probieren Sie verschieden lange Schlüsselwörter aus.</p>
+    </div>
+
+    <div class="card">
+      <div class="fields">
+        <div class="field">
+          <label class="label" for="cmpText">Klartext</label>
+          <textarea id="cmpText" spellcheck="false" autocapitalize="characters">DIEKUNSTDERVERSCHLUESSELUNGISTFASTSOALTWIEDIESCHRIFTSELBSTSCHONJULIUSCAESARVERSCHOBJEDENBUCHSTABENSEINERBRIEFEUMEINIGESTELLENIMALPHABETDAMITFEINDLICHEBOTENDIENACHRICHTENNICHTLESENKONNTENHEUTERECHNENCOMPUTERINSEKUNDENALLEMOEGLICHKEITENDURCH</textarea>
+        </div>
+        <div class="field" style="align-content:start">
+          <label class="label" for="cmpKey">Vigenère-Schlüsselwort</label>
+          <input class="txt" id="cmpKey" type="text" spellcheck="false" autocapitalize="characters" value="BLAISE">
+          <p class="hint" id="cmpInfo"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-card">
+        <h3>Klartext</h3>
+        <svg class="chart" id="chPlain" viewBox="0 0 320 150" role="img" aria-label="Buchstabenhäufigkeit des Klartexts"></svg>
+        <div class="stat" id="stPlain"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Caesar (k = 3)</h3>
+        <svg class="chart" id="chCaesar" viewBox="0 0 320 150" role="img" aria-label="Buchstabenhäufigkeit des Caesar-Geheimtexts"></svg>
+        <div class="stat" id="stCaesar"></div>
+      </div>
+      <div class="chart-card">
+        <h3 id="vigTitle">Vigenère</h3>
+        <svg class="chart" id="chVig" viewBox="0 0 320 150" role="img" aria-label="Buchstabenhäufigkeit des Vigenère-Geheimtexts"></svg>
+        <div class="stat" id="stVig"></div>
+      </div>
+    </div>
+    <p class="hint">Der häufigste Buchstabe ist jeweils orange markiert.</p>
+
+    <div class="card">
+      <h3>Was wird aus dem E?</h3>
+      <div class="efate">
+        <div style="display:grid; gap:6px">
+          <span class="label">Caesar</span>
+          <div class="chips" id="eCaesar"></div>
+        </div>
+        <div style="display:grid; gap:6px">
+          <span class="label">Vigenère</span>
+          <div class="chips" id="eVig"></div>
+        </div>
+      </div>
+      <div class="merke">
+        <span class="label">Merke</span>
+        <p>Bei Caesar wird jedes E zum selben Buchstaben, deshalb verrät der häufigste Geheimtextbuchstabe den Schlüssel. Bei Vigenère wird ein E zu so vielen verschiedenen Buchstaben, wie das Schlüsselwort verschiedene Buchstaben hat. Eine einfache Häufigkeitsanalyse über den ganzen Text führt deshalb nicht zum Ziel.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 Übungen -->
+  <section id="uebungen">
+    <div class="head">
+      <div class="kicker">Kapitel 4</div>
+      <h2>Übungen</h2>
+      <p>Lösen Sie die Aufgaben zuerst von Hand mit dem Vigenère-Quadrat. Die Werkzeuge oben dürfen Sie zur Kontrolle verwenden.</p>
+    </div>
+    <div class="tasks">
+      <div class="task">
+        <span class="label">Aufgabe 1</span>
+        <p>Verschlüsseln Sie <span class="ex">HALLOWELT</span> mit dem Schlüsselwort <span class="ex">KEY</span>.</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol"><span class="ex">REJVSUOPR</span><br>Schlüssel wiederholt: KEYKEYKEY. Beispiel erster Buchstabe: H (7) + K (10) = 17 = R.</div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 2</span>
+        <p>Entschlüsseln Sie <span class="ex">RCIGYXGYOS</span>. Das Schlüsselwort ist <span class="ex">ZUG</span>.</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol"><span class="ex">SICHERHEIT</span><br>Beispiel erster Buchstabe: R (17) − Z (25) = −8, und −8 mod 26 = 18 = S.</div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 3</span>
+        <p>Mit welchem Schlüsselwort aus einem einzigen Buchstaben erhalten Sie genau die Caesar-Verschlüsselung mit k = 3?</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol">Mit <span class="ex">D</span>, denn D hat die Position 3. Ein einbuchstabiges Schlüsselwort verschiebt jeden Buchstaben gleich weit.</div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 4</span>
+        <p>Sie kennen Klartext <span class="ex">KRYPTOGRAFIE</span> und Geheimtext <span class="ex">KSAPUQGSCFJG</span>. Bestimmen Sie das Schlüsselwort.</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol">Rechnen Sie für jede Stelle k = (c − p) mod 26: Das ergibt ABCABCABCABC, also das Schlüsselwort <span class="ex">ABC</span>. Kennt ein Angreifer ein Stück Klartext, verrät er damit den Schlüssel.</div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 5</span>
+        <p>Warum ist das Schlüsselwort <span class="ex">AAAA</span> eine schlechte Wahl? Was gilt für <span class="ex">ABAB</span> im Vergleich zu <span class="ex">AB</span>?</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol">A verschiebt um 0, der Geheimtext ist also gleich dem Klartext. ABAB und AB verschlüsseln genau gleich, denn wiederholt ergeben beide ABABAB… Entscheidend ist nicht die Länge des Worts, sondern die Länge des sich wiederholenden Musters.</div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 6</span>
+        <p>Was müsste für das Schlüsselwort gelten, damit Vigenère wirklich nicht zu knacken ist?</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol">Der Schlüssel muss so lang sein wie der Klartext, rein zufällig gewählt werden und darf nur ein einziges Mal verwendet werden. Dann wiederholt sich nichts, und jeder Klartext gleicher Länge ist gleich wahrscheinlich. Dieses Verfahren heisst One-Time-Pad.</div></details>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const $ = id => document.getElementById(id);
+  const mod = (n, m) => ((n % m) + m) % m;
+  const norm = t => t.toUpperCase()
+    .replace(/Ä/g, "AE").replace(/Ö/g, "OE").replace(/Ü/g, "UE").replace(/ß|ẞ/g, "SS")
+    .replace(/[^A-Z]/g, "");
+  const idx = ch => ch.charCodeAt(0) - 65;
+  function vig(text, key, dir) {
+    if (!key) return text;
+    let out = "";
+    for (let i = 0; i < text.length; i++) out += A[mod(idx(text[i]) + dir * idx(key[i % key.length]), 26)];
+    return out;
+  }
+  function cleanField(el) {
+    const v = el.value, n = norm(v);
+    if (v === n) return;
+    const caret = norm(v.slice(0, el.selectionStart)).length;
+    el.value = n;
+    try { el.setSelectionRange(caret, caret); } catch (e) {}
+  }
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  /* Variante und Beamer-Modus */
+  const root = document.documentElement;
+  function setVariant(v) {
+    root.dataset.variant = v;
+    $("varA").setAttribute("aria-pressed", v === "a");
+    $("varB").setAttribute("aria-pressed", v === "b");
+    store.set("vig-variant", v);
+  }
+  $("varA").onclick = () => setVariant("a");
+  $("varB").onclick = () => setVariant("b");
+  setVariant(store.get("vig-variant") === "b" ? "b" : "a");
+  $("beamer").onchange = e => { root.classList.toggle("beamer", e.target.checked); store.set("vig-beamer", e.target.checked ? "1" : "0"); };
+  if (store.get("vig-beamer") === "1") { $("beamer").checked = true; root.classList.add("beamer"); }
+
+  /* Kapitel 1: Band und Quadrat */
+  const sq = $("sq");
+  (function buildSquare() {
+    let h = '<div class="corner">k\\p</div>';
+    for (let c = 0; c < 26; c++) h += `<div class="h col-h" data-c="${c}">${A[c]}</div>`;
+    for (let r = 0; r < 26; r++) {
+      h += `<div class="h row-h" data-r="${r}">${A[r]}</div>`;
+      for (let c = 0; c < 26; c++) h += `<div data-r="${r}" data-c="${c}">${A[(r + c) % 26]}</div>`;
+    }
+    sq.innerHTML = h;
+  })();
+  const sqCells = Array.from(sq.querySelectorAll("div[data-r][data-c]"));
+  const colHeads = Array.from(sq.querySelectorAll(".col-h"));
+  const rowHeads = Array.from(sq.querySelectorAll(".row-h"));
+
+  let pos = 0;
+  const pPlain = () => norm($("pPlain").value).slice(0, 24);
+  const pKey = () => norm($("pKey").value);
+
+  function drawPrinzip() {
+    const p = pPlain(), k = pKey();
+    if (pos >= p.length) pos = Math.max(0, p.length - 1);
+    const n = p.length;
+    let rP = '<tr><th scope="row">Klartext</th>', rK = '<tr class="r-key"><th scope="row">Schlüssel</th>',
+        rS = '<tr class="r-shift"><th scope="row">Verschiebung</th>', rC = '<tr class="r-ci"><th scope="row">Geheimtext</th>';
+    for (let i = 0; i < n; i++) {
+      const kc = k ? k[i % k.length] : "", hl = i === pos ? ' class="hl"' : "";
+      rP += `<td data-i="${i}"${hl}>${p[i]}</td>`;
+      rK += `<td data-i="${i}"${hl}>${kc}</td>`;
+      rS += `<td data-i="${i}"${hl}>${kc ? "+" + idx(kc) : ""}</td>`;
+      rC += `<td data-i="${i}"${hl}>${kc ? A[mod(idx(p[i]) + idx(kc), 26)] : ""}</td>`;
+    }
+    $("band").innerHTML = rP + "</tr>" + rK + "</tr>" + rS + "</tr>" + rC + "</tr>";
+    $("band").querySelectorAll("td[data-i]").forEach(td => td.onclick = () => { pos = +td.dataset.i; drawPrinzip(); });
+
+    $("prev").disabled = pos <= 0;
+    $("next").disabled = pos >= n - 1;
+    $("pos").textContent = n ? `Buchstabe ${pos + 1} von ${n}` : "";
+
+    const ok = n && k;
+    const pc = ok ? idx(p[pos]) : -1, kc = ok ? idx(k[pos % k.length]) : -1, cc = ok ? mod(pc + kc, 26) : -1;
+    sqCells.forEach(cell => {
+      const r = +cell.dataset.r, c = +cell.dataset.c;
+      cell.classList.toggle("hit", r === kc && c === pc);
+      cell.classList.toggle("rw", r === kc && c !== pc);
+      cell.classList.toggle("cl", c === pc && r !== kc);
+    });
+    colHeads.forEach((h, c) => h.classList.toggle("on", c === pc));
+    rowHeads.forEach((h, r) => h.classList.toggle("on", r === kc));
+    $("say").innerHTML = !n ? "Geben Sie einen Klartext ein."
+      : !k ? "Geben Sie ein Schlüsselwort ein."
+      : `Klartext <b>${A[pc]}</b> (${pc}) mit Schlüsselbuchstabe <b>${A[kc]}</b> (${kc}): (${pc} + ${kc}) mod 26 = ${cc}, also <b>${A[cc]}</b>. Im Quadrat: Zeile ${A[kc]}, Spalte ${A[pc]}.`;
+  }
+  $("prev").onclick = () => { pos = Math.max(0, pos - 1); drawPrinzip(); };
+  $("next").onclick = () => { pos = Math.min(pPlain().length - 1, pos + 1); drawPrinzip(); };
+  $("pPlain").oninput = () => { cleanField($("pPlain")); drawPrinzip(); };
+  $("pKey").oninput = () => { cleanField($("pKey")); drawPrinzip(); };
+
+  /* Kapitel 2: Live */
+  const isEnc = () => $("modeEnc").checked;
+  function drawLive() {
+    const t = norm($("inText").value), k = norm($("keyIn").value), d = isEnc() ? 1 : -1;
+    $("keyErr").hidden = !!k;
+    $("outLabel").textContent = isEnc() ? "Geheimtext" : "Klartext";
+    $("outText").textContent = k ? (vig(t, k, d) || " ") : " ";
+    const rows = [];
+    for (let i = 0; i < Math.min(t.length, 10) && k; i++) {
+      const a = idx(t[i]), b = idx(k[i % k.length]), raw = a + d * b, r = mod(raw, 26);
+      rows.push(`<tr><td>${i + 1}</td><td>${t[i]}</td><td>${k[i % k.length]}</td><td>${a} ${d > 0 ? "+" : "−"} ${b} = ${raw}</td><td>${r}</td><td><b>${A[r]}</b></td></tr>`);
+    }
+    $("steps").innerHTML = rows.join("") || '<tr><td colspan="6" class="hint">Geben Sie Text und Schlüsselwort ein.</td></tr>';
+  }
+  $("inText").oninput = () => { cleanField($("inText")); drawLive(); };
+  $("keyIn").oninput = () => { cleanField($("keyIn")); drawLive(); };
+  $("modeEnc").onchange = $("modeDec").onchange = drawLive;
+  $("swap").onclick = () => {
+    $("inText").value = $("outText").textContent.trim();
+    (isEnc() ? $("modeDec") : $("modeEnc")).checked = true;
+    drawLive();
+  };
+  $("copy").onclick = () => {
+    const txt = $("outText").textContent.trim(), b = $("copy");
+    const done = () => { b.textContent = "Kopiert"; setTimeout(() => b.textContent = "Kopieren", 1500); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents($("outText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Markiert, mit ⌘C / Strg+C kopieren"; setTimeout(() => b.textContent = "Kopieren", 2500); };
+    try { navigator.clipboard.writeText(txt).then(done, fallback); } catch (e) { fallback(); }
+  };
+
+  /* Kapitel 3: Vergleich */
+  function freq(t) {
+    const c = new Array(26).fill(0);
+    for (const ch of t) c[idx(ch)]++;
+    return c.map(x => t.length ? x / t.length * 100 : 0);
+  }
+  function drawChart(svgId, f, maxV) {
+    const W = 320, H = 150, L = 26, R = 4, T = 8, B = 18;
+    const y = v => T + (H - T - B) * (1 - v / maxV);
+    const bw = (W - L - R) / 26;
+    const top = f.indexOf(Math.max(...f));
+    let s = "";
+    for (let v = 0; v <= maxV; v += 5) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L - 4}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end">${v}%</text>`;
+    for (let i = 0; i < 26; i++) {
+      const x = L + i * bw;
+      if (f[i] > 0) s += `<rect class="bar${i === top ? " max" : ""}" x="${(x + bw * .15).toFixed(1)}" y="${y(f[i]).toFixed(1)}" width="${(bw * .7).toFixed(1)}" height="${(y(0) - y(f[i])).toFixed(1)}"/>`;
+      s += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 5}" text-anchor="middle">${A[i]}</text>`;
+    }
+    $(svgId).innerHTML = s;
+    return top;
+  }
+  function statLine(id, f, top) {
+    const sorted = [...f].sort((a, b) => b - a);
+    $(id).innerHTML = f[top] ? `<span>Häufigster: <span class="v">${A[top]} ${f[top].toFixed(1)} %</span></span><span>Top 3 zusammen: <span class="v">${(sorted[0] + sorted[1] + sorted[2]).toFixed(1)} %</span></span>` : "";
+  }
+  function chips(id, map) {
+    const items = Object.entries(map).sort((a, b) => b[1] - a[1]);
+    $(id).innerHTML = items.length ? items.map(([l, n]) => `<span class="chip">E → <b>${l}</b> · ${n}×</span>`).join("") : '<span class="hint">Kein E im Klartext.</span>';
+  }
+  function drawCompare() {
+    const t = norm($("cmpText").value), k = norm($("cmpKey").value) || "A";
+    const ca = vig(t, "D", 1), vi = vig(t, k, 1);
+    const fP = freq(t), fC = freq(ca), fV = freq(vi);
+    const maxV = Math.max(20, Math.ceil(Math.max(...fP, ...fC, ...fV) / 5) * 5);
+    statLine("stPlain", fP, drawChart("chPlain", fP, maxV));
+    statLine("stCaesar", fC, drawChart("chCaesar", fC, maxV));
+    statLine("stVig", fV, drawChart("chVig", fV, maxV));
+    $("vigTitle").textContent = `Vigenère (${k})`;
+    const distinct = new Set(k).size;
+    $("cmpInfo").textContent = `${t.length} Buchstaben · Schlüsselwort mit ${k.length} Buchstaben, davon ${distinct} verschiedene`;
+    const eC = {}, eV = {};
+    for (let i = 0; i < t.length; i++) if (t[i] === "E") { eC[ca[i]] = (eC[ca[i]] || 0) + 1; eV[vi[i]] = (eV[vi[i]] || 0) + 1; }
+    chips("eCaesar", eC); chips("eVig", eV);
+  }
+  $("cmpText").oninput = () => { cleanField($("cmpText")); drawCompare(); };
+  $("cmpKey").oninput = () => { cleanField($("cmpKey")); drawCompare(); };
+
+  drawPrinzip(); drawLive(); drawCompare();
+})();
+</script>
+
+</body></html>

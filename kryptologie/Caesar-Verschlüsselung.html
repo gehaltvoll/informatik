@@ -1,0 +1,734 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik, Zielgruppe Schüler:innen, selbstständige Arbeit (gemischt Desktop/Handy), Beamer-Modus-Schalter
+  Inhalte: Prinzip mit Chiffrierscheibe und Alphabet-Band, Live Ver-/Entschlüsseln mit Rechenschritten, Knacken (Häufigkeitsanalyse mit Probeschlüssel + Brute Force)
+  Übungen: 6 Aufgaben, Lösungen einblendbar
+  Datenhaltung: nur localStorage für Variante und Beamer-Modus (Komfort)
+  Design: Nord-Farbschema, Open Sans + Google Sans Code, Hell/Dunkel folgt System
+  Variante A "Klar": hell, ruhig, feine Linien, Frost-Akzent sparsam
+  Variante B "Terminal": Polar-Night-Flächen für Kopf, Scheibe und Ausgaben, eckig, Mono-Labels
+  Sprache: Deutsch (CH), Sie-Form
+  Kapitel 3 (2026-10-19): Probeschlüssel per Zahlenfeld frei eingebbar; Tabelle der häufigsten Buchstaben (Deutsch vs. Geheimtext), Klick auf Geheimtext-Buchstaben setzt Probeschlüssel unter der Annahme "= E"
+  Textformat (2026-10-19): Klar- und Geheimtext nur Grossbuchstaben A-Z ohne Leerzeichen; Umlaute -> AE/OE/UE, ß -> SS, alle anderen Zeichen werden entfernt
+-->
+<title>Caesar-Verschlüsselung</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: einspaltige Lernseite, vier Kapitel; Kapitel 1 und 3 zweispaltig ab Tablet */
+:root {
+  --nord0:#2E3440; --nord1:#3B4252; --nord2:#434C5E; --nord3:#4C566A;
+  --nord4:#D8DEE9; --nord5:#E5E9F0; --nord6:#ECEFF4;
+  --nord7:#8FBCBB; --nord8:#88C0D0; --nord9:#81A1C1; --nord10:#5E81AC;
+  --nord11:#BF616A; --nord12:#D08770; --nord13:#EBCB8B; --nord14:#A3BE8C; --nord15:#B48EAD;
+
+  --bg: var(--nord6);
+  --surface: var(--nord5);
+  --line: var(--nord4);
+  --text: var(--nord0);
+  --muted: var(--nord3);
+  --accent: var(--nord10);
+  --accent-soft: var(--nord9);
+  --accent-wash: rgba(94,129,172,.12);
+  --ok: var(--nord14);
+  --warn: var(--nord13);
+  --merke: var(--nord15);
+
+  --font: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Google Sans Code", ui-monospace, "Cascadia Code", Consolas, "SF Mono", monospace;
+
+  /* Variante A (Standard) */
+  --radius: 10px;
+  --hero-bg: var(--surface);
+  --hero-fg: var(--text);
+  --hero-muted: var(--muted);
+  --hero-line: var(--line);
+  --hero-accent: var(--accent);
+  --code-bg: var(--surface);
+  --code-fg: var(--text);
+  --code-muted: var(--muted);
+  --label-font: var(--font);
+  --label-case: none;
+  --label-track: .01em;
+  --h-weight: 600;
+  --base: 17px;
+  --body-weight: 400;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--nord0); --surface: var(--nord1); --line: var(--nord2);
+    --text: var(--nord6); --muted: var(--nord4);
+    --accent: var(--nord8); --accent-wash: rgba(136,192,208,.14);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: var(--nord0); --surface: var(--nord1); --line: var(--nord2);
+  --text: var(--nord6); --muted: var(--nord4);
+  --accent: var(--nord8); --accent-wash: rgba(136,192,208,.14);
+  color-scheme: dark;
+}
+/* Variante B: Terminal */
+:root[data-variant="b"] {
+  --radius: 3px;
+  --hero-bg: var(--nord0);
+  --hero-fg: var(--nord6);
+  --hero-muted: var(--nord4);
+  --hero-line: var(--nord2);
+  --hero-accent: var(--nord8);
+  --code-bg: var(--nord0);
+  --code-fg: var(--nord6);
+  --code-muted: var(--nord4);
+  --label-font: var(--font-mono);
+  --label-case: uppercase;
+  --label-track: .08em;
+  --h-weight: 700;
+}
+:root.beamer { --base: 23px; --body-weight: 600; }
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size: var(--base); font-weight: var(--body-weight); line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; font-weight: var(--h-weight); margin: 0; }
+h1 { font-size: 2.1em; font-weight: 700; }
+h2 { font-size: 1.45em; }
+h3 { font-size: 1.05em; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; border-radius: 4px; }
+code, kbd, .mono { font-family: var(--font-mono); }
+code { font-size: .9em; background: var(--surface); padding: .08em .35em; border-radius: 4px; }
+
+.wrap { max-width: 1080px; margin: 0 auto; }
+
+/* Kopf */
+.top {
+  display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between;
+  padding-block: 18px; border-bottom: 1px solid var(--line);
+}
+.brand { font-family: var(--label-font); text-transform: var(--label-case); letter-spacing: var(--label-track); font-size: .78em; color: var(--muted); font-weight: 600; }
+.toggles { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; cursor: pointer; font-size: .82em; font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+.switch { display: inline-flex; gap: 8px; align-items: center; font-size: .82em; font-weight: 600; cursor: pointer; }
+.switch input { width: 18px; height: 18px; accent-color: var(--nord10); }
+
+.intro { display: grid; gap: 14px; padding-block: 40px 28px; }
+.intro p { color: var(--muted); font-size: 1.08em; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: .9em; }
+
+section { padding-block: 40px; border-top: 1px solid var(--line); display: grid; gap: 22px; }
+.kicker { font-family: var(--label-font); text-transform: var(--label-case); letter-spacing: var(--label-track); color: var(--muted); font-size: .78em; font-weight: 600; }
+.head { display: grid; gap: 8px; }
+.head p { color: var(--muted); }
+
+.two { display: grid; gap: 28px; grid-template-columns: 1fr; }
+.two > * { min-width: 0; }
+@media (min-width: 860px) { .two { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } }
+
+.panel { background: var(--hero-bg); color: var(--hero-fg); border-radius: var(--radius); padding: 20px; border: 1px solid var(--hero-line); }
+.card { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; background: var(--bg); display: grid; gap: 12px; }
+
+/* Schlüssel-Steuerung */
+.keyctl { display: grid; gap: 8px; }
+.keyrow { display: flex; gap: 10px; align-items: center; }
+.keyrow input[type=range] { flex: 1; min-width: 0; accent-color: var(--nord10); }
+.keyval { font-family: var(--font-mono); font-size: 1.5em; font-weight: 600; min-width: 2.2ch; text-align: center; font-variant-numeric: tabular-nums; }
+input.keyval { width: 3.4ch; min-width: 0; padding: 2px 4px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); color: var(--text); -moz-appearance: textfield; appearance: textfield; }
+input.keyval::-webkit-outer-spin-button, input.keyval::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input.keyval:focus { border-color: var(--accent); }
+.freq td, .freq th { padding: 5px 10px; }
+.freq td.c { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.freq th.c { text-align: right; }
+.freq .sep { border-left: 1px solid var(--line); }
+.freq button.letter { font-family: var(--font-mono); font-weight: 600; border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: 4px; width: 2.2em; padding: 1px 0; cursor: pointer; }
+.freq button.letter:hover { border-color: var(--accent); }
+.freq button.letter.on { background: var(--nord13); color: var(--nord0); border-color: var(--nord13); }
+.freq .de { font-family: var(--font-mono); font-weight: 600; }
+.freq tr.rank1 td { background: var(--accent-wash); }
+.btn { border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; font-weight: 600; font-size: .9em; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.step { width: 36px; height: 36px; padding: 0; font-family: var(--font-mono); font-size: 1.1em; }
+.label { font-family: var(--label-font); text-transform: var(--label-case); letter-spacing: var(--label-track); font-size: .78em; font-weight: 600; color: var(--muted); }
+.panel .label { color: var(--hero-muted); }
+
+/* Scheibe */
+.disk { display: grid; gap: 14px; justify-items: center; }
+.disk svg { width: 100%; max-width: 380px; height: auto; display: block; }
+.disk .ring-out { fill: var(--hero-bg); stroke: var(--hero-line); }
+.disk .ring-in { fill: var(--accent-wash); stroke: var(--hero-line); }
+:root[data-variant="b"] .disk .ring-in { fill: rgba(136,192,208,.12); }
+.disk .tick { stroke: var(--hero-line); }
+.disk text { font-family: var(--font-mono); font-size: 15px; fill: var(--hero-fg); cursor: pointer; }
+.disk .inner text { fill: var(--hero-accent); font-weight: 600; }
+.disk .sel-out { fill: var(--nord13); }
+.disk text.on { fill: var(--nord0); font-weight: 600; }
+.disk .hub { fill: var(--hero-bg); stroke: var(--hero-line); }
+.disk .hubk { font-family: var(--font-mono); font-size: 30px; font-weight: 600; fill: var(--hero-fg); cursor: default; }
+.disk .hubl { font-size: 11px; fill: var(--hero-muted); cursor: default; letter-spacing: .08em; }
+.disk .pointer { fill: var(--nord13); }
+.inner { transform-origin: 0 0; transition: transform .45s cubic-bezier(.3,.7,.3,1); }
+@media (prefers-reduced-motion: reduce) { .inner { transition: none; } }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .8em; color: var(--hero-muted); }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; border: 1px solid var(--hero-line); }
+
+/* Band */
+.band-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+.band { display: grid; grid-template-columns: auto repeat(26, minmax(30px, 1fr)); min-width: 860px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.band > div { padding: 6px 0; text-align: center; border-left: 1px solid var(--line); }
+.band .rh { text-align: left; padding: 6px 10px; border-left: 0; font-family: var(--label-font); font-size: .72em; font-weight: 600; color: var(--muted); text-transform: var(--label-case); letter-spacing: var(--label-track); white-space: nowrap; display: flex; align-items: center; }
+.band .num { font-size: .72em; color: var(--muted); background: var(--surface); }
+.band .pl { font-weight: 600; cursor: pointer; }
+.band .ci { color: var(--accent); font-weight: 600; cursor: pointer; border-top: 1px solid var(--line); }
+.band .hl { background: var(--nord13); color: var(--nord0); }
+.say { font-size: 1.05em; }
+.say b { font-family: var(--font-mono); }
+
+.merke { border-left: 4px solid var(--nord15); background: var(--surface); padding: 12px 16px; border-radius: 0 var(--radius) var(--radius) 0; display: grid; gap: 6px; }
+.merke .label { color: var(--muted); }
+.formula { font-family: var(--font-mono); font-size: 1.05em; }
+
+/* Live */
+.mode { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: max-content; max-width: 100%; }
+.mode label { padding: 6px 14px; cursor: pointer; font-weight: 600; font-size: .9em; }
+.mode input { position: absolute; opacity: 0; pointer-events: none; }
+.mode label:has(input:checked) { background: var(--accent); color: var(--bg); }
+.mode label:has(input:focus-visible) { outline: 3px solid var(--accent-soft); outline-offset: -3px; }
+textarea { width: 100%; min-height: 110px; resize: vertical; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); font-family: var(--font-mono); font-size: .95em; line-height: 1.5; }
+.out { background: var(--code-bg); color: var(--code-fg); border-radius: var(--radius); padding: 14px; font-family: var(--font-mono); font-size: .95em; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 60px; border: 1px solid var(--line); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+th { font-family: var(--label-font); text-transform: var(--label-case); letter-spacing: var(--label-track); font-size: .74em; color: var(--muted); font-weight: 600; }
+td.m { font-family: var(--font-mono); }
+.hint { font-size: .85em; color: var(--muted); }
+
+/* Knacken */
+.chart-wrap { overflow-x: auto; }
+.chart { min-width: 480px; width: 100%; height: auto; display: block; }
+.chart text { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); }
+.chart .grid { stroke: var(--line); }
+.chart .ref { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.chart .obs { fill: var(--accent-soft); }
+.chart .lt { fill: var(--text); font-weight: 600; }
+.stat { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: baseline; }
+.stat .v { font-family: var(--font-mono); font-weight: 600; font-size: 1.2em; font-variant-numeric: tabular-nums; }
+.meter { height: 8px; background: var(--surface); border-radius: 4px; overflow: hidden; border: 1px solid var(--line); }
+.meter > i { display: block; height: 100%; background: var(--nord14); transition: width .3s; }
+.verdict { font-weight: 600; }
+.bf td.m { white-space: nowrap; }
+.bf tr.best td { background: rgba(163,190,140,.22); }
+.tag { display: inline-block; font-size: .75em; font-weight: 600; padding: 1px 8px; border-radius: 99px; background: var(--nord14); color: var(--nord0); white-space: nowrap; }
+
+/* Übungen */
+.tasks { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .tasks { grid-template-columns: 1fr 1fr; } }
+.task { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; align-content: start; }
+.task .label { color: var(--muted); }
+details summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: .92em; }
+details .sol { margin-top: 8px; padding: 10px 12px; background: var(--surface); border-radius: var(--radius); border-left: 4px solid var(--nord14); }
+.ex { font-family: var(--font-mono); font-weight: 600; font-size: 1.05em; overflow-wrap: anywhere; }
+
+:root.beamer .disk text { font-size: 17px; }
+:root.beamer .out, :root.beamer textarea, :root.beamer .band { font-size: 20px; }
+:root.beamer .chart text { font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Informatik · Kryptologie</div>
+    <div class="toggles">
+      <div class="seg" role="group" aria-label="Design-Variante">
+        <button id="varA" type="button" aria-pressed="true">Variante A</button>
+        <button id="varB" type="button" aria-pressed="false">Variante B</button>
+      </div>
+      <label class="switch" for="beamer"><input id="beamer" type="checkbox"> Beamer-Modus</label>
+    </div>
+  </header>
+
+  <div class="intro">
+    <h1>Caesar-Verschlüsselung</h1>
+    <p>Julius Caesar soll seine Nachrichten geschützt haben, indem er jeden Buchstaben um drei Stellen im Alphabet verschob. Auf dieser Seite probieren Sie das Verfahren aus, verschlüsseln eigene Texte und knacken anschliessend einen Geheimtext, ohne den Schlüssel zu kennen.</p>
+    <nav class="toc" aria-label="Kapitel">
+      <a href="#prinzip">1 Prinzip</a><a href="#live">2 Ver- und Entschlüsseln</a><a href="#knacken">3 Knacken</a><a href="#uebungen">4 Übungen</a>
+    </nav>
+  </div>
+
+  <!-- 1 Prinzip -->
+  <section id="prinzip">
+    <div class="head">
+      <div class="kicker">Kapitel 1</div>
+      <h2>Das Prinzip: Verschieben im Alphabet</h2>
+      <p>Der Schlüssel <i>k</i> gibt an, um wie viele Stellen jeder Buchstabe nach rechts verschoben wird. Nach Z geht es wieder bei A weiter, das Alphabet ist also ein Kreis. Drehen Sie die innere Scheibe mit dem Regler und klicken Sie auf einen Buchstaben.</p>
+    </div>
+
+    <div class="two">
+      <div class="panel disk">
+        <svg id="disk" viewBox="-185 -185 370 370" role="img" aria-label="Chiffrierscheibe: aussen Klartext, innen Geheimtext"></svg>
+        <div class="legend">
+          <span><span class="sw" style="background:var(--hero-bg)"></span>aussen: Klartext</span>
+          <span><span class="sw" style="background:rgba(136,192,208,.35)"></span>innen: Geheimtext</span>
+          <span><span class="sw" style="background:var(--nord13)"></span>gewählter Buchstabe</span>
+        </div>
+        <div class="keyctl" style="width:100%">
+          <span class="label">Schlüssel k</span>
+          <div class="keyrow">
+            <button class="btn step" type="button" data-d="-1" aria-label="Schlüssel verkleinern">−</button>
+            <input id="k1" type="range" min="0" max="25" value="3" aria-label="Schlüssel k">
+            <button class="btn step" type="button" data-d="1" aria-label="Schlüssel vergrössern">+</button>
+            <output id="k1v" class="keyval" for="k1">3</output>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; gap:18px; min-width:0">
+        <p class="say" id="say" aria-live="polite"></p>
+        <div class="band-wrap"><div class="band" id="band"></div></div>
+        <div class="merke">
+          <span class="label">Merke</span>
+          <p>Nummeriert man die Buchstaben von A = 0 bis Z = 25, gilt für jeden Buchstaben mit Position <i>p</i>:</p>
+          <p class="formula">Verschlüsseln: c = (p + k) mod 26<br>Entschlüsseln: p = (c − k) mod 26</p>
+          <p>Der Rest bei der Division durch 26 (<code>mod 26</code>) sorgt dafür, dass nach Z wieder A folgt.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 Live -->
+  <section id="live">
+    <div class="head">
+      <div class="kicker">Kapitel 2</div>
+      <h2>Selbst ver- und entschlüsseln</h2>
+      <p>Geben Sie einen Text ein. Wie in der klassischen Kryptografie bestehen Klar- und Geheimtext nur aus Grossbuchstaben ohne Leerzeichen: Kleinbuchstaben werden zu Grossbuchstaben, Ä, Ö, Ü zu AE, OE, UE und ß zu SS. Leerzeichen, Satzzeichen und Ziffern werden entfernt, damit die Wortgrenzen keine Hinweise verraten.</p>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <div class="row">
+          <div class="mode" role="radiogroup" aria-label="Richtung">
+            <label><input type="radio" name="mode" id="modeEnc" value="enc" checked>Verschlüsseln</label>
+            <label><input type="radio" name="mode" id="modeDec" value="dec">Entschlüsseln</label>
+          </div>
+        </div>
+        <label class="label" for="inText">Eingabe</label>
+        <textarea id="inText" spellcheck="false" autocapitalize="characters">VENIVIDIVICITREFFENAMFORUMUMMITTERNACHT</textarea>
+        <div class="keyctl">
+          <span class="label">Schlüssel k</span>
+          <div class="keyrow">
+            <button class="btn step" type="button" data-d="-1" aria-label="Schlüssel verkleinern">−</button>
+            <input id="k2" type="range" min="0" max="25" value="3" aria-label="Schlüssel k">
+            <button class="btn step" type="button" data-d="1" aria-label="Schlüssel vergrössern">+</button>
+            <output id="k2v" class="keyval" for="k2">3</output>
+          </div>
+        </div>
+        <div class="row">
+          <span class="label" id="outLabel">Geheimtext</span>
+          <div style="display:flex; gap:8px">
+            <button class="btn" type="button" id="swap">Ergebnis als Eingabe verwenden</button>
+            <button class="btn" type="button" id="copy">Kopieren</button>
+          </div>
+        </div>
+        <div class="out" id="outText" aria-live="polite"></div>
+      </div>
+
+      <div class="card">
+        <h3>Rechenschritte für die ersten Buchstaben</h3>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Buchstabe</th><th>Position p</th><th id="opHead">p + k</th><th>mod 26</th><th>Ergebnis</th></tr></thead>
+            <tbody id="steps"></tbody>
+          </table>
+        </div>
+        <p class="hint">Die Schlüssel in Kapitel 1 und 2 sind gekoppelt: Ändern Sie den einen, ändert sich der andere mit.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 Knacken -->
+  <section id="knacken">
+    <div class="head">
+      <div class="kicker">Kapitel 3</div>
+      <h2>Die Verschlüsselung knacken</h2>
+      <p>Ein abgefangener Geheimtext, Schlüssel unbekannt. Es gibt zwei Wege: alle Schlüssel durchprobieren (Brute Force) oder die Buchstabenhäufigkeit mit der deutschen Sprache vergleichen. Sie können auch einen eigenen Geheimtext einfügen.</p>
+    </div>
+
+    <div class="card">
+      <label class="label" for="crackIn">Geheimtext</label>
+      <textarea id="crackIn" spellcheck="false" autocapitalize="characters">OTPVFYDEOPCGPCDNSWFPDDPWFYRTDEQLDEDZLWEHTPOTPDNSCTQEDPWMDEDNSZYUFWTFDNLPDLCGPCDNSZMUPOPYMFNSDELMPYDPTYPCMCTPQPFXPTYTRPDEPWWPYTXLWASLMPEOLXTEQPTYOWTNSPMZEPYOTPYLNSCTNSEPYYTNSEWPDPYVZYYEPYSPFEPCPNSYPYNZXAFEPCTYDPVFYOPYLWWPXZPRWTNSVPTEPYOFCNS</textarea>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h3>Weg 1: Häufigkeitsanalyse</h3>
+        <p>Im Deutschen ist E mit grossem Abstand der häufigste Buchstabe. Wählen Sie einen Probeschlüssel, indem Sie eine Zahl von 0 bis 25 eintippen oder den Regler verschieben, bis die Balken des Geheimtexts zum deutschen Profil (gestrichelt) passen.</p>
+        <div class="keyctl">
+          <span class="label">Probeschlüssel</span>
+          <div class="keyrow">
+            <button class="btn step" type="button" data-d="-1" aria-label="Probeschlüssel verkleinern">−</button>
+            <input id="pk" type="range" min="0" max="25" value="0" aria-label="Probeschlüssel">
+            <button class="btn step" type="button" data-d="1" aria-label="Probeschlüssel vergrössern">+</button>
+            <input id="pkv" class="keyval" type="number" min="0" max="25" step="1" value="0" inputmode="numeric" aria-label="Probeschlüssel als Zahl eingeben">
+          </div>
+        </div>
+        <div class="stat">
+          <span><span class="label">Übereinstimmung</span></span>
+          <span class="v" id="fit">0 %</span>
+          <span class="verdict" id="verdict"></span>
+        </div>
+        <div class="meter" aria-hidden="true"><i id="fitBar" style="width:0%"></i></div>
+        <span class="label">Probe-Entschlüsselung</span>
+        <div class="out" id="probe"></div>
+        <details>
+          <summary>Vermutung des Computers anzeigen</summary>
+          <div class="sol" id="guess"></div>
+        </details>
+      </div>
+
+      <div class="card" style="min-width:0">
+        <div class="row"><h3>Buchstabenhäufigkeit</h3><span class="hint" id="nLetters"></span></div>
+        <div class="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 640 250" role="img" aria-label="Balkendiagramm Buchstabenhäufigkeit"></svg></div>
+        <div class="legend" style="color:var(--muted)">
+          <span><span class="sw" style="background:var(--accent-soft); border-color:var(--accent-soft)"></span>Geheimtext, um Probeschlüssel zurückgeschoben</span>
+          <span><span class="sw" style="background:transparent; border:1.5px dashed var(--muted)"></span>Deutsch (Durchschnitt)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Die häufigsten Buchstaben</h3>
+      <p>Links stehen die zehn häufigsten Buchstaben in deutschen Texten, rechts die zehn häufigsten im Geheimtext. Stimmt der Schlüssel, entspricht der häufigste Geheimtext-Buchstabe meist dem E. Klicken Sie auf einen Buchstaben des Geheimtexts, um anzunehmen, dass er für E steht: Der Probeschlüssel wird dann entsprechend gesetzt.</p>
+      <div class="tbl-wrap">
+        <table class="freq">
+          <thead><tr><th>Rang</th><th>Deutsch</th><th class="c">Anteil</th><th class="sep">Geheimtext</th><th class="c">Anzahl</th><th class="c">Anteil</th></tr></thead>
+          <tbody id="freq"></tbody>
+        </table>
+      </div>
+      <p class="hint" id="freqHint" aria-live="polite"></p>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <h3>Weg 2: Brute Force</h3>
+        <button class="btn primary" type="button" id="bfBtn" aria-expanded="false" aria-controls="bfWrap">Alle 25 Schlüssel ausprobieren</button>
+      </div>
+      <p>Weil es nur 25 sinnvolle Schlüssel gibt, kann man einfach alle durchprobieren und den lesbaren Text suchen. Ein Computer schafft das in Millisekunden.</p>
+      <div class="tbl-wrap" id="bfWrap" hidden>
+        <table class="bf">
+          <thead><tr><th>k</th><th>Entschlüsselter Anfang</th></tr></thead>
+          <tbody id="bf"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 Übungen -->
+  <section id="uebungen">
+    <div class="head">
+      <div class="kicker">Kapitel 4</div>
+      <h2>Übungen</h2>
+      <p>Lösen Sie die Aufgaben zuerst von Hand. Die Werkzeuge oben dürfen Sie zur Kontrolle verwenden.</p>
+    </div>
+    <div class="tasks">
+      <div class="task">
+        <span class="label">Aufgabe 1</span>
+        <p>Verschlüsseln Sie das Wort <span class="ex">INFORMATIK</span> mit dem Schlüssel k = 3.</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol"><span class="ex">LQIRUPDWLN</span></div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 2</span>
+        <p>Entschlüsseln Sie <span class="ex">ZPJOLYOLPA</span>. Der Schlüssel ist k = 7.</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol"><span class="ex">SICHERHEIT</span><br>Jeder Buchstabe wird um 7 Stellen zurückgeschoben, z. B. Z (25) − 7 = 18 = S.</div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 3</span>
+        <p>Knacken Sie den Geheimtext <span class="ex">USVSWABWG</span>. Der Schlüssel ist unbekannt.</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol"><span class="ex">GEHEIMNIS</span>, Schlüssel k = 14. Bei so kurzen Texten hilft vor allem Brute Force.</div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 4</span>
+        <p>Wie viele verschiedene Schlüssel gibt es? Warum sind k = 0 und k = 26 nutzlos?</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol">Es gibt 26 Verschiebungen (0 bis 25), aber nur 25 sinnvolle. Bei k = 0 und k = 26 landet jeder Buchstabe wieder auf sich selbst, der Geheimtext ist also gleich dem Klartext.</div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 5</span>
+        <p>Ein Text wurde mit k = 10 verschlüsselt. Mit welchem Schlüssel können Sie ihn entschlüsseln, wenn Ihr Programm nur <em>verschlüsseln</em> kann?</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol">Mit k = 16, denn 10 + 16 = 26 und (p + 26) mod 26 = p. Allgemein: Entschlüsseln mit k entspricht Verschlüsseln mit 26 − k.</div></details>
+      </div>
+      <div class="task">
+        <span class="label">Aufgabe 6</span>
+        <p>Begründen Sie, warum die Häufigkeitsanalyse bei sehr kurzen Texten oft versagt, Brute Force aber nicht.</p>
+        <details><summary>Lösung anzeigen</summary><div class="sol">Die Häufigkeiten in einem kurzen Text weichen stark vom Durchschnitt der Sprache ab; ein Wort wie GEHEIMNIS hat zwar drei E, ein anderes kurzes Wort aber vielleicht gar keines. Brute Force prüft dagegen jeden der 25 Schlüssel direkt und braucht keine Statistik, nur einen Menschen (oder ein Wörterbuch), der den lesbaren Text erkennt.</div></details>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  // Durchschnittliche Buchstabenhäufigkeit im Deutschen (in %)
+  const DE = [6.51,1.89,3.06,5.08,17.40,1.66,3.01,4.76,7.55,0.27,1.21,3.44,2.53,9.78,2.51,0.79,0.02,7.00,7.27,6.15,4.35,0.67,1.89,0.03,0.04,1.13];
+  const $ = id => document.getElementById(id);
+  const mod = (n, m) => ((n % m) + m) % m;
+  // Klassisches Format: nur A-Z, keine Leerzeichen; Umlaute ausschreiben
+  const norm = t => t.toUpperCase()
+    .replace(/Ä/g, "AE").replace(/Ö/g, "OE").replace(/Ü/g, "UE").replace(/ß|ẞ/g, "SS")
+    .replace(/[^A-Z]/g, "");
+  const shiftText = (t, k) => norm(t).replace(/[A-Z]/g, ch =>
+    String.fromCharCode(mod(ch.charCodeAt(0) - 65 + k, 26) + 65));
+  // Eingabefeld beim Tippen bereinigen, Cursorposition beibehalten
+  function cleanField(ta) {
+    const v = ta.value, n = norm(v);
+    if (v === n) return;
+    const caret = norm(v.slice(0, ta.selectionStart)).length;
+    ta.value = n;
+    try { ta.setSelectionRange(caret, caret); } catch (e) {}
+  }
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  /* Variante und Beamer-Modus */
+  const root = document.documentElement;
+  function setVariant(v) {
+    root.dataset.variant = v;
+    $("varA").setAttribute("aria-pressed", v === "a");
+    $("varB").setAttribute("aria-pressed", v === "b");
+    store.set("caesar-variant", v);
+  }
+  $("varA").onclick = () => setVariant("a");
+  $("varB").onclick = () => setVariant("b");
+  setVariant(store.get("caesar-variant") === "b" ? "b" : "a");
+  $("beamer").onchange = e => { root.classList.toggle("beamer", e.target.checked); store.set("caesar-beamer", e.target.checked ? "1" : "0"); };
+  if (store.get("caesar-beamer") === "1") { $("beamer").checked = true; root.classList.add("beamer"); }
+
+  /* Plus/Minus-Knöpfe neben jedem Regler */
+  document.querySelectorAll(".keyrow").forEach(row => {
+    const range = row.querySelector("input[type=range]");
+    row.querySelectorAll("button[data-d]").forEach(b => b.onclick = () => {
+      range.value = mod(+range.value + +b.dataset.d, 26);
+      range.dispatchEvent(new Event("input"));
+    });
+  });
+
+  /* Kapitel 1: Scheibe und Band */
+  let key = 3, sel = 0, rot = -key * 360 / 26;
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("disk");
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); (parent || svg).appendChild(e); return e; };
+  const step = 360 / 26;
+  el("circle", { r: 178, class: "ring-out" });
+  const outerSel = el("path", { class: "sel-out" });
+  el("circle", { r: 134, class: "ring-in" });
+  const innerG = el("g", { class: "inner" });
+  const innerSel = el("path", { class: "sel-out" }, innerG);
+  const outerT = [], innerT = [];
+  function sector(r1, r2, i) {
+    const a1 = (i - .5) * step * Math.PI / 180, a2 = (i + .5) * step * Math.PI / 180;
+    const p = (r, a) => [r * Math.sin(a), -r * Math.cos(a)].map(n => n.toFixed(2)).join(" ");
+    return `M${p(r2, a1)} A${r2} ${r2} 0 0 1 ${p(r2, a2)} L${p(r1, a2)} A${r1} ${r1} 0 0 0 ${p(r1, a1)} Z`;
+  }
+  for (let i = 0; i < 26; i++) {
+    const a = i * step;
+    el("line", { x1: 0, y1: -134, x2: 0, y2: -178, class: "tick", transform: `rotate(${a + step / 2})` });
+    const t = el("text", { transform: `rotate(${a}) translate(0,-156)`, "text-anchor": "middle", "dominant-baseline": "central" });
+    t.textContent = A[i]; t.onclick = () => select(i); outerT.push(t);
+    el("line", { x1: 0, y1: -90, x2: 0, y2: -134, class: "tick", transform: `rotate(${a + step / 2})` }, innerG);
+    const u = el("text", { transform: `rotate(${a}) translate(0,-112)`, "text-anchor": "middle", "dominant-baseline": "central" }, innerG);
+    u.textContent = A[i]; u.onclick = () => select(mod(i - key, 26)); innerT.push(u);
+  }
+  el("circle", { r: 90, class: "hub" });
+  const hubK = el("text", { class: "hubk", "text-anchor": "middle", y: 4 });
+  const hubL = el("text", { class: "hubl", "text-anchor": "middle", y: 30 }); hubL.textContent = "SCHLÜSSEL";
+  el("path", { d: "M-8 -184 L8 -184 L0 -176 Z", class: "pointer", transform: "rotate(0)" });
+
+  const band = $("band");
+  function buildBand() {
+    let h = '<div class="rh">Position</div>';
+    for (let i = 0; i < 26; i++) h += `<div class="num">${i}</div>`;
+    h += '<div class="rh">Klartext</div>';
+    for (let i = 0; i < 26; i++) h += `<div class="pl" data-i="${i}">${A[i]}</div>`;
+    h += '<div class="rh">Geheimtext</div>';
+    for (let i = 0; i < 26; i++) h += `<div class="ci" data-i="${i}"></div>`;
+    band.innerHTML = h;
+    band.querySelectorAll("[data-i]").forEach(c => c.onclick = () => select(+c.dataset.i));
+  }
+  buildBand();
+  const plCells = band.querySelectorAll(".pl"), ciCells = band.querySelectorAll(".ci");
+
+  function select(i) { sel = i; drawPrinzip(); }
+  function drawPrinzip() {
+    hubK.textContent = key;
+    innerG.style.transform = `rotate(${rot}deg)`;
+    const c = mod(sel + key, 26);
+    outerSel.setAttribute("d", sector(134, 178, sel));
+    innerSel.setAttribute("d", sector(90, 134, c));
+    outerT.forEach((t, i) => t.classList.toggle("on", i === sel));
+    innerT.forEach((t, i) => t.classList.toggle("on", i === c));
+    ciCells.forEach((cell, i) => { cell.textContent = A[mod(i + key, 26)]; });
+    plCells.forEach((cell, i) => cell.classList.toggle("hl", i === sel));
+    ciCells.forEach((cell, i) => cell.classList.toggle("hl", i === sel));
+    $("say").innerHTML = key === 0
+      ? `Mit Schlüssel <b>0</b> bleibt jeder Buchstabe gleich: <b>${A[sel]}</b> → <b>${A[sel]}</b>.`
+      : `Mit Schlüssel <b>${key}</b> wird <b>${A[sel]}</b> (Position ${sel}) zu <b>${A[c]}</b>, denn (${sel} + ${key}) mod 26 = ${c}.`;
+  }
+
+  function setKey(k) {
+    k = mod(k, 26);
+    let d = mod(k - key, 26); if (d > 13) d -= 26;
+    rot -= d * step; key = k;
+    $("k1").value = $("k2").value = k; $("k1v").value = $("k2v").value = k;
+    drawPrinzip(); drawLive();
+  }
+  $("k1").oninput = e => setKey(+e.target.value);
+  $("k2").oninput = e => setKey(+e.target.value);
+
+  /* Kapitel 2: Live */
+  const isEnc = () => $("modeEnc").checked;
+  function drawLive() {
+    const t = $("inText").value, k = isEnc() ? key : -key;
+    $("outText").textContent = shiftText(t, k) || " ";
+    $("outLabel").textContent = isEnc() ? "Geheimtext" : "Klartext";
+    $("opHead").textContent = isEnc() ? "p + k" : "p − k";
+    const letters = (t.match(/[A-Za-z]/g) || []).slice(0, 8);
+    $("steps").innerHTML = letters.length ? letters.map(ch => {
+      const p = A.indexOf(ch.toUpperCase()), raw = p + k, r = mod(raw, 26);
+      return `<tr><td class="m">${ch.toUpperCase()}</td><td class="m">${p}</td><td class="m">${p} ${isEnc() ? "+" : "−"} ${key} = ${raw}</td><td class="m">${r}</td><td class="m"><b>${A[r]}</b></td></tr>`;
+    }).join("") : '<tr><td colspan="5" class="hint">Geben Sie oben einen Text mit Buchstaben ein.</td></tr>';
+  }
+  $("inText").oninput = () => { cleanField($("inText")); drawLive(); };
+  $("modeEnc").onchange = $("modeDec").onchange = drawLive;
+  $("swap").onclick = () => {
+    $("inText").value = $("outText").textContent.trim();
+    (isEnc() ? $("modeDec") : $("modeEnc")).checked = true;
+    drawLive();
+  };
+  $("copy").onclick = () => {
+    const txt = $("outText").textContent, b = $("copy");
+    const done = () => { b.textContent = "Kopiert"; setTimeout(() => b.textContent = "Kopieren", 1500); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents($("outText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Markiert, mit ⌘C / Strg+C kopieren"; setTimeout(() => b.textContent = "Kopieren", 2500); };
+    try { navigator.clipboard.writeText(txt).then(done, fallback); } catch (e) { fallback(); }
+  };
+
+  /* Kapitel 3: Knacken */
+  let counts = new Array(26).fill(0), N = 0, best = 0, chis = [];
+  function analyse() {
+    const t = $("crackIn").value;
+    counts = new Array(26).fill(0); N = 0;
+    for (const ch of t.toUpperCase()) { const i = A.indexOf(ch); if (i >= 0) { counts[i]++; N++; } }
+    chis = [];
+    for (let k = 0; k < 26; k++) {
+      let chi = 0;
+      for (let i = 0; i < 26; i++) { const exp = N * DE[i] / 100, obs = counts[mod(i + k, 26)]; chi += (obs - exp) ** 2 / exp; }
+      chis.push(chi);
+    }
+    best = chis.indexOf(Math.min(...chis));
+    $("nLetters").textContent = `${N} Buchstaben`;
+    const g = shiftText(t, -best).slice(0, 90);
+    $("guess").innerHTML = N ? `Am besten passt Schlüssel <b class="mono">k = ${best}</b>. Anfang: <span class="mono">${esc(g)}…</span><br><button class="btn" type="button" id="useBest" style="margin-top:8px">Probeschlüssel auf ${best} setzen</button>` : "Noch kein Text.";
+    const ub = $("useBest"); if (ub) ub.onclick = () => { $("pk").value = best; drawCrack(); };
+    drawFreq();
+    drawCrack(); drawBF();
+  }
+  function esc(s) { return s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+
+  function drawCrack() {
+    const pk = +$("pk").value;
+    if (document.activeElement !== $("pkv") || $("pkv").value === "") $("pkv").value = pk;
+    if (typeof drawFreq === "function" && $("freq")) drawFreqMarks(pk);
+    const obs = DE.map((_, i) => N ? counts[mod(i + pk, 26)] / N * 100 : 0);
+    // Übereinstimmung: Kosinus-Ähnlichkeit der beiden Profile
+    let dot = 0, a2 = 0, b2 = 0;
+    for (let i = 0; i < 26; i++) { dot += obs[i] * DE[i]; a2 += obs[i] ** 2; b2 += DE[i] ** 2; }
+    const sim = N ? dot / Math.sqrt(a2 * b2) : 0;
+    $("fit").textContent = Math.round(sim * 100) + " %";
+    $("fitBar").style.width = Math.round(sim * 100) + "%";
+    $("verdict").textContent = !N ? "" : sim > .85 ? "✓ passt sehr gut zum Deutschen" : sim > .65 ? "≈ teilweise ähnlich" : "✗ passt nicht";
+    $("probe").textContent = shiftText($("crackIn").value, -pk).slice(0, 220) + ($("crackIn").value.length > 220 ? " …" : "") || " ";
+    drawChart(obs);
+  }
+
+  function drawChart(obs) {
+    const W = 640, H = 250, L = 34, R = 8, T = 12, B = 30;
+    const maxV = Math.max(20, Math.ceil(Math.max(...obs, ...DE) / 5) * 5);
+    const y = v => T + (H - T - B) * (1 - v / maxV);
+    const bw = (W - L - R) / 26;
+    let s = "";
+    for (let v = 0; v <= maxV; v += 5) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}%</text>`;
+    for (let i = 0; i < 26; i++) {
+      const x = L + i * bw;
+      s += `<rect class="obs" x="${(x + bw * .18).toFixed(1)}" y="${y(obs[i]).toFixed(1)}" width="${(bw * .64).toFixed(1)}" height="${(y(0) - y(obs[i])).toFixed(1)}"/>`;
+      s += `<rect class="ref" x="${(x + bw * .12).toFixed(1)}" y="${y(DE[i]).toFixed(1)}" width="${(bw * .76).toFixed(1)}" height="${(y(0) - y(DE[i])).toFixed(1)}"/>`;
+      s += `<text class="${i === 4 ? "lt" : ""}" x="${(x + bw / 2).toFixed(1)}" y="${H - 10}" text-anchor="middle">${A[i]}</text>`;
+    }
+    $("chart").innerHTML = s;
+  }
+
+  function drawBF() {
+    const t = $("crackIn").value;
+    let h = "";
+    for (let k = 1; k < 26; k++) {
+      const r = shiftText(t, -k).slice(0, 56);
+      h += `<tr class="${k === best && N ? "best" : ""}"><td class="m">${k}</td><td class="m">${esc(r)}${k === best && N ? ' <span class="tag">✓ lesbar</span>' : ""}</td></tr>`;
+    }
+    $("bf").innerHTML = h;
+  }
+  $("bfBtn").onclick = () => {
+    const w = $("bfWrap"), open = w.hidden; w.hidden = !open;
+    $("bfBtn").setAttribute("aria-expanded", open);
+    $("bfBtn").textContent = open ? "Tabelle ausblenden" : "Alle 25 Schlüssel ausprobieren";
+  };
+  $("crackIn").oninput = () => { cleanField($("crackIn")); analyse(); };
+  $("pk").oninput = drawCrack;
+  // Probeschlüssel direkt eintippen
+  $("pkv").oninput = e => {
+    const v = e.target.value.trim();
+    if (!/^\d{1,2}$/.test(v)) return;
+    const k = Math.min(25, +v);
+    $("pk").value = k; drawCrack();
+  };
+  $("pkv").onchange = e => {
+    const n = parseInt(e.target.value, 10);
+    e.target.value = isNaN(n) ? $("pk").value : mod(n, 26);
+    $("pk").value = e.target.value; drawCrack();
+  };
+  function drawFreqMarks(pk) {
+    const eAt = mod(4 + pk, 26);
+    document.querySelectorAll("#freq button.letter").forEach(b => b.classList.toggle("on", +b.dataset.c === eAt));
+  }
+  // Tabelle der häufigsten Buchstaben
+  const DE_RANK = DE.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  function drawFreq() {
+    const ci = counts.map((c, i) => [i, c]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1] || a[0] - b[0]).slice(0, 10);
+    const pk = +$("pk").value, eAt = mod(4 + pk, 26);
+    let h = "";
+    for (let r = 0; r < 10; r++) {
+      const [di, dv] = DE_RANK[r], c = ci[r];
+      const right = c
+        ? `<td class="sep"><button type="button" class="letter${c[0] === eAt ? " on" : ""}" data-c="${c[0]}" aria-label="${A[c[0]]} als E annehmen">${A[c[0]]}</button></td><td class="c">${c[1]}</td><td class="c">${(c[1] / N * 100).toFixed(1)} %</td>`
+        : `<td class="sep"></td><td></td><td></td>`;
+      h += `<tr class="${r === 0 ? "rank1" : ""}"><td class="c" style="text-align:left">${r + 1}</td><td class="de">${A[di]}</td><td class="c">${dv.toFixed(1)} %</td>${right}</tr>`;
+    }
+    $("freq").innerHTML = h;
+    $("freq").querySelectorAll("button.letter").forEach(b => b.onclick = () => {
+      const c = +b.dataset.c, k = mod(c - 4, 26);
+      $("pk").value = k; drawCrack();
+      $("freqHint").innerHTML = `Annahme: <b class="mono">${A[c]}</b> steht für <b class="mono">E</b>. Dann gilt k = (${c} − 4) mod 26 = <b class="mono">${k}</b>. Prüfen Sie die Probe-Entschlüsselung oben.`;
+    });
+  }
+
+  setKey(3); analyse();
+})();
+</script>
+
+</body></html>

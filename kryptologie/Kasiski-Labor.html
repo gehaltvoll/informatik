@@ -1,0 +1,520 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik, Selbststudium Schüler:innen (mit Beamer-Modus-Schalter)
+  Funktion: voll interaktiv – eigener Klartext + Schlüssel (oder eigener Geheimtext), Vigenère live,
+            Wiederholungen finden, Abstände, Teiler-Histogramm, Raster in Schlüssellänge,
+            Spalten-Häufigkeitsanalyse (Chi-Quadrat) bis zum Klartext, Verschiebungen von Hand korrigierbar
+  Umfang: bis zum Klartext
+  Datenhaltung: localStorage nur für Variante, Beamer-Modus und Eingaben (Komfort)
+  Export: Geheimtext in die Zwischenablage kopieren
+  Design: Nord-Palette, Open Sans + Google Sans Code
+    Variante A – Klar: hell, viel Weissraum, feine Linien, Frost nur als Akzent
+    Variante B – Technisch: dunkle Kopfzeile und Code-Flächen auch im hellen Modus, Mono-Labels, eckige Formen
+  Sprache: Deutsch, Schweizer Rechtschreibung
+-->
+<title>Kasiski-Labor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: eine Lesespalte, vier echte Arbeitsschritte untereinander, Werkzeuge in Panels */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+
+  --bg:var(--nord6);--surface:var(--nord5);--surface-2:var(--nord4);--line:var(--nord4);
+  --text:var(--nord0);--muted:var(--nord3);--accent:var(--nord10);--accent-soft:var(--nord9);
+  --ok:var(--nord14);--warn:var(--nord13);--err:var(--nord11);--special:var(--nord15);--info:var(--nord8);
+  --panel-bg:var(--nord6);--panel-line:var(--nord4);
+  --head-bg:var(--nord6);--head-fg:var(--nord0);--head-muted:var(--nord3);
+  --code-bg:var(--nord5);--code-fg:var(--nord0);--code-muted:var(--nord3);
+  --bar:var(--nord9);--bar-strong:var(--nord10);--expect:var(--nord3);
+  --chip-bg:transparent;--chip-fg:var(--nord10);--chip-line:var(--nord9);
+  --radius:10px;--radius-sm:6px;--label-font:var(--font);--h-weight:600;--label-case:none;--label-track:0;
+  --base:17px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--line:var(--nord2);
+  --text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);--accent-soft:var(--nord9);
+  --panel-bg:var(--nord0);--panel-line:var(--nord2);
+  --head-bg:var(--nord0);--head-fg:var(--nord6);--head-muted:var(--nord4);
+  --code-bg:var(--nord1);--code-fg:var(--nord6);--code-muted:var(--nord4);
+  --bar:var(--nord9);--bar-strong:var(--nord8);--expect:var(--nord4);
+  --chip-fg:var(--nord8);--chip-line:var(--nord9);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--line:var(--nord2);
+  --text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);--accent-soft:var(--nord9);
+  --panel-bg:var(--nord0);--panel-line:var(--nord2);
+  --head-bg:var(--nord0);--head-fg:var(--nord6);--head-muted:var(--nord4);
+  --code-bg:var(--nord1);--code-fg:var(--nord6);--code-muted:var(--nord4);
+  --bar:var(--nord9);--bar-strong:var(--nord8);--expect:var(--nord4);
+  --chip-fg:var(--nord8);--chip-line:var(--nord9);
+  color-scheme:dark}
+
+/* Variante B – technisch */
+:root[data-variant="b"]{
+  --panel-bg:var(--nord5);--panel-line:var(--nord4);
+  --head-bg:var(--nord0);--head-fg:var(--nord6);--head-muted:var(--nord4);
+  --code-bg:var(--nord0);--code-fg:var(--nord6);--code-muted:var(--nord4);
+  --chip-bg:var(--nord0);--chip-fg:var(--nord8);--chip-line:var(--nord0);
+  --radius:3px;--radius-sm:2px;--label-font:var(--font-mono);--h-weight:700;--label-case:uppercase;--label-track:.06em;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"])[data-variant="b"]{
+  --panel-bg:var(--nord1);--panel-line:var(--nord2);
+  --head-bg:var(--nord1);--head-fg:var(--nord6);--head-muted:var(--nord4);
+  --code-bg:var(--nord1);--code-fg:var(--nord6);--code-muted:var(--nord4);
+  --chip-bg:var(--nord8);--chip-fg:var(--nord0);--chip-line:var(--nord8);
+  --radius:3px;--radius-sm:2px;--label-font:var(--font-mono);--h-weight:700;--label-case:uppercase;--label-track:.06em;}}
+:root[data-theme="dark"][data-variant="b"]{
+  --panel-bg:var(--nord1);--panel-line:var(--nord2);
+  --head-bg:var(--nord1);--head-fg:var(--nord6);--head-muted:var(--nord4);
+  --code-bg:var(--nord1);--code-fg:var(--nord6);--code-muted:var(--nord4);
+  --chip-bg:var(--nord8);--chip-fg:var(--nord0);--chip-line:var(--nord8);
+  --radius:3px;--radius-sm:2px;--label-font:var(--font-mono);--h-weight:700;--label-case:uppercase;--label-track:.06em;}
+
+:root[data-beamer="1"]{--base:22px}
+
+html{font-size:var(--base)}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:1rem;line-height:1.6}
+*{box-sizing:border-box}
+button,input,textarea,select{font:inherit;color:inherit}
+:root[data-beamer="1"] body{font-weight:600}
+
+.wrap{max-width:62rem;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header.top{background:var(--head-bg);color:var(--head-fg);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-block:1.5rem 1.75rem;display:flex;flex-wrap:wrap;gap:1rem 2rem;align-items:flex-start;justify-content:space-between}
+.title-block{min-width:0;flex:1 1 28rem}
+.eyebrow{font-family:var(--label-font);text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;color:var(--head-muted);margin:0 0 .35rem}
+h1{font-size:2.1rem;line-height:1.15;margin:0 0 .6rem;font-weight:700;text-wrap:balance}
+:root[data-variant="b"] h1{font-family:var(--font-mono);font-weight:600;letter-spacing:-.01em}
+.lede{margin:0;max-width:40rem;color:var(--head-muted)}
+.toggles{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--head-muted);border-radius:999px;overflow:hidden}
+:root[data-variant="b"] .seg{border-radius:var(--radius-sm)}
+.seg button{background:transparent;border:0;padding:.3rem .8rem;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--head-fg)}
+.seg button[aria-pressed="true"]{background:var(--head-fg);color:var(--head-bg)}
+.seg .lbl{padding:.3rem .2rem .3rem .8rem;font-size:.82rem;color:var(--head-muted);font-family:var(--label-font)}
+
+main .wrap{padding-block:1rem 4rem}
+section.step{padding-block:2.25rem;border-bottom:1px solid var(--line);display:grid;gap:1.1rem}
+section.step:last-of-type{border-bottom:0}
+.step-head{display:flex;gap:.9rem;align-items:baseline}
+.num{flex:none;font-family:var(--font-mono);font-weight:600;font-size:.95rem;color:var(--chip-fg);background:var(--chip-bg);border:1.5px solid var(--chip-line);border-radius:999px;width:2rem;height:2rem;display:inline-grid;place-items:center;transform:translateY(-.15rem)}
+:root[data-variant="b"] .num{border-radius:var(--radius-sm);width:auto;padding:0 .55rem}
+h2{font-size:1.45rem;line-height:1.25;margin:0;font-weight:var(--h-weight);text-wrap:balance}
+h3{font-size:1rem;margin:0;font-weight:600}
+p{margin:0;max-width:44rem}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+
+.label{font-family:var(--label-font);text-transform:var(--label-case);letter-spacing:var(--label-track);font-size:.78rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.35rem}
+
+.panel{background:var(--panel-bg);border:1px solid var(--panel-line);border-radius:var(--radius);padding:1rem 1.1rem;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:1rem}
+@media (max-width:720px){.grid2{grid-template-columns:minmax(0,1fr)}}
+
+textarea,input[type=text],select{width:100%;background:var(--bg);border:1px solid var(--surface-2);border-radius:var(--radius-sm);padding:.6rem .7rem;line-height:1.5}
+textarea{min-height:9rem;resize:vertical}
+input.mono,textarea.mono{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.tabs{display:flex;gap:.4rem;flex-wrap:wrap}
+.tabs button,.btn{background:transparent;border:1px solid var(--surface-2);border-radius:var(--radius-sm);padding:.4rem .85rem;font-size:.88rem;font-weight:600;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn:hover,.tabs button:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+
+.code{background:var(--code-bg);color:var(--code-fg);border-radius:var(--radius);padding:.9rem 1rem;font-family:var(--font-mono);font-size:.92rem;line-height:1.75;letter-spacing:.08em;word-break:break-all;overflow-wrap:anywhere;min-width:0}
+.code.scroll{max-height:20rem;overflow:auto}
+.code .muted{color:var(--code-muted)}
+
+.mark{border-radius:2px;color:var(--nord0);box-shadow:inset 0 -2px 0 rgba(46,52,64,.55)}
+.m0{background:var(--nord13)}.m1{background:var(--nord14)}.m2{background:var(--nord8)}.m3{background:var(--nord15)}.m4{background:var(--nord12)}.m5{background:var(--nord7)}
+.dim{opacity:.35}
+
+.tbl-wrap{overflow-x:auto;min-width:0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:.45rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--label-font);text-transform:var(--label-case);letter-spacing:var(--label-track);font-size:.74rem;color:var(--muted);font-weight:600}
+td.mono,.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+tbody tr.rep{cursor:pointer}
+tbody tr.rep:hover{background:var(--surface)}
+tbody tr.rep[aria-selected="true"]{background:var(--surface);outline:2px solid var(--accent);outline-offset:-2px}
+.swatch{display:inline-block;width:.8rem;height:.8rem;border-radius:2px;vertical-align:-.05rem;margin-right:.4rem}
+
+.align{border-collapse:separate;border-spacing:2px;width:auto;font-family:var(--font-mono);font-size:.9rem}
+.align th{border:0;padding:.2rem .6rem .2rem 0;white-space:nowrap;text-align:right}
+.align td{border:0;padding:.15rem 0;width:1.55rem;text-align:center;border-radius:3px}
+.align tr.k td{color:var(--accent);font-weight:600}
+.align tr.c td{background:var(--code-bg);color:var(--code-fg);font-weight:600}
+.align td.pos{color:var(--muted);font-size:.7rem}
+
+.callout{border-left:4px solid var(--special);background:var(--surface);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:.85rem 1rem;max-width:46rem}
+.callout.info{border-left-color:var(--info)}
+.callout strong{display:block;margin-bottom:.2rem}
+
+.status{display:inline-flex;align-items:center;gap:.45rem;font-weight:600;padding:.35rem .75rem;border-radius:var(--radius-sm);color:var(--nord0)}
+.status.ok{background:var(--nord14)}.status.warn{background:var(--nord13)}
+
+.chart svg{display:block;width:100%;height:auto}
+.chart text{fill:var(--muted);font-family:var(--font-mono);font-size:11px}
+.chart .bar{fill:var(--bar)}
+.chart .bar.on{fill:var(--bar-strong)}
+.chart .base{stroke:var(--line)}
+.chart .exp{fill:none;stroke:var(--expect);stroke-width:1.5}
+.chart .expdot{fill:var(--expect)}
+.chart text.val{fill:var(--text);font-weight:600}
+.chart text.on{fill:var(--accent);font-weight:600}
+
+.rowgrid{font-family:var(--font-mono);font-size:.92rem;line-height:1.55;background:var(--code-bg);color:var(--code-fg);border-radius:var(--radius);padding:.8rem 1rem;max-height:22rem;overflow:auto}
+.rowgrid .r{white-space:pre;display:flex;gap:0}
+.rowgrid .r span{display:inline-block;width:1.45em;text-align:center}
+.rowgrid .r .ln{width:3.2em;text-align:right;padding-right:.9em;color:var(--code-muted);font-size:.78em}
+.rowgrid .hdr span{color:var(--code-muted);font-size:.75em}
+
+.Lpick{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.Lpick select{width:auto;min-width:5rem;font-family:var(--font-mono)}
+
+.cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:1rem}
+.colcard{display:grid;gap:.5rem}
+.colhead{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.keyletter{font-family:var(--font-mono);font-weight:600;font-size:1.6rem;line-height:1;color:var(--accent);min-width:1.6rem;text-align:center}
+.stepper{display:flex;align-items:center;gap:.35rem}
+.stepper button{width:2rem;height:2rem;border:1px solid var(--surface-2);background:transparent;border-radius:var(--radius-sm);cursor:pointer;font-weight:700}
+.stepper button:hover{border-color:var(--accent)}
+.keyline{display:flex;flex-wrap:wrap;align-items:center;gap:.8rem 1.2rem}
+.bigkey{font-family:var(--font-mono);font-size:1.9rem;font-weight:600;letter-spacing:.18em;color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:.9rem;height:.6rem;margin-right:.35rem;vertical-align:0}
+.empty{color:var(--muted);font-style:italic}
+footer{color:var(--muted);font-size:.82rem;padding-block:0 3rem}
+@media (max-width:520px){h1{font-size:1.7rem}h2{font-size:1.25rem}}
+@media (prefers-reduced-motion:no-preference){.tabs button,.btn,.stepper button,tbody tr.rep{transition:background .15s,border-color .15s}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="title-block">
+      <p class="eyebrow">Kryptologie · Vigenère knacken</p>
+      <h1>Der Kasiski-Test</h1>
+      <p class="lede">Friedrich Wilhelm Kasiski zeigte 1863, wie man die Länge eines Vigenère-Schlüssels allein aus dem Geheimtext errät. Hier spielst du den Angriff Schritt für Schritt durch, bis der Klartext wieder dasteht.</p>
+    </div>
+    <div class="toggles" aria-label="Darstellung">
+      <div class="seg" role="group" aria-label="Design-Variante">
+        <span class="lbl">Variante</span>
+        <button type="button" id="varA" aria-pressed="true">A</button>
+        <button type="button" id="varB" aria-pressed="false">B</button>
+      </div>
+      <div class="seg" role="group" aria-label="Beamer-Modus">
+        <button type="button" id="beamer" aria-pressed="false">Beamer-Modus</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<section class="step" id="s1">
+  <div class="step-head"><span class="num">1</span><h2>Text verschlüsseln</h2></div>
+  <p>Bei Vigenère wird jeder Buchstabe um den Wert des darunter stehenden Schlüsselbuchstabens verschoben (A&nbsp;=&nbsp;0, B&nbsp;=&nbsp;1 … Z&nbsp;=&nbsp;25). Der Schlüssel wiederholt sich immer wieder. Gib einen eigenen Text ein oder analysiere direkt einen Geheimtext.</p>
+  <div class="tabs" role="tablist" aria-label="Modus">
+    <button type="button" role="tab" id="tabEnc" aria-selected="true">Selbst verschlüsseln</button>
+    <button type="button" role="tab" id="tabCip" aria-selected="false">Fremden Geheimtext analysieren</button>
+  </div>
+
+  <div class="grid2" id="encInputs">
+    <div class="panel">
+      <label class="label" for="plain">Klartext</label>
+      <textarea id="plain" spellcheck="false"></textarea>
+      <p class="small muted" style="margin-top:.4rem">Umlaute werden zu AE, OE, UE. Leerzeichen und Satzzeichen fallen weg.</p>
+    </div>
+    <div class="panel" style="display:grid;gap:.8rem;align-content:start">
+      <div>
+        <label class="label" for="key">Schlüssel</label>
+        <input type="text" id="key" class="mono" spellcheck="false" autocomplete="off">
+      </div>
+      <p class="small muted">Ein längerer Text liefert mehr Wiederholungen. Ab etwa 300 Buchstaben funktioniert der Test zuverlässig.</p>
+      <button type="button" class="btn" id="resetSample">Beispiel wiederherstellen</button>
+    </div>
+  </div>
+
+  <div class="panel" id="cipInputs" hidden>
+    <label class="label" for="cipherIn">Geheimtext</label>
+    <textarea id="cipherIn" class="mono" spellcheck="false" placeholder="Geheimtext hier einfügen …"></textarea>
+    <p class="small muted" style="margin-top:.4rem">Nur die Buchstaben A–Z werden ausgewertet.</p>
+  </div>
+
+  <div id="alignBlock">
+    <span class="label">So entsteht der Geheimtext (erste Buchstaben)</span>
+    <div class="tbl-wrap"><table class="align" id="alignTbl"></table></div>
+  </div>
+
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.35rem">
+      <span class="label" style="margin:0">Geheimtext <span id="cLen" class="mono"></span></span>
+      <button type="button" class="btn" id="copyC">Geheimtext kopieren</button>
+    </div>
+    <div class="code scroll" id="cipherOut"></div>
+  </div>
+</section>
+
+<section class="step" id="s2">
+  <div class="step-head"><span class="num">2</span><h2>Wiederholungen im Geheimtext suchen</h2></div>
+  <p>Häufige Wörter wie DIE, UND oder EIN kommen oft vor. Steht ein solches Wort zufällig zweimal an derselben Stelle des Schlüssels, entsteht im Geheimtext zweimal dieselbe Buchstabenfolge. Gesucht werden Folgen ab drei Buchstaben. Tippe auf eine Zeile, um nur diese Folge zu markieren.</p>
+  <div class="code scroll" id="cipherMarked"></div>
+  <div class="tbl-wrap">
+    <table id="repTbl">
+      <thead><tr><th>Folge</th><th>Positionen</th><th>Abstand</th><th>Zerlegung</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <p class="small muted" id="repNote"></p>
+</section>
+
+<section class="step" id="s3">
+  <div class="step-head"><span class="num">3</span><h2>Abstände auswerten: die Schlüssellänge</h2></div>
+  <p>Der Abstand zweier echter Wiederholungen ist ein Vielfaches der Schlüssellänge. Darum zählen wir für jede mögliche Länge, wie viele Abstände durch sie teilbar sind. Zufällige Treffer erzeugen etwas Rauschen.</p>
+  <div class="panel chart">
+    <span class="label">Wie viele Abstände sind durch L teilbar?</span>
+    <div id="histo"></div>
+  </div>
+  <div class="callout">
+    <strong>Achtung, Teiler zählen mit</strong>
+    Ist die Schlüssellänge 6, dann ist jeder passende Abstand auch durch 2 und 3 teilbar. Kleine Zahlen schneiden darum immer gut ab. Wähle die <em>grösste</em> Länge, die fast so viele Treffer hat wie die beste.
+  </div>
+  <div class="Lpick">
+    <label class="label" for="Lsel" style="margin:0">Gewählte Schlüssellänge L</label>
+    <select id="Lsel"></select>
+    <span class="small muted" id="Lhint"></span>
+  </div>
+  <div>
+    <span class="label">Geheimtext in Zeilen der Länge L</span>
+    <p class="small muted" style="margin-bottom:.5rem">Mit der richtigen Länge stehen die Wiederholungen genau untereinander: Jede Spalte wurde mit demselben Schlüsselbuchstaben verschlüsselt.</p>
+    <div class="rowgrid" id="rowGrid"></div>
+  </div>
+</section>
+
+<section class="step" id="s4">
+  <div class="step-head"><span class="num">4</span><h2>Spalten knacken: Häufigkeitsanalyse</h2></div>
+  <p>Jede Spalte ist jetzt nur noch eine Caesar-Verschlüsselung. Im Deutschen ist E mit gut 17&nbsp;% der häufigste Buchstabe. Für jede Spalte probieren wir alle 26 Verschiebungen aus und nehmen jene, bei der die Verteilung am besten zur deutschen Sprache passt (Chi-Quadrat-Test). Mit − und + kannst du selbst nachjustieren.</p>
+  <div class="legend">
+    <span><i style="background:var(--bar)"></i>Spalte nach dem Zurückschieben</span>
+    <span><i style="background:var(--bar-strong)"></i>Buchstabe E</span>
+    <span><i style="height:2px;background:var(--expect)"></i>Erwartung im Deutschen</span>
+  </div>
+  <div class="cols" id="cols"></div>
+  <div class="panel" style="display:grid;gap:.9rem">
+    <div class="keyline">
+      <div><span class="label">Rekonstruierter Schlüssel</span><span class="bigkey" id="recKey"></span></div>
+      <div id="keyStatus"></div>
+    </div>
+    <div>
+      <span class="label">Entschlüsselter Text</span>
+      <div class="code scroll" id="plainOut" style="letter-spacing:.04em"></div>
+    </div>
+  </div>
+  <div class="callout info">
+    <strong>Warum das Verfahren funktioniert</strong>
+    Vigenère versteckt die Buchstabenhäufigkeiten, weil jeder Buchstabe je nach Position anders verschoben wird. Kennt man aber die Schlüssellänge, fällt die Chiffre in L einfache Caesar-Verschiebungen auseinander, und dort verrät die Häufigkeit des E jede Verschiebung. Je länger der Schlüssel im Verhältnis zum Text, desto weniger Buchstaben pro Spalte und desto unsicherer wird die Analyse.
+  </div>
+</section>
+
+</div>
+</main>
+<footer><div class="wrap">Buchstabenhäufigkeiten Deutsch nach Beutelspacher, Kryptologie. Alle Berechnungen laufen in deinem Browser.</div></footer>
+
+<script>
+(function(){
+const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const F=[6.51,1.89,3.06,5.08,17.40,1.66,3.01,4.76,7.55,0.27,1.21,3.44,2.53,9.78,2.51,0.79,0.02,7.00,7.27,6.15,4.35,0.67,1.89,0.03,0.04,1.13].map(x=>x/100);
+const SAMPLE_P='Die Vigenère-Verschlüsselung galt lange als unknackbar. Man nannte sie sogar die unentzifferbare Chiffre. Doch im neunzehnten Jahrhundert fanden Charles Babbage und Friedrich Wilhelm Kasiski unabhängig voneinander einen Weg, die Verschlüsselung zu brechen. Die Idee ist einfach: Wenn ein häufiges Wort wie DIE oder UND im Klartext mehrfach vorkommt und dabei zufällig an derselben Stelle des Schlüssels steht, dann entsteht im Geheimtext zweimal dieselbe Buchstabenfolge. Der Abstand zwischen den beiden Wiederholungen ist dann ein Vielfaches der Schlüssellänge. Sammelt man viele solche Abstände und sucht ihre gemeinsamen Teiler, so verrät der Geheimtext die Länge des Schlüssels. Danach zerfällt die Vigenère-Chiffre in mehrere einfache Caesar-Chiffren, die man mit einer Häufigkeitsanalyse knacken kann. Der häufigste Buchstabe im Deutschen ist das E, und genau dieses E verrät in jeder Spalte die Verschiebung.';
+const SAMPLE_K='KRYPTO';
+const MAXL=20, MARKS=6;
+
+const $=id=>document.getElementById(id);
+const root=document.documentElement;
+const store={get(k){try{return localStorage.getItem('kasiski.'+k)}catch(e){return null}},set(k,v){try{localStorage.setItem('kasiski.'+k,v)}catch(e){}}};
+
+const st={mode:store.get('mode')||'enc',plain:store.get('plain')??SAMPLE_P,key:store.get('key')??SAMPLE_K,cipherIn:store.get('cipherIn')||'',L:null,shifts:{},focus:null};
+
+function norm(s){return (s||'').toUpperCase().replace(/Ä/g,'AE').replace(/Ö/g,'OE').replace(/Ü/g,'UE').replace(/ß/g,'SS').replace(/[ÀÁÂ]/g,'A').replace(/[ÈÉÊË]/g,'E').replace(/[ÎÏ]/g,'I').replace(/[ÔÓ]/g,'O').replace(/Ç/g,'C').replace(/[^A-Z]/g,'');}
+function vig(p,k,d){if(!k)return '';let o='';for(let i=0;i<p.length;i++)o+=A[(A.indexOf(p[i])+d*A.indexOf(k[i%k.length])+26)%26];return o;}
+function findRepeats(c){
+  const tri=new Map();
+  for(let i=0;i+3<=c.length;i++){const t=c.substr(i,3);if(!tri.has(t))tri.set(t,[]);tri.get(t).push(i);}
+  const g=new Map();
+  for(const pos of tri.values()){
+    if(pos.length<2)continue;
+    for(let j=0;j<pos.length-1;j++){
+      const a=pos[j],b=pos[j+1];
+      if(a>0&&c[a-1]===c[b-1])continue;
+      let len=3;while(b+len<c.length&&c[a+len]===c[b+len])len++;
+      const s=c.substr(a,len);
+      if(!g.has(s))g.set(s,{seq:s,pos:new Set(),dist:[]});
+      const e=g.get(s);e.pos.add(a);e.pos.add(b);e.dist.push(b-a);
+    }
+  }
+  return [...g.values()].map(e=>({seq:e.seq,pos:[...e.pos].sort((x,y)=>x-y),dist:e.dist}))
+    .sort((x,y)=>y.seq.length-x.seq.length||y.pos.length-x.pos.length||x.pos[0]-y.pos[0]);
+}
+function factor(n){const f=[];let d=2;while(n>1&&d*d<=n){while(n%d===0){f.push(d);n/=d;}d++;}if(n>1)f.push(n);return f;}
+function chiShift(col){
+  const n=col.length,cnt=Array(26).fill(0);for(const ch of col)cnt[A.indexOf(ch)]++;
+  let bs=0,bv=Infinity;
+  for(let s=0;s<26;s++){let x=0;for(let j=0;j<26;j++){const e=n*F[j];x+=(cnt[(j+s)%26]-e)**2/e;}if(x<bv){bv=x;bs=s;}}
+  return {shift:bs,cnt,n};
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------- Darstellung ---------- */
+function setVariant(v){root.setAttribute('data-variant',v);$('varA').setAttribute('aria-pressed',v==='a');$('varB').setAttribute('aria-pressed',v==='b');store.set('variant',v);}
+function setBeamer(on){if(on)root.setAttribute('data-beamer','1');else root.removeAttribute('data-beamer');$('beamer').setAttribute('aria-pressed',on);store.set('beamer',on?'1':'0');}
+$('varA').onclick=()=>setVariant('a');$('varB').onclick=()=>setVariant('b');
+$('beamer').onclick=()=>setBeamer(root.getAttribute('data-beamer')!=='1');
+setVariant(store.get('variant')==='b'?'b':'a');setBeamer(store.get('beamer')==='1');
+
+/* ---------- Eingaben ---------- */
+$('plain').value=st.plain;$('key').value=st.key;$('cipherIn').value=st.cipherIn;
+function setMode(m){st.mode=m;store.set('mode',m);
+  $('tabEnc').setAttribute('aria-selected',m==='enc');$('tabCip').setAttribute('aria-selected',m==='cip');
+  $('encInputs').hidden=m!=='enc';$('cipInputs').hidden=m!=='cip';$('alignBlock').hidden=m!=='enc';
+  $('copyC').hidden=m!=='enc';
+  if(m==='cip'&&!$('cipherIn').value.trim()){$('cipherIn').value=vig(norm(st.plain),norm(st.key)||'A',1);st.cipherIn=$('cipherIn').value;}
+  reset();render();}
+$('tabEnc').onclick=()=>setMode('enc');$('tabCip').onclick=()=>setMode('cip');
+let tm;function onInput(){clearTimeout(tm);tm=setTimeout(()=>{st.plain=$('plain').value;st.key=$('key').value;st.cipherIn=$('cipherIn').value;
+  store.set('plain',st.plain);store.set('key',st.key);store.set('cipherIn',st.cipherIn);reset();render();},180);}
+['plain','key','cipherIn'].forEach(id=>$(id).addEventListener('input',onInput));
+$('resetSample').onclick=()=>{$('plain').value=SAMPLE_P;$('key').value=SAMPLE_K;onInput();};
+$('Lsel').onchange=e=>{st.L=+e.target.value;st.shifts={};render();};
+$('copyC').onclick=()=>{const t=cur.c;const b=$('copyC');
+  const done=()=>{b.textContent='Kopiert ✓';setTimeout(()=>b.textContent='Geheimtext kopieren',1600);};
+  const fallback=()=>{const r=document.createRange();r.selectNodeContents($('cipherOut'));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Markiert, jetzt kopieren';};
+  try{navigator.clipboard.writeText(t).then(done,fallback);}catch(e){fallback();}};
+function reset(){st.L=null;st.shifts={};st.focus=null;}
+
+let cur={c:''};
+
+/* ---------- Render ---------- */
+function render(){
+  const P=norm(st.plain),K=norm(st.key);
+  const c=st.mode==='enc'?vig(P,K,1):norm(st.cipherIn);
+  cur.c=c;
+  $('cLen').textContent=c?'('+c.length+' Buchstaben)':'';
+
+  // Schritt 1
+  if(st.mode==='enc'){
+    if(!K){$('alignTbl').innerHTML='<tr><td class="empty" style="width:auto">Gib einen Schlüssel ein.</td></tr>';}
+    else{const n=Math.min(P.length,24);let r1='<tr><th></th>',r2='<tr><th>Klartext</th>',r3='<tr class="k"><th>Schlüssel</th>',r4='<tr class="c"><th>Geheimtext</th>';
+      for(let i=0;i<n;i++){r1+='<td class="pos">'+i+'</td>';r2+='<td>'+P[i]+'</td>';r3+='<td>'+K[i%K.length]+'</td>';r4+='<td>'+c[i]+'</td>';}
+      $('alignTbl').innerHTML=r1+'</tr>'+r2+'</tr>'+r3+'</tr>'+r4+'</tr>';}
+  }
+  $('cipherOut').innerHTML=c?esc(c):'<span class="muted">Noch kein Geheimtext.</span>';
+
+  // Schritt 2
+  const reps=c.length>=6?findRepeats(c):[];
+  const marks=Array(c.length).fill(-1);
+  const shown=reps.slice(0,MARKS);
+  const focusIdx=st.focus!=null&&st.focus<reps.length?st.focus:null;
+  const toMark=focusIdx!=null?[[reps[focusIdx],focusIdx%MARKS]]:shown.map((r,i)=>[r,i]);
+  for(const [r,ci] of toMark)for(const p of r.pos)for(let k=0;k<r.seq.length;k++)if(marks[p+k]===-1)marks[p+k]=ci;
+  $('cipherMarked').innerHTML=c?markHTML(c,marks):'<span class="muted">Noch kein Geheimtext.</span>';
+  const tb=$('repTbl').tBodies[0];
+  const rowsMax=14;
+  const allDist=reps.flatMap(r=>r.dist);
+  const cnt={};for(let L=2;L<=MAXL;L++)cnt[L]=allDist.filter(d=>d%L===0).length;
+  const mx=Math.max(0,...Object.values(cnt));
+  let sug=null;if(mx>0)for(let L=2;L<=MAXL;L++)if(cnt[L]>=0.75*mx)sug=L;
+  const L=st.L||sug||Math.min(Math.max(norm(st.key).length,2),MAXL);
+  tb.innerHTML=reps.length?reps.slice(0,rowsMax).map((r,i)=>{
+    const sw=i<MARKS?'<span class="swatch m'+i+'"></span>':'<span class="swatch" style="background:transparent"></span>';
+    return '<tr class="rep" tabindex="0" data-i="'+i+'" aria-selected="'+(focusIdx===i)+'"><td class="mono">'+sw+r.seq+'</td><td class="mono">'+r.pos.join(', ')+'</td><td class="mono">'+r.dist.join(', ')+'</td><td class="mono">'+r.dist.map(d=>{const ok=d%L===0;return factor(d).join('·')+(ok?' <span title="teilbar durch L" style="color:var(--accent)">✓'+L+'</span>':'');}).join('<br>')+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" class="empty">Keine Wiederholungen gefunden. Der Text ist vermutlich zu kurz.</td></tr>';
+  tb.querySelectorAll('tr.rep').forEach(tr=>{const f=()=>{const i=+tr.dataset.i;st.focus=st.focus===i?null:i;render();};tr.onclick=f;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f();}};});
+  $('repNote').textContent=reps.length?(reps.length+' wiederholte Folgen, '+allDist.length+' Abstände'+(reps.length>rowsMax?'. Die Tabelle zeigt die längsten '+rowsMax+'.':'.')+(focusIdx!=null?' Nochmals tippen hebt die Auswahl auf.':' Farbig markiert sind die sechs längsten.')):'';
+
+  // Schritt 3
+  $('histo').innerHTML=histoSVG(cnt,L,sug);
+  const sel=$('Lsel');let o='';for(let i=2;i<=MAXL;i++)o+='<option value="'+i+'"'+(i===L?' selected':'')+'>'+i+(i===sug?' (Vorschlag)':'')+'</option>';sel.innerHTML=o;
+  $('Lhint').textContent=sug?(L===sug?'Vorschlag aus den Abständen übernommen.':'Vorschlag wäre '+sug+'.'):'Zu wenige Abstände für einen Vorschlag.';
+  $('rowGrid').innerHTML=c?gridHTML(c,L,marks):'<span class="muted">Noch kein Geheimtext.</span>';
+
+  // Schritt 4
+  let key='',colsH='';
+  for(let i=0;i<L;i++){
+    let col='';for(let j=i;j<c.length;j+=L)col+=c[j];
+    const res=chiShift(col);const k=L+':'+i;const s=st.shifts[k]!=null?st.shifts[k]:res.shift;
+    key+=A[s];
+    colsH+='<div class="panel colcard chart"><div class="colhead"><div><span class="label" style="margin:0">Spalte '+(i+1)+' · '+res.n+' Buchst.</span></div>'+
+      '<div class="stepper"><button type="button" data-k="'+k+'" data-s="'+s+'" data-d="-1" aria-label="Spalte '+(i+1)+': Verschiebung verkleinern">−</button><span class="keyletter" aria-live="polite">'+A[s]+'</span><button type="button" data-k="'+k+'" data-s="'+s+'" data-d="1" aria-label="Spalte '+(i+1)+': Verschiebung vergrössern">+</button></div></div>'+
+      colSVG(res.cnt,res.n,s)+'<span class="small muted">Verschiebung '+s+(st.shifts[k]!=null&&s!==res.shift?' · von Hand (Vorschlag: '+A[res.shift]+')':'')+'</span></div>';
+  }
+  $('cols').innerHTML=c?colsH:'<p class="empty">Noch kein Geheimtext.</p>';
+  $('cols').querySelectorAll('.stepper button').forEach(b=>b.onclick=()=>{st.shifts[b.dataset.k]=(+b.dataset.s+ +b.dataset.d+26)%26;render();});
+  $('recKey').textContent=c?key:'–';
+  const dec=c?vig(c,key,-1):'';
+  $('plainOut').innerHTML=dec?esc(dec.toLowerCase()):'<span class="muted">–</span>';
+  let stat='';
+  if(st.mode==='enc'&&K&&c){
+    const rep=K.repeat(Math.ceil(L/K.length)+1);
+    if(key===K)stat='<span class="status ok">✓ Schlüssel vollständig rekonstruiert</span>';
+    else if(L%K.length===0&&key===rep.slice(0,L))stat='<span class="status ok">✓ Entschlüsselt. L ist ein Vielfaches der echten Länge '+K.length+'.</span>';
+    else{let wrong=0;if(L===K.length)for(let i=0;i<L;i++)if(key[i]!==K[i])wrong++;
+      stat='<span class="status warn">✗ '+(L!==K.length?'Die Länge stimmt noch nicht.':wrong+(wrong===1?' Spalte stimmt':' Spalten stimmen')+' noch nicht.')+'</span>';}
+  }
+  $('keyStatus').innerHTML=stat;
+}
+
+function markHTML(c,marks){let h='',open=-2;
+  const dimAll=st.focus!=null;
+  for(let i=0;i<c.length;i++){const m=marks[i];
+    if(m!==open){if(open!==-2)h+='</span>';h+=m>=0?'<span class="mark m'+m+'">':'<span'+(dimAll?' class="dim"':'')+'>';open=m;}
+    h+=c[i];}
+  return h+'</span>';}
+
+function gridHTML(c,L,marks){
+  let h='<div class="r hdr"><span class="ln"></span>';for(let i=0;i<L;i++)h+='<span>'+(i+1)+'</span>';h+='</div>';
+  for(let r=0;r*L<c.length;r++){h+='<div class="r"><span class="ln">'+(r*L)+'</span>';
+    for(let i=0;i<L;i++){const p=r*L+i;if(p>=c.length)break;const m=marks[p];h+='<span'+(m>=0?' class="mark m'+m+'"':'')+'>'+c[p]+'</span>';}
+    h+='</div>';}
+  return h;}
+
+function histoSVG(cnt,L,sug){
+  const W=640,H=200,pl=28,pr=8,pt=22,pb=34;const n=MAXL-1;const bw=(W-pl-pr)/n;
+  const mx=Math.max(1,...Object.values(cnt));const sc=v=>(H-pt-pb)*v/mx;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Anzahl teilbarer Abstände je Schlüssellänge">';
+  s+='<line class="base" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'" stroke-width="1"/>';
+  for(let l=2;l<=MAXL;l++){const x=pl+(l-2)*bw,h=sc(cnt[l]),on=l===L;
+    s+='<rect class="bar'+(on?' on':'')+'" x="'+(x+bw*.15).toFixed(1)+'" y="'+(H-pb-h).toFixed(1)+'" width="'+(bw*.7).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2"/>';
+    if(cnt[l])s+='<text class="val" x="'+(x+bw/2).toFixed(1)+'" y="'+(H-pb-h-5).toFixed(1)+'" text-anchor="middle">'+cnt[l]+'</text>';
+    s+='<text class="'+(on?'on':'')+'" x="'+(x+bw/2).toFixed(1)+'" y="'+(H-pb+15)+'" text-anchor="middle">'+l+'</text>';
+    if(l===sug)s+='<text class="on" x="'+(x+bw/2).toFixed(1)+'" y="'+(H-pb+29)+'" text-anchor="middle">▲</text>';}
+  s+='<text x="'+pl+'" y="12">Treffer</text><text x="'+(W-pr)+'" y="'+(H-4)+'" text-anchor="end">L</text>';
+  return s+'</svg>';}
+
+function colSVG(cnt,n,s){
+  const W=320,H=120,pl=4,pr=4,pt=8,pb=18,bw=(W-pl-pr)/26;
+  const vals=[];for(let j=0;j<26;j++)vals.push(n?cnt[(j+s)%26]/n:0);
+  const mx=Math.max(.2,...vals,...F);const sc=v=>(H-pt-pb)*v/mx;
+  let g='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Häufigkeiten der Spalte nach Zurückschieben um '+s+'">';
+  g+='<line class="base" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'" stroke-width="1"/>';
+  let path='';
+  for(let j=0;j<26;j++){const x=pl+j*bw,h=sc(vals[j]);
+    g+='<rect class="bar'+(j===4?' on':'')+'" x="'+(x+1).toFixed(1)+'" y="'+(H-pb-h).toFixed(1)+'" width="'+(bw-2).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="1"/>';
+    path+=(j?'L':'M')+(x+bw/2).toFixed(1)+' '+(H-pb-sc(F[j])).toFixed(1);
+    if(j%5===0||j===4)g+='<text'+(j===4?' class="on"':'')+' x="'+(x+bw/2).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle">'+A[j]+'</text>';}
+  g+='<path class="exp" d="'+path+'"/>';
+  return g+'</svg>';}
+
+setMode(st.mode);
+})();
+</script>
+
+</body></html>
