@@ -7,6 +7,7 @@
   Datenhaltung: keine
   Export: keiner
   Variante: A „Funkraum“ gewählt (technisch, Polar-Night-Maschinenfeld, Mono-Labels); Variante B „Lehrbuch“ und Umschalter entfernt
+  Fotos: 5 Bilder vom Nutzer (bilder/), lazy geladen, mit Bildunterschriften
   Ablage: gehaltvoll/informatik/kryptologie/Die Enigma.html, verlinkt im Index
 -->
 <html lang="de">
@@ -183,6 +184,17 @@ footer{margin-top:56px;font-size:.85rem;color:var(--text-muted)}
 h2{font-weight:600}
 
 
+/* Fotos */
+.figs{display:grid;gap:14px;margin-top:16px;align-items:start}
+.figs.hero2{grid-template-columns:1.34fr 1fr}
+.figs.two{grid-template-columns:1fr 1fr}
+@media (max-width:600px){.figs.hero2,.figs.two{grid-template-columns:1fr}}
+figure{margin:0;min-width:0}
+figure img{display:block;width:100%;height:auto;max-width:100%;border-radius:8px;border:1px solid var(--surface-2);background:var(--surface)}
+figcaption{font-size:.85rem;color:var(--text-muted);margin-top:6px;line-height:1.45}
+figcaption b{color:var(--text);font-weight:600}
+.figure-wide{margin-top:16px}
+.notes{display:grid;gap:6px;margin-top:10px;padding-left:1.2rem;font-size:.95rem}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media (max-width:520px){.machine{padding:14px}.windows{gap:8px}.win button,.win .letter{width:38px}}
 </style>
@@ -281,6 +293,10 @@ h2{font-weight:600}
       <h2>Die Bauteile</h2>
       <p>Eine Enigma I, wie sie Heer und Luftwaffe verwendeten, wog rund 12 kg und steckte in einem Holzkasten. Diese Teile gehörten dazu:</p>
     </div>
+    <div class="figs hero2">
+      <figure><img src="bilder/enigma-geoeffnet.jpg" width="1000" height="1090" loading="lazy" alt="Geöffnete Enigma: hinten das Lampenfeld, darunter die drei Walzen mit Zahlenringen, davor die Tastatur und vorne das Steckbrett mit Kabeln"><figcaption><b>Geöffnet.</b> Von hinten nach vorne: Lampenfeld, die drei Walzen mit ihren Zahlenringen (links davon die Umkehrwalze B), Tastatur und ganz vorne das Steckbrett.</figcaption></figure>
+      <figure><img src="bilder/enigma-holzkasten.jpg" width="1100" height="1603" loading="lazy" alt="Enigma im Holzkasten mit geöffneter Frontklappe: oben die drei Walzenfenster, darunter Lampenfeld und Tastatur, vorne das Steckbrett"><figcaption><b>Einsatzbereit im Holzkasten.</b> Oben sieht man nur die drei Walzenfenster. Die Frontklappe verdeckt im geschlossenen Zustand das Steckbrett.</figcaption></figure>
+    </div>
     <div class="parts">
       <div class="part" style="--c:var(--nord12)"><span class="tag">Eingabe</span><h3>Tastatur</h3><p>26 Tasten, keine Ziffern, keine Leerzeichen. Zahlen wurden ausgeschrieben, Satzzeichen durch Buchstabenfolgen ersetzt, etwa X für einen Punkt.</p></div>
       <div class="part" style="--c:var(--nord13)"><span class="tag">Ausgabe</span><h3>Lampenfeld</h3><p>26 Glühlämpchen unter Buchstabenfenstern. Die Enigma druckte nichts: Ein zweiter Soldat schrieb jeden leuchtenden Buchstaben von Hand mit.</p></div>
@@ -291,6 +307,10 @@ h2{font-weight:600}
       <div class="part" style="--c:var(--nord9)"><span class="tag">Papier</span><h3>Schlüsseltafel</h3><p>Ohne den geheimen Tagesschlüssel war die Maschine nutzlos. Die Tafeln galten einen Monat und waren streng geheim.</p></div>
       <div class="part" style="--c:var(--nord7)"><span class="tag">Übertragung</span><h3>Funkgerät & Morse</h3><p>Der Geheimtext wurde in Fünfergruppen gemorst. Jeder konnte mithören – die Sicherheit lag allein in der Verschlüsselung.</p></div>
     </div>
+    <div class="figs two">
+      <figure><img src="bilder/enigma-steckbrett.jpg" width="921" height="627" loading="lazy" alt="Nahaufnahme des Steckbretts: Buchstaben in QWERTZ-Anordnung, je zwei Buchsen pro Buchstabe, einige Buchsen mit Kabeln verbunden"><figcaption><b>Steckbrett.</b> Jeder Buchstabe hat zwei Buchsen. Ein Kabel verbindet zwei Buchstaben und vertauscht sie – auf dem Hin- und auf dem Rückweg.</figcaption></figure>
+      <figure><img src="bilder/enigma-walzen.jpg" width="595" height="379" loading="lazy" alt="Drei ausgebaute Enigma-Walzen mit gezahnten Rändern und Kontaktstiften, daneben die Achse"><figcaption><b>Walzen und Achse.</b> Auf jeder Seite 26 Kontakte, innen verdrahtet. Am gezahnten Rand dreht der Funker die Grundstellung ein; die Walzen werden auf die Achse gesteckt.</figcaption></figure>
+    </div>
   </section>
 
   <!-- KAPITEL 3 -->
@@ -300,6 +320,13 @@ h2{font-weight:600}
       <h2>Schlüsseltafel und Tagesschlüssel</h2>
       <p>Beide Seiten mussten die Maschine exakt gleich einstellen. Dafür erhielten alle Funkstellen eines Netzes dieselbe Schlüsseltafel. Jede Zeile ist ein Tagesschlüssel und legt vier Dinge fest:</p>
     </div>
+    <figure class="figure-wide"><img src="bilder/enigma-schluesseltafel.jpg" width="1000" height="701" loading="lazy" alt="Originale Schlüsseltafel Luftwaffen-Maschinen-Schlüssel Nr. 649 mit Spalten für Datum, Walzenlage, Ringstellung, Steckerverbindungen und Kenngruppen, Tage 31 bis 1"><figcaption><b>Original: Luftwaffen-Maschinen-Schlüssel Nr. 649.</b> Ein Blatt für einen ganzen Monat.</figcaption></figure>
+    <ul class="notes read">
+      <li>Die Tage stehen <b>absteigend</b> von 31 bis 1. So konnte der Funker die verbrauchte Zeile unten abschneiden und vernichten – erbeutete Blätter verrieten keine alten Schlüssel.</li>
+      <li>Oben der Vermerk «Geheime Kommandosache» und die Anweisung, die Tafel bei Gefahr vollständig und frühzeitig zu vernichten.</li>
+      <li>Die zusätzliche Spalte «an der Umkehrwalze» gehört zu einer späteren, umsteckbaren Umkehrwalze der Luftwaffe. Unser Simulator verwendet die feste Umkehrwalze B.</li>
+    </ul>
+    <p class="read" style="margin-top:20px">Zum Ausprobieren eine Tafel im gleichen Aufbau:</p>
     <div class="sheethead"><span class="mono">GEHEIME KOMMANDOSACHE · Heeres-Maschinenschlüssel · Oktober</span><span>Beispiel, Werte erfunden</span></div>
     <div class="tablewrap">
       <table>
