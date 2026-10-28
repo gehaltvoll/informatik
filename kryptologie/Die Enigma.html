@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Kryptologie), Zielgruppe Schüler:innen Gymnasium, selbstständig durcharbeitbar
+  Gerät: gemischt (Desktop + Handy; Stromlaufplan horizontal scrollbar)
+  Interaktivität: voll – funktionierende Enigma I (Walzen I–V, UKW B, Ringstellung, Steckbrett), animierter Stromweg, Lampenfeld, Klar-/Geheimtext-Streifen
+  Inhalte: Bauteile · Schlüsseltafel & Tagesschlüssel · Ablauf mit zwei Funkern · Schlüsselraum · Schwächen & Bletchley Park · 2 Übungen mit einblendbaren Lösungen
+  Datenhaltung: keine
+  Export: keiner
+  Variante: A „Funkraum“ gewählt (technisch, Polar-Night-Maschinenfeld, Mono-Labels); Variante B „Lehrbuch“ und Umschalter entfernt
+  Ablage: gehaltvoll/informatik/kryptologie/Die Enigma.html, verlinkt im Index
+-->
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Die Enigma</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: eine Lesespalte; oben die Maschine als breites Panel (Fenster, Stromlaufplan, Lampen, Tastatur), darunter Kapitel in Lesereihenfolge */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+
+  --bg:var(--nord6);--surface:var(--nord5);--surface-2:var(--nord4);
+  --text:var(--nord0);--text-muted:var(--nord3);
+  --accent:var(--nord10);--accent-soft:var(--nord9);
+  --ok:var(--nord14);--warn:var(--nord13);--err:var(--nord11);--merke:var(--nord15);--info:var(--nord8);
+  --fwd:var(--nord12);--bwd:var(--nord10);
+  --code-bg:var(--nord5);
+
+  /* Maschinenfeld – je nach Variante überschrieben */
+  --panel:var(--nord5);--panel-2:var(--nord4);--panel-fg:var(--nord0);--panel-muted:var(--nord3);--panel-line:var(--nord4);
+  --wire:rgba(76,86,106,.18);--lamp-off:var(--nord4);--lamp-on:var(--nord13);
+
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --radius:10px;--radius-lg:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);
+  --text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);
+  --bwd:var(--nord8);--code-bg:var(--nord1);
+  --panel:var(--nord1);--panel-2:var(--nord2);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord2);
+  --wire:rgba(216,222,233,.13);--lamp-off:var(--nord2);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);
+  --text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);
+  --bwd:var(--nord8);--code-bg:var(--nord1);
+  --panel:var(--nord1);--panel-2:var(--nord2);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord2);
+  --wire:rgba(216,222,233,.13);--lamp-off:var(--nord2);
+  color-scheme:dark}
+
+/* Funkraum: Maschine immer in Polar Night */
+body{
+  --panel:var(--nord0);--panel-2:var(--nord1);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord2);
+  --wire:rgba(216,222,233,.12);--lamp-off:var(--nord2);--bwd-panel:var(--nord8);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:17px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:1000px;margin:0 auto}
+.read{max-width:70ch}
+h1,h2,h3{text-wrap:balance;line-height:1.2}
+h1{font-size:clamp(2rem,6vw,3rem);font-weight:700}
+h2{font-size:1.55rem;font-weight:700;margin-bottom:.6rem}
+h3{font-size:1.1rem;font-weight:600;margin-bottom:.35rem}
+p+p{margin-top:.75rem}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+code,.mono{font-family:var(--font-mono);font-size:.9em}
+code{background:var(--code-bg);padding:.08em .35em;border-radius:5px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Kopf */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.eyebrow{font-family:var(--font-mono);font-size:.78rem;letter-spacing:.06em;color:var(--text-muted)}
+.hero{margin-bottom:22px}
+.hero p{color:var(--text-muted);margin-top:.6rem;max-width:62ch}
+
+/* Maschine */
+.machine{background:var(--panel);color:var(--panel-fg);border-radius:var(--radius-lg);padding:20px;display:grid;gap:18px;border:1px solid var(--panel-line)}
+.mrow{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:space-between}
+.label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--panel-muted)}
+.windows{display:flex;gap:12px;align-items:flex-end}
+.win{display:grid;justify-items:center;gap:4px}
+.win .rname{font-family:var(--font-mono);font-size:.75rem;color:var(--panel-muted)}
+.win button{background:var(--panel-2);border:1px solid var(--panel-line);border-radius:6px;width:44px;height:24px;cursor:pointer;line-height:1;color:var(--panel-fg)}
+.win .letter{font-family:var(--font-mono);font-size:1.6rem;font-weight:600;width:44px;height:48px;display:grid;place-items:center;
+  background:var(--panel-2);border:1px solid var(--panel-line);border-radius:8px;transition:transform .18s}
+.win .letter.bump{transform:translateY(-4px)}
+.ukwbox .letter{font-size:1rem;color:var(--panel-muted)}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--panel-line);background:var(--panel-2);color:var(--panel-fg);border-radius:8px;padding:.4rem .8rem;cursor:pointer;font-size:.88rem}
+.btn:hover{border-color:var(--accent-soft)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+
+details.settings{border:1px solid var(--panel-line);border-radius:var(--radius);background:var(--panel-2)}
+details.settings summary{cursor:pointer;padding:.55rem .8rem;font-weight:600;font-size:.92rem}
+.setgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;padding:4px 12px 14px}
+.setgrid fieldset{border:0;display:grid;gap:6px;min-width:0}
+.setgrid legend{margin-bottom:4px}
+.trio{display:flex;gap:6px}
+.trio select{flex:1;min-width:0;padding:.3rem;border-radius:6px;border:1px solid var(--panel-line);background:var(--panel);color:var(--panel-fg);font-family:var(--font-mono)}
+.plugin{width:100%;padding:.4rem .5rem;border-radius:6px;border:1px solid var(--panel-line);background:var(--panel);color:var(--panel-fg);font-family:var(--font-mono);text-transform:uppercase}
+.hint{font-size:.8rem;color:var(--panel-muted)}
+.hint.bad{color:var(--err)}
+
+/* Stromlaufplan */
+.circuit{overflow-x:auto;border-radius:var(--radius);background:var(--panel-2);border:1px solid var(--panel-line)}
+.circuit svg{display:block;min-width:660px;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--panel-muted)}
+.legend i{display:inline-block;width:22px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.caption{font-size:.9rem;min-height:1.5em}
+.caption b{font-family:var(--font-mono)}
+
+/* Lampen & Tasten */
+.board{display:grid;gap:7px;justify-items:center}
+.board .r{display:flex;gap:6px;flex-wrap:nowrap}
+.lamp,.key{width:clamp(26px,7.4vw,44px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:clamp(.72rem,2.4vw,.95rem);max-width:100%}
+.lamp{background:var(--lamp-off);color:var(--panel-muted);transition:background .12s,box-shadow .12s,color .12s}
+.lamp.on{background:var(--lamp-on);color:var(--nord0);box-shadow:0 0 0 4px rgba(235,203,139,.3),0 0 22px rgba(235,203,139,.55)}
+.key{border:2px solid var(--panel-line);background:var(--panel);color:var(--panel-fg);cursor:pointer;transition:transform .06s}
+.key:active,.key.down{transform:translateY(2px);border-color:var(--fwd)}
+.tape{display:grid;gap:6px;font-family:var(--font-mono);font-size:.95rem;background:var(--panel-2);border:1px solid var(--panel-line);border-radius:var(--radius);padding:10px 12px;min-width:0}
+.tape div{display:flex;gap:10px;min-width:0}
+.tape span:last-child{overflow-wrap:anywhere;letter-spacing:.06em;min-width:0}
+.tape .lbl{color:var(--panel-muted);flex:none;width:7.5em}
+.tape .ct{color:var(--panel-fg);font-weight:600}
+.stat{font-size:.85rem;color:var(--panel-muted)}
+.stat b{color:var(--panel-fg);font-family:var(--font-mono)}
+
+/* Kapitel */
+section{margin-top:56px}
+.kicker{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem}
+.steps{list-style:none;counter-reset:s;display:grid;gap:10px;margin-top:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:2.2rem 1fr;gap:10px;align-items:start}
+.steps li::before{content:counter(s);font-family:var(--font-mono);font-weight:600;width:2rem;height:2rem;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--surface-2)}
+.steps li.f::before{border-color:var(--fwd)}
+.steps li.b::before{border-color:var(--bwd)}
+.parts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:16px}
+.part{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius);padding:14px 16px;min-width:0}
+.part .tag{font-family:var(--font-mono);font-size:.72rem;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase}
+.part p{font-size:.95rem}
+.box{border-radius:var(--radius);padding:14px 16px;margin-top:16px;border:1px solid var(--surface-2);background:var(--surface)}
+.box.merke{border-left:4px solid var(--merke)}
+.box.warn{border-left:4px solid var(--warn)}
+.box .bt{font-weight:700;margin-bottom:.25rem}
+.tablewrap{overflow-x:auto;margin-top:14px;border:1px solid var(--surface-2);border-radius:var(--radius)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.88rem}
+th,td{padding:.45rem .65rem;text-align:left;border-bottom:1px solid var(--surface-2);white-space:nowrap}
+th{background:var(--surface);font-weight:600}
+td{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.sheethead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:.85rem;color:var(--text-muted);margin-top:16px}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:16px}
+.duo .part ol{padding-left:1.2rem;display:grid;gap:6px;font-size:.95rem}
+.bignum{font-family:var(--font-mono);font-size:clamp(.95rem,4.4vw,1.75rem);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow-x:auto;line-height:1.3;padding-block:2px}
+.calc{display:grid;gap:4px;margin-top:12px;font-size:.95rem}
+.calc div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--surface-2);padding-bottom:4px}
+.calc span:last-child{font-family:var(--font-mono);text-align:right;font-variant-numeric:tabular-nums}
+.timeline{list-style:none;display:grid;gap:12px;margin-top:14px;border-left:2px solid var(--surface-2);padding-left:16px}
+.timeline b{font-family:var(--font-mono)}
+.task{margin-top:16px;background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius);padding:14px 16px}
+.task .btn{background:var(--bg);color:var(--text);border-color:var(--surface-2)}
+.task .btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.task details{margin-top:10px}
+.task summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.task .sol{margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--surface-2)}
+footer{margin-top:56px;font-size:.85rem;color:var(--text-muted)}
+
+/* Funkraum: technisch */
+.machine{border-radius:8px}
+.part{border-radius:6px}
+.part h3{font-family:var(--font-mono);font-weight:600;font-size:1rem}
+h2{font-weight:600}
+
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:520px){.machine{padding:14px}.windows{gap:8px}.win button,.win .letter{width:38px}}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app">
+  <div class="top">
+    <span class="eyebrow">Informatik · Kryptologie · Chiffriermaschine 1930–1945</span>
+  </div>
+
+  <header class="hero">
+    <h1>Die Enigma</h1>
+    <p>Tippe auf der Tastatur unten oder auf deinem Computer. Du siehst, wie der Strom durch Steckbrett, drei Walzen und die Umkehrwalze läuft – und warum derselbe Buchstabe beim nächsten Tastendruck etwas ganz anderes ergibt.</p>
+  </header>
+
+  <!-- MASCHINE -->
+  <div class="machine" aria-label="Enigma-Simulator">
+    <div class="mrow">
+      <div>
+        <div class="label" style="margin-bottom:6px">Walzenfenster</div>
+        <div class="windows" id="windows"></div>
+      </div>
+      <div class="tools">
+        <button class="btn" type="button" id="toStart" title="Walzen auf die zuletzt eingestellte Grundstellung zurückdrehen">↺ Zur Grundstellung</button>
+        <button class="btn" type="button" id="clear">Text löschen</button>
+      </div>
+    </div>
+
+    <details class="settings" id="settings">
+      <summary>Tagesschlüssel einstellen (Walzenlage, Ringstellung, Steckbrett)</summary>
+      <div class="setgrid">
+        <fieldset>
+          <legend class="label">Walzenlage (links · Mitte · rechts)</legend>
+          <div class="trio" id="selOrder"></div>
+        </fieldset>
+        <fieldset>
+          <legend class="label">Ringstellung</legend>
+          <div class="trio" id="selRing"></div>
+        </fieldset>
+        <fieldset>
+          <legend class="label"><label for="plugs">Steckerverbindungen</label></legend>
+          <input class="plugin" id="plugs" type="text" autocomplete="off" spellcheck="false" placeholder="z. B. AE BF CM">
+          <span class="hint" id="plugHint">Paare mit Leerzeichen trennen, höchstens 13 Paare.</span>
+        </fieldset>
+      </div>
+    </details>
+
+    <div>
+      <div class="mrow" style="margin-bottom:8px;align-items:center">
+        <div class="label">Stromlaufplan</div>
+        <div class="legend"><span><i style="background:var(--fwd)"></i>Hinweg</span><span><i style="background:var(--bwd-panel)"></i>Rückweg</span><span><i style="background:var(--panel-muted);opacity:.5"></i>Verdrahtung</span></div>
+      </div>
+      <div class="circuit"><svg id="svg" viewBox="0 0 760 530" role="img" aria-labelledby="capt"></svg></div>
+      <p class="caption" id="capt" aria-live="polite"></p>
+    </div>
+
+    <div>
+      <div class="label" style="margin-bottom:6px;text-align:center">Lampenfeld</div>
+      <div class="board" id="lamps"></div>
+    </div>
+    <div>
+      <div class="label" style="margin-bottom:6px;text-align:center">Tastatur</div>
+      <div class="board" id="keys"></div>
+    </div>
+
+    <div class="tape" aria-live="polite">
+      <div><span class="lbl">Eingetippt</span><span id="tIn">–</span></div>
+      <div><span class="lbl">Lampen</span><span class="ct" id="tOut">–</span></div>
+    </div>
+    <p class="stat">Getippte Buchstaben: <b id="sN">0</b> · davon zu sich selbst verschlüsselt: <b id="sSelf">0</b> <span id="sNote"></span></p>
+  </div>
+
+  <!-- KAPITEL 1 -->
+  <section class="read">
+    <div class="kicker">Ein Tastendruck</div>
+    <h2>Der Weg eines Buchstabens</h2>
+    <p>Die Enigma ist elektrisch: Jede Taste schliesst einen Stromkreis, und am Ende leuchtet genau eine Lampe. Dazwischen passiert in Bruchteilen einer Sekunde Folgendes:</p>
+    <ol class="steps">
+      <li><div><b>Walzen drehen sich.</b> Noch bevor Strom fliesst, rückt die rechte Walze um eine Stelle weiter. Hat sie ihre Übertragskerbe erreicht, nimmt sie die mittlere mit – wie bei einem Kilometerzähler.</div></li>
+      <li class="f"><div><b>Steckbrett.</b> Ist die Taste mit einem Kabel verbunden (z. B. A–E), wird der Buchstabe getauscht. Sonst geht er unverändert weiter.</div></li>
+      <li class="f"><div><b>Drei Walzen hin.</b> Jede Walze ist innen kreuz und quer verdrahtet und ersetzt den Buchstaben durch einen anderen. Weil sie sich drehen, ändert sich diese Ersetzung bei jedem Tastendruck.</div></li>
+      <li><div><b>Umkehrwalze (UKW).</b> Sie dreht sich nicht. Sie verbindet Buchstaben paarweise und schickt den Strom auf einem anderen Weg zurück.</div></li>
+      <li class="b"><div><b>Drei Walzen zurück, Steckbrett, Lampe.</b> Der Strom läuft rückwärts durch alle Walzen und nochmals durchs Steckbrett. Die Lampe am Ende ist der Geheimbuchstabe.</div></li>
+    </ol>
+    <div class="box merke">
+      <div class="bt">Merke: Verschlüsseln = Entschlüsseln</div>
+      <p>Wegen der Umkehrwalze ist die Enigma <em>selbstinvers</em>: Wer die Maschine gleich einstellt und den Geheimtext eintippt, sieht auf dem Lampenfeld den Klartext. Probiere es aus: Tippe ein Wort, klicke «Zur Grundstellung» und tippe die leuchtenden Buchstaben.</p>
+    </div>
+  </section>
+
+  <!-- KAPITEL 2 -->
+  <section>
+    <div class="read">
+      <div class="kicker">Was man brauchte · 1</div>
+      <h2>Die Bauteile</h2>
+      <p>Eine Enigma I, wie sie Heer und Luftwaffe verwendeten, wog rund 12 kg und steckte in einem Holzkasten. Diese Teile gehörten dazu:</p>
+    </div>
+    <div class="parts">
+      <div class="part" style="--c:var(--nord12)"><span class="tag">Eingabe</span><h3>Tastatur</h3><p>26 Tasten, keine Ziffern, keine Leerzeichen. Zahlen wurden ausgeschrieben, Satzzeichen durch Buchstabenfolgen ersetzt, etwa X für einen Punkt.</p></div>
+      <div class="part" style="--c:var(--nord13)"><span class="tag">Ausgabe</span><h3>Lampenfeld</h3><p>26 Glühlämpchen unter Buchstabenfenstern. Die Enigma druckte nichts: Ein zweiter Soldat schrieb jeden leuchtenden Buchstaben von Hand mit.</p></div>
+      <div class="part" style="--c:var(--nord14)"><span class="tag">Vorne</span><h3>Steckbrett</h3><p>Mit 10 Kabeln wurden 20 Buchstaben paarweise vertauscht. Es vervielfachte die Zahl der möglichen Einstellungen enorm.</p></div>
+      <div class="part" style="--c:var(--nord8)"><span class="tag">Herzstück</span><h3>Walzen I–V</h3><p>Fünf verschieden verdrahtete Walzen lagen in der Kiste, drei davon wurden eingesetzt. Jede hat einen Buchstabenring und eine Übertragskerbe.</p></div>
+      <div class="part" style="--c:var(--nord15)"><span class="tag">Links</span><h3>Umkehrwalze B</h3><p>Fest eingebaut, sendet den Strom zurück. Sie macht das Gerät selbstinvers – und ist zugleich seine grösste Schwäche.</p></div>
+      <div class="part" style="--c:var(--nord11)"><span class="tag">Strom</span><h3>Batterie</h3><p>Eine 4,5-Volt-Flachbatterie versorgte die Lämpchen. So war die Maschine auch im Feld ohne Netzstrom einsetzbar.</p></div>
+      <div class="part" style="--c:var(--nord9)"><span class="tag">Papier</span><h3>Schlüsseltafel</h3><p>Ohne den geheimen Tagesschlüssel war die Maschine nutzlos. Die Tafeln galten einen Monat und waren streng geheim.</p></div>
+      <div class="part" style="--c:var(--nord7)"><span class="tag">Übertragung</span><h3>Funkgerät & Morse</h3><p>Der Geheimtext wurde in Fünfergruppen gemorst. Jeder konnte mithören – die Sicherheit lag allein in der Verschlüsselung.</p></div>
+    </div>
+  </section>
+
+  <!-- KAPITEL 3 -->
+  <section>
+    <div class="read">
+      <div class="kicker">Was man brauchte · 2</div>
+      <h2>Schlüsseltafel und Tagesschlüssel</h2>
+      <p>Beide Seiten mussten die Maschine exakt gleich einstellen. Dafür erhielten alle Funkstellen eines Netzes dieselbe Schlüsseltafel. Jede Zeile ist ein Tagesschlüssel und legt vier Dinge fest:</p>
+    </div>
+    <div class="sheethead"><span class="mono">GEHEIME KOMMANDOSACHE · Heeres-Maschinenschlüssel · Oktober</span><span>Beispiel, Werte erfunden</span></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Datum</th><th>Walzenlage</th><th>Ringstellung</th><th>Steckerverbindungen</th><th>Kenngruppen</th><th></th></tr></thead>
+        <tbody id="sheet"></tbody>
+      </table>
+    </div>
+    <div class="parts">
+      <div class="part"><h3>Walzenlage</h3><p>Welche drei der fünf Walzen in welcher Reihenfolge eingesetzt werden, z. B. <code>II I III</code>.</p></div>
+      <div class="part"><h3>Ringstellung</h3><p>Wie der Buchstabenring gegenüber der inneren Verdrahtung verdreht ist, z. B. <code>01 01 01</code>.</p></div>
+      <div class="part"><h3>Steckerverbindungen</h3><p>Welche 10 Buchstabenpaare am Steckbrett verbunden werden.</p></div>
+      <div class="part"><h3>Kenngruppen</h3><p>Dreibuchstabige Gruppen, an denen der Empfänger erkennt, welcher Schlüssel für einen Funkspruch gilt.</p></div>
+    </div>
+    <p class="read" style="margin-top:12px">Mit «Einstellen» überträgst du eine Zeile direkt in den Simulator oben.</p>
+  </section>
+
+  <!-- KAPITEL 4 -->
+  <section>
+    <div class="read">
+      <div class="kicker">Was man brauchte · 3</div>
+      <h2>Ablauf: zwei Funkstellen, ein Funkspruch</h2>
+      <p>Hätten alle Funksprüche eines Tages mit derselben Grundstellung begonnen, hätte ein Gegner Hunderte Texte mit identischer Einstellung erhalten. Deshalb wählte jeder Funker für jede Nachricht einen eigenen <b>Spruchschlüssel</b>. Vereinfacht, nach dem Verfahren ab 1940:</p>
+    </div>
+    <div class="duo">
+      <div class="part" style="--c:var(--nord12)"><span class="tag">Sender · zwei Soldaten</span><h3>Verschlüsseln</h3>
+        <ol>
+          <li>Tagesschlüssel aus der Tafel einstellen.</li>
+          <li>Eine zufällige Grundstellung wählen, z. B. <code>WZA</code>, und einstellen.</li>
+          <li>Einen zufälligen Spruchschlüssel ausdenken, z. B. <code>SXT</code>, eintippen. Ergebnis z. B. <code>UHL</code>.</li>
+          <li>Walzen auf den Spruchschlüssel <code>SXT</code> drehen.</li>
+          <li>Klartext eintippen, ein zweiter Soldat notiert die Lampen.</li>
+          <li>Funkspruch senden: Kopf mit <code>WZA UHL</code>, dann den Geheimtext in Fünfergruppen.</li>
+        </ol></div>
+      <div class="part" style="--c:var(--nord10)"><span class="tag">Empfänger · zwei Soldaten</span><h3>Entschlüsseln</h3>
+        <ol>
+          <li>Morsezeichen mitschreiben.</li>
+          <li>Denselben Tagesschlüssel einstellen.</li>
+          <li>Walzen auf die Grundstellung aus dem Kopf (<code>WZA</code>) drehen.</li>
+          <li><code>UHL</code> eintippen – die Lampen zeigen den Spruchschlüssel <code>SXT</code>.</li>
+          <li>Walzen auf <code>SXT</code> drehen.</li>
+          <li>Geheimtext eintippen und den Klartext von den Lampen ablesen.</li>
+        </ol></div>
+    </div>
+    <div class="box warn read">
+      <div class="bt">Menschen als Teil des Systems</div>
+      <p>Pro Maschine brauchte es also eine Schlüsseltafel, zwei Bediener, einen Funker und viel Disziplin. Genau hier entstanden Fehler: bequeme Spruchschlüssel wie <code>AAA</code> oder Tastaturreihen, immer gleiche Formulierungen und das Wiederholen von Nachrichten mit altem Schlüssel.</p>
+    </div>
+  </section>
+
+  <!-- KAPITEL 5 -->
+  <section class="read">
+    <div class="kicker">Warum man sie für sicher hielt</div>
+    <h2>Der Schlüsselraum</h2>
+    <p>Wie viele verschiedene Tagesschlüssel gab es bei einer Enigma I mit fünf Walzen und zehn Steckerkabeln?</p>
+    <div class="calc">
+      <div><span>Walzenlage: 3 aus 5 Walzen, Reihenfolge zählt</span><span>5 · 4 · 3 = 60</span></div>
+      <div><span>Grundstellung: 26 Buchstaben je Walze</span><span>26³ = 17’576</span></div>
+      <div><span>Steckbrett: 10 Paare aus 26 Buchstaben</span><span>150’738’274’937’250</span></div>
+      <div><span><b>Zusammen</b> (ohne Ringstellung)</span><span><b>≈ 1,59 · 10²⁰</b></span></div>
+    </div>
+    <p style="margin-top:14px">Das sind rund 159 Trillionen Möglichkeiten:</p>
+    <p class="bignum">158’962’555’217’826’360’000</p>
+    <p style="margin-top:10px">Selbst wenn man eine Million Einstellungen pro Sekunde prüfen könnte, bräuchte man rund fünf Millionen Jahre. Durchprobieren war also unmöglich – die Enigma wurde anders geknackt.</p>
+  </section>
+
+  <!-- KAPITEL 6 -->
+  <section class="read">
+    <div class="kicker">Die Schwächen</div>
+    <h2>Wie die Enigma geknackt wurde</h2>
+    <div class="box merke">
+      <div class="bt">Kein Buchstabe wird zu sich selbst</div>
+      <p>Weil die Umkehrwalze den Strom nie auf denselben Kontakt zurückschickt, wird ein A nie zu einem A verschlüsselt. Schau oben auf den Zähler: Egal wie viel du tippst, er bleibt bei 0. Das klingt harmlos, verrät aber viel.</p>
+    </div>
+    <p style="margin-top:14px"><b>Cribs – vermutete Klartextstücke.</b> Viele Funksprüche begannen gleich, etwa mit Wetterberichten oder «KEINE BESONDEREN EREIGNISSE». Legt man ein solches Wort unter den Geheimtext, kommen nur Positionen in Frage, an denen kein Buchstabe auf sich selbst fällt. Mit wenigen Stellen bleiben so nur noch wenige Kandidaten übrig.</p>
+    <ul class="timeline">
+      <li><b>1932</b> · Der polnische Mathematiker Marian Rejewski rekonstruiert die Verdrahtung der Walzen – mit Gruppentheorie und Unterlagen, die ein Spion lieferte.</li>
+      <li><b>1938</b> · Die Polen bauen die «Bomba», eine Maschine, die Walzenstellungen automatisch durchprobiert.</li>
+      <li><b>1939</b> · Kurz vor Kriegsbeginn übergeben sie ihr Wissen an Grossbritannien und Frankreich.</li>
+      <li><b>1940</b> · In Bletchley Park bei London läuft die erste Turing-Bombe, entwickelt von Alan Turing und Gordon Welchman. Sie testet Einstellungen anhand von Cribs.</li>
+      <li><b>1945</b> · Am Kriegsende arbeiten rund 10’000 Menschen in Bletchley Park, die meisten davon Frauen. Täglich werden Tausende Funksprüche entschlüsselt.</li>
+    </ul>
+    <div class="box">
+      <div class="bt">Was wir daraus lernen</div>
+      <p>Ein riesiger Schlüsselraum allein macht ein Verfahren nicht sicher. Strukturelle Eigenschaften (kein Buchstabe zu sich selbst), vorhersehbare Texte und Bedienfehler reichten aus. Heutige Verfahren wie AES werden deshalb öffentlich geprüft – nach dem Prinzip von Kerckhoffs: Sicherheit darf nur vom Schlüssel abhängen, nicht von der Geheimhaltung der Maschine.</p>
+    </div>
+  </section>
+
+  <!-- KAPITEL 7 -->
+  <section class="read">
+    <div class="kicker">Übungen</div>
+    <h2>Selbst ausprobieren</h2>
+    <div class="task">
+      <h3>Aufgabe 1 · Ein Funkspruch</h3>
+      <p>Eine Funkstelle empfängt diesen Text. Tagesschlüssel: Walzenlage <code>II I III</code>, Ringstellung <code>01 01 01</code>, Stecker <code>AE BF CM DQ HU JN LX PR SZ VW</code>, Spruchschlüssel <code>KZU</code>.</p>
+      <p class="mono" style="margin-top:8px;font-size:1rem;letter-spacing:.06em">PIMLE ZGAJZ RRJOH DJUSN YJ</p>
+      <p style="margin-top:8px"><button class="btn primary" type="button" id="loadTask">Einstellungen in den Simulator laden</button></p>
+      <details><summary>Lösung anzeigen</summary><div class="sol"><code>TREFFPUNKT MENSA ZEHN UHR</code> – ohne Leerzeichen getippt ergibt sich <code>TREFFPUNKTMENSAZEHNUHR</code>.</div></details>
+    </div>
+    <div class="task">
+      <h3>Aufgabe 2 · Gleiche Taste, anderer Buchstabe</h3>
+      <p>Stelle die Walzen auf <code>A A A</code> und drücke fünfmal die Taste A. Warum leuchten fünf verschiedene Lampen? Was unterscheidet die Enigma damit von der Caesar-Verschlüsselung?</p>
+      <details><summary>Lösung anzeigen</summary><div class="sol">Du siehst <code>BDZGO</code> (bei Walzenlage I II III ohne Stecker). Die rechte Walze dreht sich vor jedem Tastendruck, darum gilt für jeden Buchstaben ein anderes Ersetzungsalphabet. Caesar ersetzt immer gleich (monoalphabetisch) und lässt sich mit einer Häufigkeitsanalyse knacken. Die Enigma ist polyalphabetisch mit einer sehr langen Periode von 26 · 25 · 26 = 16’900 Schritten.</div></details>
+    </div>
+  </section>
+
+  <footer>Simulation einer Enigma I mit historischer Verdrahtung der Walzen I–V und der Umkehrwalze B. Kantonsschule Zürcher Unterland · Informatik</footer>
+</div>
+
+<script>
+(()=>{
+const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const ROT={I:{w:'EKMFLGDQVZNTOWYHXUSPAIBRCJ',n:'Q'},II:{w:'AJDKSIRUXBLHWTMCQGZNPYFVOE',n:'E'},III:{w:'BDFHJLCPRTXVZNYEIWGAKMUSQO',n:'V'},IV:{w:'ESOVPZJAYQUIRHXLNFTGKDCMWB',n:'J'},V:{w:'VZBRGITYUPSDNHLXAWMJQOFECK',n:'Z'}};
+const UKW='YRUHQSLDPXNGOKMIEBFZCWVJAT';
+const NAMES=['I','II','III','IV','V'];
+const m=x=>((x%26)+26)%26;
+const $=id=>document.getElementById(id);
+
+const S={order:['I','II','III'],ring:[0,0,0],pos:[0,0,0],start:[0,0,0],plug:[...Array(26).keys()],plugText:'',inp:'',out:'',n:0,self:0};
+
+/* ---- Logik ---- */
+const atNotch=(s,i)=>A[s.pos[i]]===ROT[s.order[i]].n;
+function stepRotors(s){const moved=[false,false,true];
+  if(atNotch(s,1)){s.pos[0]=m(s.pos[0]+1);s.pos[1]=m(s.pos[1]+1);moved[0]=moved[1]=true}
+  else if(atNotch(s,2)){s.pos[1]=m(s.pos[1]+1);moved[1]=true}
+  s.pos[2]=m(s.pos[2]+1);return moved}
+const fw=(s,i,c)=>{const sh=s.pos[i]-s.ring[i];return m(A.indexOf(ROT[s.order[i]].w[m(c+sh)])-sh)};
+const bw=(s,i,c)=>{const sh=s.pos[i]-s.ring[i];return m(ROT[s.order[i]].w.indexOf(A[m(c+sh)])-sh)};
+function trace(s,c){const p=[c];c=s.plug[c];p.push(c);c=fw(s,2,c);p.push(c);c=fw(s,1,c);p.push(c);c=fw(s,0,c);p.push(c);
+  c=A.indexOf(UKW[c]);p.push(c);c=bw(s,0,c);p.push(c);c=bw(s,1,c);p.push(c);c=bw(s,2,c);p.push(c);c=s.plug[c];p.push(c);return p}
+
+/* ---- Walzenfenster ---- */
+const slotName=['links','Mitte','rechts'];
+function buildWindows(){const w=$('windows');w.innerHTML='';
+  const u=document.createElement('div');u.className='win ukwbox';u.innerHTML='<span class="rname">UKW</span><span style="height:24px"></span><span class="letter">B</span><span style="height:24px"></span>';w.appendChild(u);
+  for(let i=0;i<3;i++){const d=document.createElement('div');d.className='win';
+    d.innerHTML=`<span class="rname" id="rn${i}">${S.order[i]}</span><button type="button" aria-label="Walze ${slotName[i]} vorwärts">▲</button><span class="letter" id="wl${i}">A</span><button type="button" aria-label="Walze ${slotName[i]} rückwärts">▼</button>`;
+    const [up,down]=d.querySelectorAll('button');
+    up.onclick=()=>{S.pos[i]=m(S.pos[i]+1);S.start=[...S.pos];refresh()};
+    down.onclick=()=>{S.pos[i]=m(S.pos[i]-1);S.start=[...S.pos];refresh()};
+    w.appendChild(d)}}
+function refresh(bump){for(let i=0;i<3;i++){const el=$('wl'+i);el.textContent=A[S.pos[i]];$('rn'+i).textContent=S.order[i];
+  if(bump&&bump[i]){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),180)}}
+  preview()}
+
+/* ---- Einstellungen ---- */
+function buildSettings(){const so=$('selOrder'),sr=$('selRing');so.innerHTML='';sr.innerHTML='';
+  for(let i=0;i<3;i++){const a=document.createElement('select');a.id='ord'+i;a.setAttribute('aria-label','Walze '+slotName[i]);
+    NAMES.forEach(n=>a.add(new Option(n,n)));a.value=S.order[i];
+    a.onchange=()=>{const nv=a.value,j=S.order.indexOf(nv);if(j>-1&&j!==i){S.order[j]=S.order[i];$('ord'+j).value=S.order[j]}S.order[i]=nv;refresh()};so.appendChild(a);
+    const r=document.createElement('select');r.id='ring'+i;r.setAttribute('aria-label','Ringstellung '+slotName[i]);
+    for(let k=0;k<26;k++)r.add(new Option(String(k+1).padStart(2,'0')+' '+A[k],k));r.value=S.ring[i];
+    r.onchange=()=>{S.ring[i]=+r.value;refresh()};sr.appendChild(r)}
+  $('plugs').value=S.plugText}
+function parsePlugs(t){const pairs=t.toUpperCase().replace(/[^A-Z ]/g,'').trim().split(/\s+/).filter(Boolean);
+  const plug=[...Array(26).keys()],used=new Set();
+  if(pairs.length>13)return{err:'Höchstens 13 Paare möglich.'};
+  for(const p of pairs){if(p.length!==2)return{err:`«${p}» ist kein Paar aus zwei Buchstaben.`};
+    if(p[0]===p[1])return{err:`«${p}»: Ein Buchstabe kann nicht mit sich selbst verbunden werden.`};
+    for(const ch of p){if(used.has(ch))return{err:`${ch} ist schon gesteckt – jeder Buchstabe nur einmal.`};used.add(ch)}
+    const a=A.indexOf(p[0]),b=A.indexOf(p[1]);plug[a]=b;plug[b]=a}
+  return{plug,n:pairs.length}}
+$('plugs').addEventListener('input',e=>{const r=parsePlugs(e.target.value),h=$('plugHint');
+  if(r.err){h.textContent='✗ '+r.err;h.classList.add('bad')}else{S.plug=r.plug;S.plugText=e.target.value.toUpperCase();
+    h.textContent=r.n?`✓ ${r.n} Paar${r.n>1?'e':''} gesteckt.`:'Paare mit Leerzeichen trennen, höchstens 13 Paare.';h.classList.remove('bad');preview()}});
+function applyKey(order,ring,pos,plugs){S.order=[...order];S.ring=[...ring];S.pos=[...pos];S.start=[...pos];
+  const r=parsePlugs(plugs);S.plug=r.plug;S.plugText=plugs;buildSettings();$('plugHint').textContent=`✓ ${r.n} Paare gesteckt.`;$('plugHint').classList.remove('bad');
+  S.inp='';S.out='';updTape();refresh()}
+
+/* ---- Lampen & Tasten ---- */
+const ROWS=['QWERTZUIO','ASDFGHJK','PYXCVBNML'];
+const lampEl={},keyEl={};
+ROWS.forEach(r=>{const lr=document.createElement('div');lr.className='r';const kr=document.createElement('div');kr.className='r';
+  [...r].forEach(ch=>{const l=document.createElement('span');l.className='lamp';l.textContent=ch;lampEl[ch]=l;lr.appendChild(l);
+    const k=document.createElement('button');k.type='button';k.className='key';k.textContent=ch;k.setAttribute('aria-label','Taste '+ch);
+    k.addEventListener('click',()=>press(ch));keyEl[ch]=k;kr.appendChild(k)});
+  $('lamps').appendChild(lr);$('keys').appendChild(kr)});
+let lit=null;
+function press(ch){const moved=stepRotors(S);const p=trace(S,A.indexOf(ch));const out=A[p[9]];
+  S.inp+=ch;S.out+=out;S.n++;if(out===ch)S.self++;
+  if(lit)lampEl[lit].classList.remove('on');lit=out;lampEl[out].classList.add('on');
+  keyEl[ch].classList.add('down');setTimeout(()=>keyEl[ch].classList.remove('down'),120);
+  for(let i=0;i<3;i++){const el=$('wl'+i);el.textContent=A[S.pos[i]];if(moved[i]){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),180)}}
+  draw(p,false);updTape()}
+const group5=t=>t.replace(/(.{5})/g,'$1 ').trim()||'–';
+function updTape(){$('tIn').textContent=group5(S.inp);$('tOut').textContent=group5(S.out);$('sN').textContent=S.n;$('sSelf').textContent=S.self;
+  $('sNote').textContent=S.n>=20?'– und das bleibt so.':''}
+document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const t=e.target;
+  if(t&&(t.tagName==='INPUT'||t.tagName==='SELECT'||t.tagName==='TEXTAREA'))return;
+  const ch=e.key.toUpperCase();if(ch.length===1&&A.includes(ch)){e.preventDefault();press(ch)}});
+$('clear').onclick=()=>{S.inp='';S.out='';S.n=0;S.self=0;if(lit){lampEl[lit].classList.remove('on');lit=null}updTape()};
+$('toStart').onclick=()=>{S.pos=[...S.start];if(lit){lampEl[lit].classList.remove('on');lit=null}refresh()};
+
+/* ---- Stromlaufplan ---- */
+const NS='http://www.w3.org/2000/svg';
+const ROW=17.4,TOP=64;const y=i=>TOP+i*ROW;
+// Bauteile: [x links, x rechts, Titel]
+const BOX={plug:[86,176,'Steckbrett'],r2:[230,330,'Walze rechts'],r1:[384,484,'Walze Mitte'],r0:[538,638,'Walze links'],ukw:[690,736,'UKW']};
+const css=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
+function el(tag,attrs,parent,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;parent.appendChild(e);return e}
+let lastPath=null,isPreview=true,prevKey='E';
+function draw(p,preview){if(p)lastPath=p;if(preview!==undefined)isPreview=preview;p=lastPath;const svg=$('svg');svg.innerHTML='';
+  const fg=css('--panel-fg'),mu=css('--panel-muted'),ln=css('--panel-line'),wire=css('--wire'),fwd=css('--fwd'),bwd=css('--bwd-panel'),pnl=css('--panel');
+  // Kopfzeile
+  el('text',{x:34,y:24,'text-anchor':'middle','font-family':'Google Sans Code, monospace','font-size':10.5,fill:mu},svg,'Taste');
+  el('text',{x:34,y:38,'text-anchor':'middle','font-family':'Google Sans Code, monospace','font-size':10.5,fill:mu},svg,'Lampe');
+  for(const k in BOX){const [x0,x1,t]=BOX[k];
+    el('rect',{x:x0,y:TOP-14,width:x1-x0,height:26*ROW+10,rx:8,fill:pnl,stroke:ln},svg);
+    el('text',{x:(x0+x1)/2,y:22,'text-anchor':'middle','font-family':'Open Sans, sans-serif','font-size':12,'font-weight':600,fill:fg},svg,t);
+    if(k[0]==='r'){const i=+k[1];el('text',{x:(x0+x1)/2,y:TOP-24,'text-anchor':'middle','font-family':'Google Sans Code, monospace','font-size':10,fill:mu},svg,'Walze '+S.order[i]+' · '+A[S.pos[i]]);}}
+  // Kontaktbeschriftung
+  for(let j=0;j<26;j++){
+    el('text',{x:34,y:y(j)+3.5,'text-anchor':'middle','font-family':'Google Sans Code, monospace','font-size':11,fill:fg},svg,A[j]);
+    for(const i of [2,1,0]){const [x0]=BOX['r'+i];el('text',{x:x0+10,y:y(j)+3.2,'text-anchor':'middle','font-family':'Google Sans Code, monospace','font-size':9,fill:mu},svg,A[m(S.pos[i]+j)])}}
+  // Verdrahtung (blass)
+  const g=el('g',{stroke:wire,'stroke-width':1,fill:'none'},svg);
+  for(let j=0;j<26;j++){
+    if(S.plug[j]!==j){const [x0,x1]=BOX.plug;el('line',{x1:x0+8,y1:y(j),x2:x1-8,y2:y(S.plug[j])},g)}
+    else{const [x0,x1]=BOX.plug;el('line',{x1:x0+8,y1:y(j),x2:x1-8,y2:y(j)},g)}
+    for(const i of [2,1,0]){const [x0,x1]=BOX['r'+i];el('line',{x1:x0+18,y1:y(j),x2:x1-8,y2:y(fw(S,i,j))},g)}}
+  // Kontaktpunkte
+  const dots=el('g',{fill:mu},svg);
+  for(let j=0;j<26;j++)for(const k in BOX){const [x0,x1]=BOX[k];if(k!=='ukw'){el('circle',{cx:k==='plug'?x0+8:x0+18,cy:y(j),r:1.6},dots)}el('circle',{cx:x1-8,cy:y(j),r:1.6},dots)}
+  if(!p)return;
+  // Pfad
+  const P=(pts,col,off)=>{el('polyline',{points:pts.map(([a,b])=>a+','+(b+off)).join(' '),fill:'none',stroke:col,'stroke-width':2.6,'stroke-linejoin':'round','stroke-linecap':'round'},svg)};
+  const [pl0,pl1]=BOX.plug,[a0,a1]=BOX.r2,[b0,b1]=BOX.r1,[c0,c1]=BOX.r0,[u0,u1]=BOX.ukw;
+  const hin=[[48,y(p[0])],[pl0+8,y(p[0])],[pl1-8,y(p[1])],[a0+18,y(p[1])],[a1-8,y(p[2])],[b0+18,y(p[2])],[b1-8,y(p[3])],[c0+18,y(p[3])],[c1-8,y(p[4])],[u1-8,y(p[4])]];
+  const back=[[u1-8,y(p[5])],[c1-8,y(p[5])],[c0+18,y(p[6])],[b1-8,y(p[6])],[b0+18,y(p[7])],[a1-8,y(p[7])],[a0+18,y(p[8])],[pl1-8,y(p[8])],[pl0+8,y(p[9])],[48,y(p[9])]];
+  P(hin,fwd,-1.5);
+  el('path',{d:`M${u1-8},${y(p[4])-1.5} C${u0-4},${y(p[4])} ${u0-4},${y(p[5])} ${u1-8},${y(p[5])+1.5}`,fill:'none',stroke:css('--merke'),'stroke-width':2.6},svg);
+  P(back,bwd,1.5);
+  el('circle',{cx:34,cy:y(p[0]),r:9,fill:'none',stroke:fwd,'stroke-width':2},svg);
+  el('circle',{cx:34,cy:y(p[9]),r:9,fill:'none',stroke:bwd,'stroke-width':2},svg);
+  const L=i=>A[p[i]];
+  $('capt').innerHTML=(isPreview?'Vorschau für die Taste <b>'+L(0)+'</b> (noch nicht gedrückt): ':'')+
+    `<b>${L(0)}</b> → Steckbrett <b>${L(1)}</b> → Walzen <b>${L(2)}·${L(3)}·${L(4)}</b> → UKW <b>${L(5)}</b> → zurück <b>${L(6)}·${L(7)}·${L(8)}</b> → Steckbrett → Lampe <b>${L(9)}</b>`;}
+function preview(){const c={...S,pos:[...S.pos]};stepRotors(c);draw(trace(c,A.indexOf(prevKey)),true)}
+
+/* ---- Schlüsseltafel (Beispiel) ---- */
+const SHEET=[
+ ['31.',['IV','I','V'],[19,2,11],'AT BN CU EQ GZ HL JP KY MR WX','vfx hnz ruc tkp'],
+ ['30.',['II','V','III'],[6,14,21],'AJ BH DZ FO GT IR KS LV MX QU','oem bga xwl ifd'],
+ ['29.',['I','IV','II'],[25,9,3],'BQ CR DI EJ KW MT OS PX UZ GH','qas lzn yvm cgo'],
+ ['28.',['V','III','I'],[12,1,17],'AK BV CO DW EZ FN GS HP IY LT','wkh pru dbx nfe'],
+ ['27.',['II','I','III'],[0,0,0],'AE BF CM DQ HU JN LX PR SZ VW','kzu ins mat jxv']];
+const sb=$('sheet');
+SHEET.forEach(([d,o,r,p,k])=>{const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${d}</td><td>${o.join(' ')}</td><td>${r.map(x=>String(x+1).padStart(2,'0')).join(' ')}</td><td>${p}</td><td>${k}</td><td></td>`;
+  const b=document.createElement('button');b.className='btn';b.type='button';b.textContent='Einstellen';
+  b.style.cssText='background:var(--bg);color:var(--text);border-color:var(--surface-2);font-family:var(--font)';
+  b.onclick=()=>{applyKey(o,r,[0,0,0],p);document.querySelector('.machine').scrollIntoView({behavior:'smooth',block:'start'})};
+  tr.lastChild.appendChild(b);sb.appendChild(tr)});
+$('loadTask').onclick=()=>{applyKey(['II','I','III'],[0,0,0],[10,25,20],'AE BF CM DQ HU JN LX PR SZ VW');
+  document.querySelector('.machine').scrollIntoView({behavior:'smooth',block:'start'})};
+
+buildWindows();buildSettings();updTape();refresh();
+})();
+</script>
+
+</body>
+</html>
