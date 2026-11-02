@@ -7,6 +7,7 @@
   Umfang: bis zum Klartext
   Datenhaltung: localStorage nur für Variante, Beamer-Modus und Eingaben (Komfort)
   Export: Geheimtext in die Zwischenablage kopieren
+  Primfaktorzerlegung (Schritt 2): zuerst verdeckt, pro Zeile oder für alle aufdeckbar; wird bei neuer Eingabe wieder verdeckt
   Design: Nord-Palette, Open Sans + Google Sans Code
     Variante A – Klar: hell, viel Weissraum, feine Linien, Frost nur als Akzent
     Variante B – Technisch: dunkle Kopfzeile und Code-Flächen auch im hellen Modus, Mono-Labels, eckige Formen
@@ -193,6 +194,10 @@ tbody tr.rep[aria-selected="true"]{background:var(--surface);outline:2px solid v
 .legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;font-size:.8rem;color:var(--muted)}
 .legend i{display:inline-block;width:.9rem;height:.6rem;margin-right:.35rem;vertical-align:0}
 .empty{color:var(--muted);font-style:italic}
+.reveal{background:transparent;border:1.5px dashed var(--surface-2);border-radius:var(--radius-sm);padding:.1rem .6rem;font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;font-family:var(--font)}
+.reveal:hover{border-color:var(--accent);color:var(--text)}
+.hidden-f{display:inline-block;min-width:4.5rem;color:var(--muted);letter-spacing:.15em}
+.task{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center;justify-content:space-between}
 footer{color:var(--muted);font-size:.82rem;padding-block:0 3rem}
 @media (max-width:520px){h1{font-size:1.7rem}h2{font-size:1.25rem}}
 @media (prefers-reduced-motion:no-preference){.tabs button,.btn,.stepper button,tbody tr.rep{transition:background .15s,border-color .15s}}
@@ -268,6 +273,10 @@ footer{color:var(--muted);font-size:.82rem;padding-block:0 3rem}
 <section class="step" id="s2">
   <div class="step-head"><span class="num">2</span><h2>Wiederholungen im Geheimtext suchen</h2></div>
   <p>Häufige Wörter wie DIE, UND oder EIN kommen oft vor. Steht ein solches Wort zufällig zweimal an derselben Stelle des Schlüssels, entsteht im Geheimtext zweimal dieselbe Buchstabenfolge. Gesucht werden Folgen ab drei Buchstaben. Tippe auf eine Zeile, um nur diese Folge zu markieren.</p>
+  <div class="callout info task">
+    <div><strong>Zuerst selbst rechnen</strong>Zerlege die Abstände in Primfaktoren, bevor du die Lösung aufdeckst. Welche Faktoren kommen immer wieder vor?</div>
+    <button type="button" class="btn" id="revealAll" aria-pressed="false">Alle Zerlegungen aufdecken</button>
+  </div>
   <div class="code scroll" id="cipherMarked"></div>
   <div class="tbl-wrap">
     <table id="repTbl">
@@ -342,7 +351,7 @@ const $=id=>document.getElementById(id);
 const root=document.documentElement;
 const store={get(k){try{return localStorage.getItem('kasiski.'+k)}catch(e){return null}},set(k,v){try{localStorage.setItem('kasiski.'+k,v)}catch(e){}}};
 
-const st={mode:store.get('mode')||'enc',plain:store.get('plain')??SAMPLE_P,key:store.get('key')??SAMPLE_K,cipherIn:store.get('cipherIn')||'',L:null,shifts:{},focus:null};
+const st={revealAll:false,revealed:new Set(),mode:store.get('mode')||'enc',plain:store.get('plain')??SAMPLE_P,key:store.get('key')??SAMPLE_K,cipherIn:store.get('cipherIn')||'',L:null,shifts:{},focus:null};
 
 function norm(s){return (s||'').toUpperCase().replace(/Ä/g,'AE').replace(/Ö/g,'OE').replace(/Ü/g,'UE').replace(/ß/g,'SS').replace(/[ÀÁÂ]/g,'A').replace(/[ÈÉÊË]/g,'E').replace(/[ÎÏ]/g,'I').replace(/[ÔÓ]/g,'O').replace(/Ç/g,'C').replace(/[^A-Z]/g,'');}
 function vig(p,k,d){if(!k)return '';let o='';for(let i=0;i<p.length;i++)o+=A[(A.indexOf(p[i])+d*A.indexOf(k[i%k.length])+26)%26];return o;}
@@ -398,7 +407,8 @@ $('copyC').onclick=()=>{const t=cur.c;const b=$('copyC');
   const done=()=>{b.textContent='Kopiert ✓';setTimeout(()=>b.textContent='Geheimtext kopieren',1600);};
   const fallback=()=>{const r=document.createRange();r.selectNodeContents($('cipherOut'));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Markiert, jetzt kopieren';};
   try{navigator.clipboard.writeText(t).then(done,fallback);}catch(e){fallback();}};
-function reset(){st.L=null;st.shifts={};st.focus=null;}
+function reset(){st.L=null;st.shifts={};st.focus=null;st.revealAll=false;st.revealed.clear();}
+$('revealAll').onclick=()=>{st.revealAll=!st.revealAll;if(!st.revealAll)st.revealed.clear();render();};
 
 let cur={c:''};
 
@@ -435,8 +445,10 @@ function render(){
   const L=st.L||sug||Math.min(Math.max(norm(st.key).length,2),MAXL);
   tb.innerHTML=reps.length?reps.slice(0,rowsMax).map((r,i)=>{
     const sw=i<MARKS?'<span class="swatch m'+i+'"></span>':'<span class="swatch" style="background:transparent"></span>';
-    return '<tr class="rep" tabindex="0" data-i="'+i+'" aria-selected="'+(focusIdx===i)+'"><td class="mono">'+sw+r.seq+'</td><td class="mono">'+r.pos.join(', ')+'</td><td class="mono">'+r.dist.join(', ')+'</td><td class="mono">'+r.dist.map(d=>{const ok=d%L===0;return factor(d).join('·')+(ok?' <span title="teilbar durch L" style="color:var(--accent)">✓'+L+'</span>':'');}).join('<br>')+'</td></tr>';
+    return '<tr class="rep" tabindex="0" data-i="'+i+'" aria-selected="'+(focusIdx===i)+'"><td class="mono">'+sw+r.seq+'</td><td class="mono">'+r.pos.join(', ')+'</td><td class="mono">'+r.dist.join(', ')+'</td><td class="mono">'+((st.revealAll||st.revealed.has(r.seq))?r.dist.map(d=>{const ok=d%L===0;return d+' = '+factor(d).join(' · ')+(ok?' <span title="teilbar durch L" style="color:var(--accent)">✓'+L+'</span>':'');}).join('<br>'):'<button type="button" class="reveal" data-seq="'+r.seq+'" aria-label="Zerlegung für '+r.seq+' aufdecken">Aufdecken</button>')+'</td></tr>';
   }).join(''):'<tr><td colspan="4" class="empty">Keine Wiederholungen gefunden. Der Text ist vermutlich zu kurz.</td></tr>';
+  tb.querySelectorAll('.reveal').forEach(b=>{b.onclick=e=>{e.stopPropagation();st.revealed.add(b.dataset.seq);render();};b.onkeydown=e=>e.stopPropagation();});
+  const ra=$('revealAll');ra.textContent=st.revealAll?'Zerlegungen verdecken':'Alle Zerlegungen aufdecken';ra.setAttribute('aria-pressed',st.revealAll);ra.hidden=!reps.length;
   tb.querySelectorAll('tr.rep').forEach(tr=>{const f=()=>{const i=+tr.dataset.i;st.focus=st.focus===i?null:i;render();};tr.onclick=f;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f();}};});
   $('repNote').textContent=reps.length?(reps.length+' wiederholte Folgen, '+allDist.length+' Abstände'+(reps.length>rowsMax?'. Die Tabelle zeigt die längsten '+rowsMax+'.':'.')+(focusIdx!=null?' Nochmals tippen hebt die Auswahl auf.':' Farbig markiert sind die sechs längsten.')):'';
 
