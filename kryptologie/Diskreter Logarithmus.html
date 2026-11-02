@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Diffie-Hellman und der diskrete Logarithmus: selbst rechnen, Eves Angriff verfolgen und sehen, warum grosse Primzahlen den Angriff unlösbar machen.">
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Kryptografie, Diffie-Hellman)
+  Zielgruppe: Schüler:innen, selbsterklärend (beantwortet), Sie-Form
+  Interaktivität: voll – eigene Zahlen p, g, a, b; Brute-Force-Angriff live mit Zähler (beantwortet)
+  Grosses Beispiel: Steigerung in Stufen 2 → 6 → 12 → 20 → 40 → 100 → 617 Stellen (beantwortet)
+  Selbst entschieden: Primzahlen vorab mit Miller-Rabin geprüft und eingebettet; Zeiten werden im Browser gemessen und hochgerechnet;
+    p in Teil 1 nur aus Auswahlliste geprüfter Primzahlen (5 bis 617 Stellen, Miller-Rabin/Probedivision); ab p > 500 zeigt das Raster die letzten 60 Versuche;
+    Ordnung von g mit Warnung (klein / nur kleine Primfaktoren → Pohlig-Hellman), Knopf «Erzeuger wählen»; ab 20 Stellen sichere Primzahlen p = 2q + 1;
+    Turbo-Modus mit Restzeit-Schätzung; Knopf für zufällige Geheimzahlen; BigInt in Teil 1 und 2; Streudiagramm zeigt das «Springen»;
+    drei Übungen mit einblendbaren Lösungen; keine Datenhaltung; kein Export.
+  Varianten: «Klar» (ruhig, gerundet, hell/dunkel nach System) und «Terminal» (technisch, dunkle Panels, Festbreiten-Labels), umschaltbar.
+-->
+<title>Diskreter Logarithmus</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: eine Lesespalte, drei Teile (selbst rechnen → angreifen → skalieren), Übungen am Schluss */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;--nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;--nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --bg:var(--nord6);--surface:var(--nord5);--surface-2:var(--nord4);--text:var(--nord0);--text-muted:var(--nord3);
+  --accent:var(--nord10);--accent-soft:var(--nord9);
+  --ok:var(--nord14);--warn:var(--nord13);--bad:var(--nord11);--special:var(--nord15);--info:var(--nord8);
+  --card:#FFFFFF00;
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  /* Variante «Klar» */
+  --radius:14px;--panel-bg:var(--surface);--panel-fg:var(--text);--panel-muted:var(--text-muted);--panel-line:var(--surface-2);
+  --head-bg:transparent;--head-fg:var(--text);--head-muted:var(--text-muted);--label-font:var(--font);--label-case:none;--label-track:0;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);color-scheme:dark}
+
+.app[data-variant="terminal"]{
+  --radius:4px;--panel-bg:var(--nord1);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord3);
+  --head-bg:var(--nord0);--head-fg:var(--nord6);--head-muted:var(--nord4);--label-font:var(--font-mono);--label-case:uppercase;--label-track:.06em;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.6;margin:0}
+button,input,select{font:inherit}
+code,.mono{font-family:var(--font-mono);font-size:.9em}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Kopf */
+header.head{background:var(--head-bg);color:var(--head-fg);padding-block:40px 28px}
+.head h1{font-size:clamp(2rem,5vw,2.8rem);line-height:1.15;margin:0 0 10px;font-weight:700;text-wrap:balance}
+.head p{margin:0;max-width:62ch;color:var(--head-muted)}
+.eq{font-family:var(--font-mono);font-size:clamp(1.05rem,3vw,1.4rem);margin:18px 0 0;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline}
+.eq .easy{color:var(--ok)} .eq .hard{color:var(--bad)}
+.head-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.kicker{font-family:var(--label-font);text-transform:var(--label-case);letter-spacing:var(--label-track);font-size:.8rem;font-weight:600;color:var(--head-muted)}
+.switch{display:inline-flex;border:1px solid var(--panel-line);border-radius:999px;padding:3px;gap:2px;background:var(--surface)}
+.app[data-variant="terminal"] .switch{border-radius:4px;background:var(--nord1);border-color:var(--nord3)}
+.switch button{border:0;background:transparent;color:var(--text);padding:4px 12px;border-radius:999px;cursor:pointer;font-size:.85rem}
+.app[data-variant="terminal"] .switch button{color:var(--nord4);border-radius:3px;font-family:var(--font-mono)}
+.switch button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+.app[data-variant="terminal"] .switch button[aria-pressed="true"]{background:var(--nord8);color:var(--nord0)}
+
+main{display:flex;flex-direction:column;gap:56px;padding-block:36px 64px}
+section > h2{font-size:1.55rem;margin:0 0 6px;font-weight:700;text-wrap:balance;display:flex;gap:12px;align-items:baseline}
+.step{font-family:var(--label-font);font-size:.85rem;color:var(--accent);font-weight:600;letter-spacing:var(--label-track)}
+.lead{margin:0 0 20px;max-width:68ch}
+.muted{color:var(--text-muted)}
+
+.panel{background:var(--panel-bg);color:var(--panel-fg);border-radius:var(--radius);padding:20px}
+.panel .muted{color:var(--panel-muted)}
+.lbl{font-family:var(--label-font);text-transform:var(--label-case);letter-spacing:var(--label-track);font-size:.78rem;font-weight:600;color:var(--panel-muted)}
+
+/* Teil 1 */
+.public{display:flex;flex-wrap:wrap;gap:16px;align-items:end;margin-bottom:18px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field{min-width:0;max-width:100%}
+.field select{padding:6px 10px;border-radius:calc(var(--radius) / 2);border:1px solid var(--panel-line);background:var(--bg);color:var(--text);font-family:var(--font-mono);max-width:100%}
+.field input{width:7.5em;padding:6px 10px;border-radius:calc(var(--radius) / 2);border:1px solid var(--panel-line);background:var(--bg);color:var(--text);font-family:var(--font-mono)}
+.app[data-variant="terminal"] .field select,.app[data-variant="terminal"] .field input{background:var(--nord0);color:var(--nord6);border-color:var(--nord3)}
+.field select:focus-visible,.field input:focus-visible,input[type=checkbox]:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--accent-soft);outline-offset:2px}
+.trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.party{border:1px solid var(--panel-line);border-radius:calc(var(--radius) - 4px);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.party h3{margin:0;font-size:1.05rem;display:flex;gap:8px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.party.alice .dot{background:var(--nord15)} .party.bob .dot{background:var(--nord7)} .party.eve .dot{background:var(--nord11)}
+.party.eve{border-style:dashed}
+.calc{font-family:var(--font-mono);font-size:.88rem;line-height:1.5;overflow-wrap:anywhere}
+.calc b{font-weight:600}
+.big{font-family:var(--font-mono);font-size:1.5rem;font-weight:600}
+.key{display:inline-block;padding:1px 10px;border-radius:999px;background:var(--nord13);color:var(--nord0);font-family:var(--font-mono);font-weight:600}
+.order{border-left:4px solid var(--panel-line);padding:8px 0 8px 14px;margin:0 0 18px;display:flex;flex-direction:column;gap:4px;font-size:.95rem;overflow-wrap:anywhere}
+.order.ok{border-color:var(--nord14)} .order.warn{border-color:var(--nord13)} .order.bad{border-color:var(--nord11)}
+.err{color:var(--bad);font-weight:600;margin-top:10px}
+.note{margin-top:14px;font-size:.95rem}
+
+/* Teil 2 */
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--bg);padding:7px 16px;border-radius:calc(var(--radius) / 2);cursor:pointer;font-weight:600}
+.app[data-variant="terminal"] .btn{background:var(--nord8);border-color:var(--nord8);color:var(--nord0);font-family:var(--font-mono);font-weight:400}
+.btn.ghost{background:transparent;color:var(--panel-fg);border-color:var(--panel-line)}
+.app[data-variant="terminal"] .btn.ghost{background:transparent;color:var(--nord6);border-color:var(--nord3)}
+.btn:disabled{opacity:.5;cursor:default}
+.speed{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.status{font-family:var(--font-mono);font-size:.92rem;padding:10px 12px;border-radius:calc(var(--radius) / 2);background:var(--bg);color:var(--text);margin-bottom:14px;min-height:2.6em;overflow-wrap:anywhere}
+.app[data-variant="terminal"] .status{background:var(--nord0);color:var(--nord6)}
+.status.hit{background:var(--nord14);color:var(--nord0)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:4px;max-height:340px;overflow:auto;padding:2px}
+.cell{border:1px solid var(--panel-line);border-radius:4px;padding:3px 0 2px;text-align:center;font-family:var(--font-mono);font-size:.82rem;line-height:1.25;font-variant-numeric:tabular-nums}
+.cell small{display:block;font-size:.68rem;color:var(--panel-muted)}
+.cell.tried{background:color-mix(in srgb,var(--nord9) 28%,transparent)}
+.cell.now{outline:2px solid var(--nord13)}
+.cell.found{background:var(--nord14);color:var(--nord0);border-color:var(--nord14)}
+.cell.found small{color:var(--nord0)}
+.counter{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:12px}
+.counter div{display:flex;flex-direction:column;min-width:0}
+.counter .big{font-size:1.3rem;font-variant-numeric:tabular-nums}
+
+.plotbox{margin-top:22px}
+.plot{width:100%;height:auto;display:block}
+.plot .axis{stroke:var(--panel-muted);stroke-width:1}
+.plot text{fill:var(--panel-muted);font-family:var(--font-mono);font-size:11px}
+.plot .pt{fill:var(--accent)}
+.app[data-variant="terminal"] .plot .pt,.plot-dark .pt{fill:var(--nord8)}
+.plot .target{fill:var(--nord11)}
+.plot .curve{fill:none;stroke:var(--nord14);stroke-width:2}
+
+/* Teil 3 */
+.levels{display:flex;flex-direction:column;gap:10px}
+.level{display:grid;grid-template-columns:5.5rem minmax(0,1fr) auto;gap:6px 16px;align-items:start;padding:14px 16px;border:1px solid var(--panel-line);border-radius:calc(var(--radius) - 4px)}
+.level .digits{font-family:var(--font-mono);font-size:1.6rem;font-weight:600;line-height:1}
+.level .digits span{display:block;font-size:.72rem;font-weight:400;color:var(--panel-muted);margin-top:4px;font-family:var(--label-font)}
+.pval{font-family:var(--font-mono);font-size:.8rem;overflow-wrap:anywhere;color:var(--panel-muted);max-height:4.6em;overflow:auto}
+.res{grid-column:2 / 4;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px;font-size:.92rem}
+.res .lbl{display:block}
+.res .v{font-family:var(--font-mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.v.ok::before{content:"✓ ";color:var(--ok)}
+.v.bad::before{content:"✗ ";color:var(--bad)}
+.tag{display:inline-block;font-size:.75rem;padding:1px 8px;border-radius:999px;font-weight:600;color:var(--nord0)}
+.tag.ok{background:var(--nord14)} .tag.mid{background:var(--nord13)} .tag.bad{background:var(--nord11)}
+.compare{margin-top:16px;font-size:.95rem}
+
+/* Übungen */
+.tasks{display:flex;flex-direction:column;gap:12px}
+.task{border:1px solid var(--surface-2);border-radius:var(--radius);padding:14px 18px}
+.task p{margin:0 0 8px}
+details summary{cursor:pointer;color:var(--accent);font-weight:600}
+details[open] summary{margin-bottom:8px}
+.sol{font-family:var(--font-mono);font-size:.9rem;background:var(--surface);padding:10px 12px;border-radius:calc(var(--radius) / 2);overflow-x:auto;white-space:pre}
+.merke{border-left:4px solid var(--nord15);padding:4px 0 4px 16px;margin-top:20px;max-width:68ch}
+
+@media (max-width:700px){
+  .trio{grid-template-columns:1fr}
+  .level{grid-template-columns:4.5rem minmax(0,1fr)}
+  .level .go{grid-column:1 / 3}
+  .res{grid-column:1 / 3}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="app" id="app" data-variant="klar">
+<header class="head">
+  <div class="wrap">
+    <div class="head-row">
+      <span class="kicker">Informatik · Kryptografie</span>
+      <div class="switch" role="group" aria-label="Darstellung">
+        <button type="button" id="vKlar" aria-pressed="true">Klar</button>
+        <button type="button" id="vTerm" aria-pressed="false">Terminal</button>
+      </div>
+    </div>
+    <h1>Diffie-Hellman und der diskrete Logarithmus</h1>
+    <p>Zwei Personen vereinbaren über einen abgehörten Kanal einen geheimen Schlüssel. Das funktioniert, weil eine Rechnung in die eine Richtung leicht ist und in die andere praktisch unmöglich.</p>
+    <div class="eq"><span class="easy">gᵃ mod p = A</span><span>leicht</span><span class="hard">A → a ?</span><span>schwer</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- Teil 1 -->
+<section>
+  <h2><span class="step">Teil 1</span>Der Schlüsseltausch</h2>
+  <p class="lead">Wählen Sie die Primzahl p aus der Liste (sie enthält nur geprüfte Primzahlen), eine Basis g und die beiden Geheimzahlen. Bei grossen p helfen zufällige Geheimzahlen. Achten Sie auf die Ordnung von g: Probieren Sie zum Beispiel p = 17 mit g = 4. Alles, was in der mittleren Spalte steht, sieht auch die Lauscherin Eve.</p>
+  <div class="panel">
+    <div class="public">
+      <div class="field"><label class="lbl" for="inP">Primzahl p</label><select id="inP"></select></div>
+      <div class="field"><label class="lbl" for="inG">Basis g</label><input id="inG" type="text" inputmode="numeric" autocomplete="off" value="5"></div>
+      <div class="field"><label class="lbl" for="inA">Geheimzahl a (Alice)</label><input id="inA" type="text" inputmode="numeric" autocomplete="off" value="6"></div>
+      <div class="field"><label class="lbl" for="inB">Geheimzahl b (Bob)</label><input id="inB" type="text" inputmode="numeric" autocomplete="off" value="15"></div>
+      <button class="btn ghost" id="bGen" type="button">Erzeuger als g wählen</button>
+      <button class="btn ghost" id="bRand" type="button">Zufällige Geheimzahlen</button>
+    </div>
+    <div class="order" id="ord" hidden></div>
+    <div class="trio">
+      <div class="party alice"><h3><span class="dot"></span>Alice</h3><div class="calc" id="cAlice"></div></div>
+      <div class="party eve"><h3><span class="dot"></span>Öffentlich (Eve sieht)</h3><div class="calc" id="cPub"></div></div>
+      <div class="party bob"><h3><span class="dot"></span>Bob</h3><div class="calc" id="cBob"></div></div>
+    </div>
+    <div class="err" id="err1" hidden></div>
+    <p class="note muted" id="why1"></p>
+  </div>
+</section>
+
+<!-- Teil 2 -->
+<section>
+  <h2><span class="step">Teil 2</span>Eve greift an</h2>
+  <p class="lead">Eve kennt p, g und A. Sie sucht ein x mit gˣ mod p = A. Eine Abkürzung gibt es nicht, also probiert sie x = 1, 2, 3, … der Reihe nach durch. Die Zahlen stammen aus Teil 1. Mit «Turbo» probiert der Browser so schnell er kann und zeigt, wie lange es im schlimmsten Fall noch dauert.</p>
+  <div class="panel">
+    <div class="controls">
+      <button class="btn" id="bRun" type="button">Angriff starten</button>
+      <button class="btn ghost" id="bStep" type="button">Ein Schritt</button>
+      <button class="btn ghost" id="bReset" type="button">Zurücksetzen</button>
+      <label class="speed" for="inTurbo"><input id="inTurbo" type="checkbox"><span class="lbl">Turbo</span></label>
+      <label class="speed" for="inSpeed"><span class="lbl">Tempo</span><input id="inSpeed" type="range" min="1" max="60" value="8"></label>
+    </div>
+    <div class="counter">
+      <div><span class="lbl">Versuche</span><span class="big" id="nTry">0</span></div>
+      <div><span class="lbl">Gesucht: A</span><span class="big" id="nTarget">8</span></div>
+      <div><span class="lbl">Verschiedene Werte (Ordnung von g)</span><span class="big" id="nSpace">22</span></div>
+    </div>
+    <div class="status" id="status" aria-live="polite">Bereit. Eve beginnt bei x = 1.</div>
+    <p class="muted" id="gridNote" style="margin:0 0 8px;font-size:.92rem" hidden></p>
+    <div class="grid" id="grid"></div>
+
+    <div class="plotbox">
+      <span class="lbl">Warum Raten nicht hilft</span>
+      <p class="muted" style="margin:4px 0 8px;font-size:.92rem">Blaue Punkte: gˣ mod p für jedes x. Grün zum Vergleich gˣ ohne Modulo auf logarithmischer Skala: eine Gerade, an der man sich herantasten könnte. Modulo p springen die Werte ohne Ordnung. Der rote Punkt ist das gesuchte A. Bei grossen p zeigt das Diagramm nur die ersten 400 Werte.</p>
+      <svg class="plot" id="plot" viewBox="0 0 640 260" role="img" aria-label="Streudiagramm von g hoch x modulo p"></svg>
+    </div>
+  </div>
+</section>
+
+<!-- Teil 3 -->
+<section>
+  <h2><span class="step">Teil 3</span>Von lösbar zu unlösbar</h2>
+  <p class="lead">Jetzt wächst p in Stufen. Für jede Stufe rechnet Ihr Browser echt: einmal vorwärts (A = gᵃ mod p mit einer zufälligen Geheimzahl a) und dann Eves Angriff. Bei kleinen p läuft der Angriff bis zum Ende, bei grossen p misst der Browser eine Sekunde lang, wie schnell er probiert, und rechnet hoch.</p>
+  <div class="panel">
+    <div class="controls">
+      <button class="btn" id="bAll" type="button">Alle Stufen durchrechnen</button>
+      <span class="muted" style="font-size:.9rem">Basis g = 5 · alle p sind geprüfte Primzahlen</span>
+    </div>
+    <div class="levels" id="levels"></div>
+    <p class="compare muted">Zum Vergleich: Das Universum ist etwa 1,38 · 10¹⁰ Jahre alt. Im Internet (z. B. HTTPS) werden für Diffie-Hellman Primzahlen mit rund 617 Stellen (2048 Bit) verwendet.</p>
+  </div>
+  <div class="merke">
+    <strong>Merke:</strong> Die Vorwärtsrechnung wird mit jeder Stufe nur wenig langsamer, weil Square-and-Multiply nur so viele Schritte braucht, wie der Exponent Stellen hat. Der Angriff muss im Mittel p / 2 Werte durchprobieren. Jede zusätzliche Dezimalstelle verzehnfacht also seine Dauer.
+  </div>
+</section>
+
+<!-- Übungen -->
+<section>
+  <h2><span class="step">Übungen</span>Selbst rechnen</h2>
+  <p class="lead">Lösen Sie die Aufgaben von Hand. Tipp: Multiplizieren Sie das letzte Resultat mit g und reduzieren Sie sofort mod p.</p>
+  <div class="tasks">
+    <div class="task">
+      <p><strong>1.</strong> Finde x mit <code>2ˣ mod 17 = 9</code>.</p>
+      <details><summary>Lösung zeigen</summary><div class="sol">x:      1  2  3   4   5   6  7
+2ˣ mod 17: 2  4  8  16  15  13  9   → x = 7
+Kontrolle: 2⁷ = 128 = 7·17 + 9</div></details>
+    </div>
+    <div class="task">
+      <p><strong>2.</strong> Finde x mit <code>3ˣ mod 7 = 6</code>. Welche weiteren x funktionieren auch?</p>
+      <details><summary>Lösung zeigen</summary><div class="sol">x:      1  2  3
+3ˣ mod 7: 3  2  6   → x = 3
+3⁶ mod 7 = 1, die Folge wiederholt sich mit Periode 6.
+Also auch x = 9, 15, 21, …</div></details>
+    </div>
+    <div class="task">
+      <p><strong>3.</strong> Alice und Bob verwenden p = 11 und g = 2. Alice wählt a = 3, Bob wählt b = 4. Berechne A, B und den gemeinsamen Schlüssel K von beiden Seiten.</p>
+      <details><summary>Lösung zeigen</summary><div class="sol">A = 2³ mod 11 = 8
+B = 2⁴ mod 11 = 16 mod 11 = 5
+Alice: K = 5³ mod 11 = 125 mod 11 = 4
+Bob:   K = 8⁴ mod 11 = 4096 mod 11 = 4   ✓</div></details>
+    </div>
+    <div class="task">
+      <p><strong>4.</strong> Bestimme die Ordnung von 4 modulo 17. Wie viele Versuche braucht Eve bei g = 4 höchstens? Ist 3 die bessere Basis?</p>
+      <details><summary>Lösung zeigen</summary><div class="sol">x:        1   2   3  4
+4ˣ mod 17: 4  16  13  1   → Ordnung 4, Eve braucht höchstens 4 Versuche.
+3 hat modulo 17 die Ordnung 16 (Erzeuger): 3 ist besser.</div></details>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+const PRIMES = {"20": "59198212760267787527", "40": "5819195397878528404321457794260970015379", "100": "9436527382450843031474259504299660133727136469911201271761342574622984933051674364867491634441771199", "617": "83050841501984410084269275616172054511813304662253247999182350511202277610014292185484846141617616654406964544401702696408137250854385716486490616733973719245490433820011389140274012130111320862428387725077086507162852814174551103879606981133078357846892155349835862925385079519660128039235614040741039096595678893424389276136295370374937651988133442375802835915785856819018027006097306487246013896222832618745093509300682620178902094130837559349736068558101581036050957124910515026763545252543536657235296557896204404416640420478815919491474955907178740046279587831399486967869895518277927368021636919352577424139923"};
+
+/* ---------- Hilfsfunktionen ---------- */
+const $ = id => document.getElementById(id);
+function isPrime(n){ if(n<2||n%1) return false; for(let i=2;i*i<=n;i++) if(n%i===0) return false; return true; }
+function powmod(b,e,m){ let r=1; b%=m; while(e>0){ if(e&1) r=r*b%m; b=b*b%m; e=Math.floor(e/2);} return r; }
+function bpow(b,e,m){ let r=1n; b%=m; while(e>0n){ if(e&1n) r=r*b%m; b=b*b%m; e>>=1n;} return r; }
+function fmt(n){ return Number(n).toLocaleString('de-CH'); }
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'};
+const sup = n => String(n).split('').map(c=>SUP[c]||c).join('');
+
+/* ---------- Variante ---------- */
+const app=$('app');
+function setVariant(v){
+  app.dataset.variant=v;
+  $('vKlar').setAttribute('aria-pressed', v==='klar');
+  $('vTerm').setAttribute('aria-pressed', v==='terminal');
+  try{ localStorage.setItem('dh-variant',v);}catch(e){}
+}
+$('vKlar').onclick=()=>setVariant('klar');
+$('vTerm').onclick=()=>setVariant('terminal');
+try{ const v=localStorage.getItem('dh-variant'); if(v==='terminal'||v==='klar') setVariant(v);}catch(e){}
+
+/* ---------- Teil 1 ---------- */
+const PLIST = ["5", "7", "11", "13", "17", "19", "23", "29", "31", "37", "41", "43", "47", "53", "59", "61", "67", "71", "73", "79", "83", "89", "97", "101", "127", "199", "251", "307", "401", "467", "499", "1009", "10007", "100003", "1000003", "10000019", "100000007", "1000000007", "10000000019", "100000000003", "1000000000039", "1000000000000037", "1000000000000000003", "59198212760267787527", "5819195397878528404321457794260970015379", "9436527382450843031474259504299660133727136469911201271761342574622984933051674364867491634441771199", "83050841501984410084269275616172054511813304662253247999182350511202277610014292185484846141617616654406964544401702696408137250854385716486490616733973719245490433820011389140274012130111320862428387725077086507162852814174551103879606981133078357846892155349835862925385079519660128039235614040741039096595678893424389276136295370374937651988133442375802835915785856819018027006097306487246013896222832618745093509300682620178902094130837559349736068558101581036050957124910515026763545252543536657235296557896204404416640420478815919491474955907178740046279587831399486967869895518277927368021636919352577424139923"];
+const sel = $('inP');
+function shortBig(n){ const s=n.toString(); return s.length<=15 ? Number(n).toLocaleString('de-CH') : s.slice(0,6)+'…'+s.slice(-4); }
+function optLabel(s){ return s.length<=15 ? Number(s).toLocaleString('de-CH')+(s.length>3?` (${s.length} Stellen)`:'') : `${s.slice(0,6)}…${s.slice(-4)} (${s.length} Stellen)`; }
+(function fillSelect(){
+  const small=PLIST.filter(s=>s.length<=3), large=PLIST.filter(s=>s.length>3);
+  const opts=a=>a.map(s=>`<option value="${s}">${optLabel(s)}</option>`).join('');
+  sel.innerHTML=`<optgroup label="Klein: Angriff im Raster sichtbar">${opts(small)}</optgroup><optgroup label="Gross: Angriff dauert immer länger">${opts(large)}</optgroup>`;
+  sel.value='23';
+})();
+function bigIn(id){ const t=$(id).value.trim().replace(/[\s'’]/g,''); return /^\d+$/.test(t) ? BigInt(t) : null; }
+function log10Big(n){ if(n<=0n) return -Infinity; const s=n.toString(); return s.length-1+Math.log10(Number('0.'+s.slice(0,15))*10); }
+
+/* ---------- Ordnung von g ---------- */
+const FACT = {"5": {"2": 2}, "7": {"2": 1, "3": 1}, "11": {"2": 1, "5": 1}, "13": {"2": 2, "3": 1}, "17": {"2": 4}, "19": {"2": 1, "3": 2}, "23": {"2": 1, "11": 1}, "29": {"2": 2, "7": 1}, "31": {"2": 1, "3": 1, "5": 1}, "37": {"2": 2, "3": 2}, "41": {"2": 3, "5": 1}, "43": {"2": 1, "3": 1, "7": 1}, "47": {"2": 1, "23": 1}, "53": {"2": 2, "13": 1}, "59": {"2": 1, "29": 1}, "61": {"2": 2, "3": 1, "5": 1}, "67": {"2": 1, "3": 1, "11": 1}, "71": {"2": 1, "5": 1, "7": 1}, "73": {"2": 3, "3": 2}, "79": {"2": 1, "3": 1, "13": 1}, "83": {"2": 1, "41": 1}, "89": {"2": 3, "11": 1}, "97": {"2": 5, "3": 1}, "101": {"2": 2, "5": 2}, "127": {"2": 1, "3": 2, "7": 1}, "199": {"2": 1, "3": 2, "11": 1}, "251": {"2": 1, "5": 3}, "307": {"2": 1, "3": 2, "17": 1}, "401": {"2": 4, "5": 2}, "467": {"2": 1, "233": 1}, "499": {"2": 1, "3": 1, "83": 1}, "1009": {"2": 4, "3": 2, "7": 1}, "10007": {"2": 1, "5003": 1}, "100003": {"2": 1, "3": 1, "7": 1, "2381": 1}, "1000003": {"2": 1, "3": 1, "166667": 1}, "10000019": {"2": 1, "7": 2, "67": 1, "1523": 1}, "100000007": {"2": 1, "491": 1, "101833": 1}, "1000000007": {"2": 1, "500000003": 1}, "10000000019": {"2": 1, "131": 1, "521": 1, "73259": 1}, "100000000003": {"2": 1, "3": 1, "7": 1, "1543": 1, "1543067": 1}, "1000000000039": {"2": 1, "3": 1, "13": 1, "17": 1, "29": 1, "26005097": 1}, "1000000000000037": {"2": 2, "7": 1, "37": 1, "965250965251": 1}, "1000000000000000003": {"2": 1, "3": 1, "17": 1, "131": 1, "1427": 1, "52445056723": 1}, "59198212760267787527": {"2": 1, "29599106380133893763": 1}, "5819195397878528404321457794260970015379": {"2": 1, "2909597698939264202160728897130485007689": 1}, "9436527382450843031474259504299660133727136469911201271761342574622984933051674364867491634441771199": {"2": 1, "4718263691225421515737129752149830066863568234955600635880671287311492466525837182433745817220885599": 1}, "83050841501984410084269275616172054511813304662253247999182350511202277610014292185484846141617616654406964544401702696408137250854385716486490616733973719245490433820011389140274012130111320862428387725077086507162852814174551103879606981133078357846892155349835862925385079519660128039235614040741039096595678893424389276136295370374937651988133442375802835915785856819018027006097306487246013896222832618745093509300682620178902094130837559349736068558101581036050957124910515026763545252543536657235296557896204404416640420478815919491474955907178740046279587831399486967869895518277927368021636919352577424139923": {"2": 1, "41525420750992205042134637808086027255906652331126623999591175255601138805007146092742423070808808327203482272200851348204068625427192858243245308366986859622745216910005694570137006065055660431214193862538543253581426407087275551939803490566539178923446077674917931462692539759830064019617807020370519548297839446712194638068147685187468825994066721187901417957892928409509013503048653243623006948111416309372546754650341310089451047065418779674868034279050790518025478562455257513381772626271768328617648278948102202208320210239407959745737477953589370023139793915699743483934947759138963684010818459676288712069961": 1}};   // Primfaktorzerlegung von p − 1 für jedes p der Liste
+function factorsOf(p){ return Object.entries(FACT[p.toString()]).map(([q,e])=>[BigInt(q),e]); }
+function orderOf(g,p){
+  let n=p-1n;
+  for(const [q,e] of factorsOf(p)){
+    for(let i=0;i<e;i++){ if(n%q===0n && bpow(g,n/q,p)===1n) n/=q; else break; }
+  }
+  return n;
+}
+function factorize(n,p){       // Zerlegung von n mit den Primfaktoren von p − 1
+  const out=[];
+  for(const [q] of factorsOf(p)){ let e=0; while(n%q===0n){ n/=q; e++; } if(e) out.push([q,e]); }
+  return out;
+}
+function fmtFact(f){ return f.length ? f.map(([q,e])=>shortBig(q)+(e>1?sup(e):'')).join(' · ') : '1'; }
+function isGenerator(g,p){ return factorsOf(p).every(([q])=>bpow(g,(p-1n)/q,p)!==1n); }
+function renderOrder(){
+  const box=$('ord');
+  if(!S.ok){ box.hidden=true; return; }
+  box.hidden=false;
+  const n=S.p-1n, o=S.ord, f=factorize(o,S.p);
+  const ph=f.reduce((s,[q,e])=>s+BigInt(e)*q,0n);           // Aufwand Pohlig-Hellman (Probieren je Primfaktor)
+  const pct=Number(o*1000n/n)/10;
+  let cls, head;
+  if(o===n){ cls='ok'; head=`✓ g = ${S.g} ist ein Erzeuger: gˣ durchläuft alle ${shortBig(n)} möglichen Werte.`; }
+  else if(o<=20n){ cls='bad'; head=`✗ g = ${S.g} erzeugt nur ${o} verschiedene Werte. Eve braucht höchstens ${o} Versuche, egal wie gross p ist.`; }
+  else { cls='warn'; head=`⚠ g = ${S.g} erzeugt nur ${shortBig(o)} von ${shortBig(n)} möglichen Werten (${pct.toLocaleString('de-CH')} %). Eve muss nur diese durchsuchen.`; }
+  let phLine='';
+  if(o>20n){
+    if(ph*10n<o){
+      if(cls==='ok') cls='warn';
+      phLine=`⚠ Die Ordnung ${shortBig(o)} = ${fmtFact(f)} hat nur kleine Primfaktoren. Mit Pohlig-Hellman genügen etwa ${shortBig(ph)} Versuche statt ${shortBig(o)}. Deshalb verwendet man sichere Primzahlen.`;
+    } else if(f[f.length-1][0]*2n>=o){
+      phLine=`Ordnung ${shortBig(o)} = ${fmtFact(f)}. Sie enthält einen grossen Primfaktor, darum hilft auch Pohlig-Hellman kaum.`;
+    } else {
+      phLine=`Ordnung ${shortBig(o)} = ${fmtFact(f)}. Mit Pohlig-Hellman genügen etwa ${shortBig(ph)} Versuche statt ${shortBig(o)}.`;
+    }
+  }
+  box.className='order '+cls;
+  box.innerHTML=`<span class="lbl">Ordnung von g</span><div>${head}</div>${phLine?`<div class="muted">${phLine}</div>`:''}<div class="muted">p − 1 = ${fmtFact(factorsOf(S.p))}</div>`;
+}
+function pickGenerator(){
+  const p=BigInt(sel.value);
+  for(let g=2n; g<p; g++){ if(isGenerator(g,p)){ $('inG').value=g.toString(); break; } }
+  readInputs();
+}
+
+let S={ok:false};
+function readInputs(){
+  const p=BigInt(sel.value), g=bigIn('inG'), a=bigIn('inA'), b=bigIn('inB');
+  const e=$('err1');
+  let msg='';
+  if(g===null||g<2n||g>=p) msg='g muss eine ganze Zahl zwischen 2 und p − 1 sein.';
+  else if(a===null||a<1n||a>p-2n) msg='a muss eine ganze Zahl zwischen 1 und p − 2 sein.';
+  else if(b===null||b<1n||b>p-2n) msg='b muss eine ganze Zahl zwischen 1 und p − 2 sein.';
+  e.hidden=!msg; e.textContent=msg ? '✗ '+msg : '';
+  if(msg){ S={ok:false}; renderOrder(); return; }
+  const A=bpow(g,a,p), B=bpow(g,b,p), K=bpow(B,a,p), K2=bpow(A,b,p);
+  S={p,g,a,b,A,B,K,K2,ok:true,ord:orderOf(g,p)};
+  renderOrder();
+  $('cAlice').innerHTML=`geheim: a = <b>${a}</b><br>A = ${g}${sup(a)} mod p<br><span class="big">A = ${A}</span><br><br>erhält B<br>K = B${sup(a)} mod p<br>K = <span class="key">${K}</span>`;
+  $('cBob').innerHTML=`geheim: b = <b>${b}</b><br>B = ${g}${sup(b)} mod p<br><span class="big">B = ${B}</span><br><br>erhält A<br>K = A${sup(b)} mod p<br>K = <span class="key">${K2}</span>`;
+  $('cPub').innerHTML=`p = <b>${p}</b><br>g = <b>${g}</b><br><br>A = <b>${A}</b> (von Alice)<br>B = <b>${B}</b> (von Bob)<br><br>K = <b>?</b>`;
+  $('why1').textContent=`Beide erhalten denselben Schlüssel, weil (g${sup('b')})${sup('a')} = (g${sup('a')})${sup('b')} = g${sup('ab')}. Eve kennt nur p, g, A und B. Um K zu berechnen, bräuchte sie a oder b.`;
+  resetAttack();
+}
+function randomSecrets(){
+  const p=BigInt(sel.value);
+  $('inA').value=randBelow(p).toString();
+  $('inB').value=randBelow(p).toString();
+}
+sel.addEventListener('change',()=>{
+  const p=BigInt(sel.value), g=bigIn('inG'), a=bigIn('inA'), b=bigIn('inB');
+  if(g===null||g>=p) $('inG').value='2';
+  if(p>500n||a===null||b===null||a>p-2n||b>p-2n||a<1n||b<1n) randomSecrets();
+  readInputs();
+});
+['inG','inA','inB'].forEach(id=>$(id).addEventListener('input',readInputs));
+$('bGen').onclick=pickGenerator;
+$('bRand').onclick=()=>{ randomSecrets(); readInputs(); };
+
+/* ---------- Teil 2 ---------- */
+const GRID_MAX=500n, WINDOW=60;
+let atk={timer:null,raf:null};
+function resetAttack(){
+  stopRun();
+  atk={x:0n,v:1n,done:false,timer:null,raf:null,full:false,runStart:0,runX:0n};
+  $('nTry').textContent='0';
+  const grid=$('grid'); grid.innerHTML='';
+  if(!S.ok) return;
+  const n=S.p-1n;
+  atk.full = n<=GRID_MAX;
+  $('nTarget').textContent=shortBig(S.A);
+  $('nSpace').textContent=shortBig(S.ord);
+  $('status').className='status';
+  $('status').textContent=`Bereit. Eve sucht x mit ${S.g}ˣ mod p = ${shortBig(S.A)} und beginnt bei x = 1.`;
+  $('gridNote').textContent = atk.full ? '' : `Bei so grossem p zeigt das Raster nur die letzten ${WINDOW} Versuche. g erzeugt ${shortBig(S.ord)} verschiedene Werte.`;
+  $('gridNote').hidden = atk.full;
+  if(atk.full){
+    for(let x=1n;x<=n;x++){
+      const c=document.createElement('div'); c.className='cell'; c.id='c'+x;
+      c.innerHTML=`<small>x=${x}</small>?`; grid.appendChild(c);
+    }
+  }
+  $('bStep').disabled=false; $('bRun').disabled=false; $('bRun').textContent='Angriff starten';
+  drawPlot();
+}
+function advance(){            // ein Versuch; true = fertig
+  if(atk.done) return true;
+  if(atk.x>=S.p-1n){ finish(false); return true; }
+  atk.x++; atk.v=atk.v*S.g%S.p;
+  if(atk.v===S.A){ finish(true); return true; }
+  return false;
+}
+function showCell(){
+  if(atk.x===0n) return;
+  const grid=$('grid');
+  const prev=grid.querySelector('.cell.now'); if(prev) prev.classList.remove('now');
+  let c;
+  if(atk.full) c=$('c'+atk.x);
+  else {
+    c=document.createElement('div'); c.className='cell'; grid.appendChild(c);
+    while(grid.children.length>WINDOW) grid.firstChild.remove();
+  }
+  const xs=atk.x.toString(), vs=atk.v.toString();
+  c.title=`x = ${xs}, Wert = ${vs}`;
+  c.innerHTML=`<small>${xs.length>6?'…'+xs.slice(-5):'x='+xs}</small>${vs.length>6?vs.slice(0,4)+'…':vs}`;
+  c.classList.add('tried','now');
+  if(atk.v===S.A && atk.done) c.classList.add('found');
+  if(atk.full) c.scrollIntoView({block:'nearest'});
+  $('nTry').textContent=shortBig(atk.x);
+}
+function step(){
+  const done=advance(); showCell();
+  if(!done) $('status').textContent=`x = ${shortBig(atk.x)}: ${S.g}^${shortBig(atk.x)} mod p = ${shortBig(atk.v)} ≠ ${shortBig(S.A)}`;
+}
+function turboFrame(){
+  const t=performance.now(); let done=false;
+  while(performance.now()-t<30){
+    for(let k=0;k<2000;k++){ if(advance()){done=true;break;} }
+    if(done) break;
+  }
+  showCell();
+  if(done) return;
+  const el=(performance.now()-atk.runStart)/1000;
+  const rate=Number(atk.x-atk.runX)/Math.max(el,1e-3);
+  const rest=S.ord>atk.x?S.ord-atk.x:0n;
+  const pct=Number(atk.x*100000n/S.ord)/1000;
+  $('status').textContent=`Turbo: ${Math.round(rate).toLocaleString('de-CH')} Versuche pro Sekunde · durchsucht: ${pct.toLocaleString('de-CH',{maximumFractionDigits:3})} % · im schlimmsten Fall noch ${fmtTime(log10Big(rest)-Math.log10(Math.max(rate,1)))}`;
+  atk.raf=requestAnimationFrame(turboFrame);
+}
+function finish(found){
+  atk.done=true; stopRun();
+  $('bStep').disabled=true; $('bRun').disabled=true;
+  const st=$('status');
+  if(found){
+    const K=bpow(S.B,atk.x,S.p);
+    st.className='status hit';
+    st.textContent=`✓ Gefunden nach ${shortBig(atk.x)} Versuchen: x = ${atk.x}. Eve rechnet K = B^${atk.x} mod p = ${K}.`+(atk.x!==S.a?` (Alice hatte a = ${S.a} gewählt, x = ${atk.x} liefert trotzdem denselben Schlüssel.)`:'');
+  } else st.textContent='Kein Treffer gefunden.';
+}
+function stopRun(){
+  if(atk.timer){ clearInterval(atk.timer); atk.timer=null; }
+  if(atk.raf){ cancelAnimationFrame(atk.raf); atk.raf=null; }
+  $('bRun').textContent='Angriff starten';
+}
+$('bStep').onclick=step;
+$('bReset').onclick=resetAttack;
+$('bRun').onclick=()=>{
+  if(atk.timer||atk.raf){ stopRun(); return; }
+  if($('inTurbo').checked){ atk.runStart=performance.now(); atk.runX=atk.x; atk.raf=requestAnimationFrame(turboFrame); }
+  else atk.timer=setInterval(step, Math.round(1000/+$('inSpeed').value));
+  $('bRun').textContent='Pause';
+};
+$('inSpeed').addEventListener('input',()=>{ if(atk.timer){ clearInterval(atk.timer); atk.timer=setInterval(step, Math.round(1000/+$('inSpeed').value)); } });
+$('inTurbo').addEventListener('change',()=>{ if(atk.timer||atk.raf){ stopRun(); $('bRun').click(); } });
+
+function drawPlot(){
+  const svg=$('plot'), W=640,H=260,L=40,R=12,T=12,B=30;
+  const n=S.p-1n, N=n>400n?400:Number(n);
+  const frac=v=>Number(v*10000n/n)/10000;
+  const sx=x=>L+(x-1)/Math.max(N-1,1)*(W-L-R), sy=f=>H-B-f*(H-T-B);
+  let h=`<line class="axis" x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}"/><line class="axis" x1="${L}" y1="${T}" x2="${L}" y2="${H-B}"/>`;
+  h+=`<text x="${L}" y="${H-10}">x = 1</text><text x="${W-R}" y="${H-10}" text-anchor="end">x = ${N}${n>400n?' (von '+shortBig(n)+')':''}</text>`;
+  h+=`<text x="${L-6}" y="${H-B}" text-anchor="end">0</text><text x="${L-6}" y="${T+8}" text-anchor="end">p−1</text>`;
+  h+=`<path class="curve" d="M${sx(1)} ${sy(1/N)} L${sx(N)} ${sy(1)}"/>`;
+  let v=1n; const r=N>200?1.6:N>60?2.4:3.4;
+  for(let x=1;x<=N;x++){ v=v*S.g%S.p; const t=v===S.A; h+=`<circle class="${t?'target':'pt'}" cx="${sx(x).toFixed(1)}" cy="${sy(frac(v)).toFixed(1)}" r="${t?r+2:r}"/>`; }
+  svg.innerHTML=h;
+}
+
+/* ---------- Teil 3 ---------- */
+const LEVELS=[
+  {d:2, p:23n},
+  {d:6, p:999983n},
+  ...Object.keys(PRIMES).map(k=>({d:+k,p:BigInt(PRIMES[k])}))
+];
+const G=5n;
+function randBelow(p){
+  const bytes=Math.ceil(p.toString(2).length/8)+8; const arr=new Uint8Array(bytes);
+  crypto.getRandomValues(arr); let r=0n; for(const b of arr) r=(r<<8n)|BigInt(b);
+  return 2n + r % (p-3n);
+}
+function fmtTime(log10s){
+  // log10s = log10(Sekunden)
+  const s=Math.pow(10,log10s);
+  if(log10s<0) return (s*1000).toLocaleString('de-CH',{maximumFractionDigits:1})+' ms';
+  if(s<60) return s.toLocaleString('de-CH',{maximumFractionDigits:1})+' s';
+  if(s<3600) return (s/60).toLocaleString('de-CH',{maximumFractionDigits:1})+' min';
+  if(s<86400) return (s/3600).toLocaleString('de-CH',{maximumFractionDigits:1})+' h';
+  const ly=log10s-Math.log10(31557600);
+  if(ly<0) return (s/86400).toLocaleString('de-CH',{maximumFractionDigits:1})+' Tage';
+  if(ly<6) return Math.pow(10,ly).toLocaleString('de-CH',{maximumFractionDigits:0})+' Jahre';
+  return '≈ 10'+sup(Math.round(ly))+' Jahre';
+}
+function verdict(log10s){
+  const ly=log10s-Math.log10(31557600);
+  if(log10s<1) return '<span class="tag ok">lösbar</span>';
+  if(ly<2) return '<span class="tag mid">mühsam</span>';
+  return '<span class="tag bad">unlösbar</span>';
+}
+function renderLevels(){
+  const box=$('levels');
+  box.innerHTML=LEVELS.map((L,i)=>`
+    <div class="level" id="lv${i}">
+      <div class="digits">${L.d}<span>Stellen</span></div>
+      <div style="min-width:0"><span class="lbl">p =</span><div class="pval">${L.p.toString()}</div></div>
+      <button class="btn ghost go" type="button" data-i="${i}">Rechnen</button>
+      <div class="res" id="res${i}"><span class="muted">Noch nicht gerechnet.</span></div>
+    </div>`).join('');
+  box.querySelectorAll('.go').forEach(b=>b.onclick=()=>runLevel(+b.dataset.i));
+}
+const wait=()=>new Promise(r=>setTimeout(r,0));
+let busy=false;
+async function runLevel(i){
+  const L=LEVELS[i], res=$('res'+i), btn=document.querySelector(`#lv${i} .go`);
+  btn.disabled=true;
+  const a=randBelow(L.p);
+  // Vorwärts: mehrmals messen für eine stabile Zeit
+  let t0=performance.now(), reps=0, A;
+  do{ A=bpow(G,a,L.p); reps++; } while(performance.now()-t0<30 && reps<2000);
+  const fwd=(performance.now()-t0)/reps;
+  res.innerHTML=`
+    <div><span class="lbl">Vorwärts (gemessen)</span><span class="v ok">${fwd<0.01?'< 0,01':fwd.toLocaleString('de-CH',{maximumFractionDigits:2})} ms</span></div>
+    <div><span class="lbl">Angriff</span><span class="v" id="att${i}">läuft …</span></div>
+    <div><span class="lbl">Bewertung</span><span id="ver${i}">…</span></div>`;
+  await wait();
+  // Angriff: probieren, max. 1 Sekunde
+  let v=1n, x=0n, found=false;
+  const start=performance.now(), limit=1000;
+  const maxX=L.p-1n;
+  while(true){
+    for(let k=0;k<20000;k++){
+      x++; v=v*G%L.p;
+      if(v===A){found=true;break;}
+      if(x>=maxX) break;
+    }
+    if(found||x>=maxX) break;
+    if(performance.now()-start>limit) break;
+    $('att'+i).textContent=`läuft … ${fmt(x)} Versuche`;
+    await wait();
+  }
+  const el=(performance.now()-start)/1000;
+  const att=$('att'+i);
+  if(found){
+    att.className='v ok';
+    att.textContent=`gefunden: x = ${x.toString()} nach ${fmt(x)} Versuchen in ${fmtTime(Math.log10(Math.max(el,1e-4)))}`;
+    $('ver'+i).innerHTML=verdict(Math.log10(Math.max(el,1e-4)));
+  } else {
+    const rate=Number(x)/el; // Versuche pro Sekunde
+    const log10p=L.p.toString().length-1+Math.log10(Number('0.'+L.p.toString().slice(0,15))*10);
+    const logBF=log10p-Math.log10(2)-Math.log10(rate);
+    const logBS=log10p/2-Math.log10(rate);
+    att.className='v bad';
+    att.innerHTML=`nicht gefunden: ${fmt(x)} Versuche in 1 s (${fmt(Math.round(rate))} pro Sekunde)<br>Hochgerechnet (p / 2 Versuche): <b>${fmtTime(logBF)}</b><br>Mit 1 Milliarde Computern: ${fmtTime(logBF-9)}<br>Mit Baby-Step Giant-Step (√p Schritte): ${fmtTime(logBS)}`;
+    $('ver'+i).innerHTML=verdict(logBF);
+  }
+  btn.disabled=false;
+}
+$('bAll').onclick=async()=>{
+  if(busy) return; busy=true; $('bAll').disabled=true;
+  for(let i=0;i<LEVELS.length;i++) await runLevel(i);
+  busy=false; $('bAll').disabled=false;
+};
+
+renderLevels();
+readInputs();
+</script>
+
+</body>
+</html>
