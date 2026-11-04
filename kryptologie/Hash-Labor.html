@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Entscheidungen: Einsatztyp Lernmaterial Informatik · Zielgruppe Einstieg Gymnasium (Sie-Form, Schweizer Rechtschreibung) · Tiefe Spielzeug-Hash plus echtes SHA-256 · Abschnitt «Wozu» mit Vergleichslabor und sechs Alltagsanwendungen · Vertiefte Anwendungen Passwörter/Salt und Datei-Integrität · Quiz mit sofortiger Rückmeldung, ohne Speicherung · Interaktivität voll, läuft nur im Browser, keine Daten gehen weg · keine Speicherung · Design: Variante «Technisch» gewählt (Polar Night, Seitenleiste, Festbreiten-Labels), Variante A und Umschalter entfernt -->
+<title>Hash-Labor</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root { padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+body { margin:0; }
+img { max-width:100%; }
+[hidden] { display:none !important; }
+
+/* Layout: ein Lernpfad von oben nach unten mit Seitenleiste, jede Stufe mit eigenem Labor. */
+:root {
+  --nord0:#2E3440; --nord1:#3B4252; --nord2:#434C5E; --nord3:#4C566A;
+  --nord4:#D8DEE9; --nord5:#E5E9F0; --nord6:#ECEFF4;
+  --nord7:#8FBCBB; --nord8:#88C0D0; --nord9:#81A1C1; --nord10:#5E81AC;
+  --nord11:#BF616A; --nord12:#D08770; --nord13:#EBCB8B; --nord14:#A3BE8C; --nord15:#B48EAD;
+
+  --bg:var(--nord6); --surface:var(--nord5); --surface-2:var(--nord4); --border:var(--nord4);
+  --text:var(--nord0); --text-muted:var(--nord3); --accent:var(--nord10); --bit-on:var(--nord10);
+  --field:var(--nord6); --hero-bg:var(--nord0); --hero-fg:var(--nord6);
+  --ok:var(--nord14); --warn:var(--nord13); --bad:var(--nord11); --merke:var(--nord15); --info:var(--nord8);
+  --tint-ok:rgba(163,190,140,.28); --tint-bad:rgba(191,97,106,.2); --tint-warn:rgba(235,203,139,.32); --tint-merke:rgba(180,142,173,.2);
+  --code-bg:var(--nord0); --code-fg:var(--nord6);
+
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --label-font:var(--font-mono);
+  --radius:4px; --radius-s:3px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:var(--nord0); --surface:var(--nord1); --surface-2:var(--nord2); --border:var(--nord2);
+    --text:var(--nord6); --text-muted:var(--nord4); --accent:var(--nord8); --bit-on:var(--nord8);
+    --field:var(--nord0); --hero-bg:var(--nord0); --hero-fg:var(--nord6);
+    --tint-ok:rgba(163,190,140,.2); --tint-bad:rgba(191,97,106,.28); --tint-warn:rgba(235,203,139,.16); --tint-merke:rgba(180,142,173,.24);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:var(--nord0); --surface:var(--nord1); --surface-2:var(--nord2); --border:var(--nord2);
+  --text:var(--nord6); --text-muted:var(--nord4); --accent:var(--nord8); --bit-on:var(--nord8);
+  --field:var(--nord0); --hero-bg:var(--nord0); --hero-fg:var(--nord6);
+  --tint-ok:rgba(163,190,140,.2); --tint-bad:rgba(191,97,106,.28); --tint-warn:rgba(235,203,139,.16); --tint-merke:rgba(180,142,173,.24);
+  color-scheme:dark;
+}
+
+html { scroll-behavior:smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } * { transition:none !important; } }
+body { background:var(--bg); color:var(--text); font-family:var(--font); font-size:17px; line-height:1.6; }
+body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--bg); }
+*, *::before, *::after { box-sizing:border-box; }
+h1,h2,h3 { text-wrap:balance; line-height:1.2; margin:0; }
+p { margin:0; max-width:70ch; }
+a { color:var(--accent); text-decoration:underline; }
+code, kbd, samp { font-family:var(--font-mono); font-size:.9em; }
+:not(pre) > code { background:var(--surface); padding:.08em .34em; border-radius:4px; overflow-wrap:anywhere; }
+.lab :not(pre) > code, td code { background:var(--surface-2); }
+button, input, textarea, select { font:inherit; color:inherit; }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.mono { font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+.muted { color:var(--text-muted); }
+.small { font-size:.88em; }
+
+/* Kopf */
+.hero { background:var(--hero-bg); color:var(--hero-fg); }
+.hero { --text:var(--nord6); --text-muted:var(--nord4); --surface:var(--nord1); --surface-2:var(--nord2); --border:var(--nord3); --accent:var(--nord8); --bit-on:var(--nord8); --field:var(--nord1); color-scheme:dark; }
+.hero-in { max-width:1180px; margin:0 auto; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); padding-block:20px 40px; display:grid; gap:24px; }
+.topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.brand { font-weight:600; font-family:var(--label-font); font-size:.9rem; color:var(--text-muted); }
+.hero-grid { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:32px; align-items:start; }
+.hero h1 { font-size:clamp(2.2rem,5.4vw,3.6rem); font-weight:700; letter-spacing:-.015em; margin-bottom:12px; }
+.hero h1 { font-family:var(--font-mono); font-weight:600; font-size:clamp(1.9rem,4.4vw,3rem); letter-spacing:-.03em; }
+.lede { font-size:1.12rem; margin-bottom:20px; }
+.field-label { display:block; font-weight:600; font-size:.88rem; margin-bottom:5px; font-family:var(--label-font); }
+input[type=text], textarea, select { width:100%; background:var(--field); border:1px solid var(--nord9); border-radius:var(--radius-s); padding:9px 11px; color:var(--text); }
+textarea { resize:vertical; min-height:74px; display:block; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.chip { background:transparent; border:1px solid var(--border); border-radius:99px; padding:3px 11px; font-size:.84rem; cursor:pointer; color:var(--text); }
+.chip { border-radius:3px; font-family:var(--font-mono); }
+.chip:hover { border-color:var(--accent); }
+.hashline { font-family:var(--font-mono); font-size:.95rem; line-height:1.5; overflow-wrap:anywhere; word-break:break-all; background:var(--surface); border-radius:var(--radius-s); padding:10px 12px; margin-top:6px; }
+.stats { display:flex; flex-wrap:wrap; gap:6px 22px; margin-top:12px; font-size:.86rem; color:var(--text-muted); }
+.stats b { color:var(--text); font-family:var(--font-mono); font-weight:600; }
+.fp figcaption { font-size:.84rem; color:var(--text-muted); margin-top:8px; }
+figure { margin:0; }
+.grid256 { display:grid; grid-template-columns:repeat(16,1fr); gap:2px; width:100%; max-width:300px; aspect-ratio:1; }
+.grid256 span { background:var(--surface-2); border-radius:1px; }
+.grid256 span.on { background:var(--bit-on); }
+.grid256 span.diff { background:var(--nord11); }
+
+/* Gerüst */
+.shell { max-width:1180px; margin:0 auto; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); }
+.toc { position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--bg); border-bottom:1px solid var(--border); padding-block:8px; overflow-x:auto; }
+.toc ol { display:flex; gap:4px; list-style:none; margin:0; padding:0; counter-reset:t; white-space:nowrap; }
+.toc li { counter-increment:t; }
+.toc a { display:block; padding:4px 10px; border-radius:var(--radius-s); color:var(--text); text-decoration:none; font-size:.9rem; font-family:var(--label-font); }
+.toc a:hover { background:var(--surface); }
+.toc a::before { content:counter(t,decimal-leading-zero) " "; color:var(--text-muted); }
+main { max-width:800px; margin:0 auto; counter-reset:s; }
+section { padding-block:44px 8px; display:grid; gap:16px; scroll-margin-top:50px; counter-increment:s; }
+section > * { min-width:0; }
+h2 { font-size:1.85rem; font-weight:700; }
+h2 { font-family:var(--font-mono); font-weight:600; font-size:1.5rem; letter-spacing:-.02em; }
+h2::before { content:counter(s,decimal-leading-zero); color:var(--accent); margin-right:.55em; }
+h3 { font-size:1.1rem; font-weight:600; }
+@media (min-width:1080px) {
+  .shell { display:grid; grid-template-columns:190px minmax(0,1fr); gap:44px; align-items:start; }
+  .toc { top:calc(env(safe-area-inset-top,0px) + 16px); margin-top:40px; border-bottom:0; border-left:1px solid var(--border); padding:0 0 0 8px; overflow:visible; }
+  .toc ol { flex-direction:column; white-space:normal; }
+  main { margin:0; max-width:820px; }
+}
+@media (max-width:760px) {
+  .hero-grid { grid-template-columns:minmax(0,1fr); }
+  .grid256 { max-width:220px; }
+}
+
+/* Labor */
+.lab { background:var(--surface); border-radius:var(--radius); overflow:hidden; }
+.lab > h3 { padding:16px 18px 0; }
+.lab { border:1px solid var(--border); }
+.lab > h3 { background:var(--nord0); color:var(--nord8); font-family:var(--font-mono); font-size:.84rem; font-weight:400; padding:8px 14px; }
+.lab > h3::before { content:"$ "; color:var(--nord4); }
+.lab-body { padding:12px 18px 18px; display:grid; gap:12px; }
+.lab-body > * { min-width:0; }
+.two { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.three { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+@media (max-width:560px) { .two { grid-template-columns:minmax(0,1fr); } .three { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.btnrow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.btn { background:var(--nord8); color:var(--nord0); border:1px solid var(--nord8); border-radius:var(--radius-s); padding:6px 14px; font-weight:600; cursor:pointer; font-size:.94rem; }
+.btn.alt { background:transparent; color:var(--text); border-color:var(--nord9); }
+.btn:disabled { opacity:.45; cursor:not-allowed; }
+.status { padding:9px 12px; border-radius:var(--radius-s); border-left:4px solid; font-size:.95rem; }
+.status.ok { background:var(--tint-ok); border-color:var(--ok); }
+.status.bad { background:var(--tint-bad); border-color:var(--bad); }
+.status.warn { background:var(--tint-warn); border-color:var(--warn); }
+.merke { background:var(--tint-merke); border-left:4px solid var(--merke); padding:12px 16px; border-radius:var(--radius-s); max-width:70ch; }
+.merke strong { display:block; font-family:var(--label-font); }
+mark.d { background:var(--nord13); color:var(--nord0); }
+
+/* Ablaufbild */
+.flow { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr); gap:8px; align-items:center; }
+.flow div { background:var(--surface); border-radius:var(--radius-s); padding:10px 12px; font-size:.9rem; min-height:100%; }
+.flow div b { display:block; font-family:var(--label-font); }
+.flow .fn { background:var(--nord8); color:var(--nord0); text-align:center; display:grid; place-content:center; }
+.flow i { font-style:normal; color:var(--text-muted); font-family:var(--font-mono); }
+@media (max-width:560px) { .flow { grid-template-columns:minmax(0,1fr); } .flow i { text-align:center; transform:rotate(90deg); } }
+
+/* Spielzeug-Hash */
+.tiles { display:flex; flex-wrap:wrap; gap:4px; }
+.tile { width:2.3em; padding:3px 0; text-align:center; border-radius:var(--radius-s); background:var(--surface-2); font-family:var(--font-mono); line-height:1.25; font-size:.95rem; }
+.tile small { display:block; font-size:.72em; color:var(--text-muted); }
+.tile.now { background:var(--nord13); color:var(--nord0); box-shadow:0 0 0 2px var(--nord12); }
+.tile.now small { color:var(--nord0); }
+.tile.done { opacity:.6; }
+.calc { font-family:var(--font-mono); background:var(--code-bg); color:var(--code-fg); border:1px solid var(--nord3); padding:12px 14px; border-radius:var(--radius-s); overflow-x:auto; font-size:.93rem; line-height:1.7; }
+.calc b { color:var(--nord13); font-weight:600; }
+
+/* Tabellen */
+.tbl { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; }
+th { text-align:left; font-weight:600; font-family:var(--label-font); font-size:.85rem; }
+th, td { padding:7px 10px 7px 0; border-bottom:1px solid var(--border); vertical-align:top; }
+.lab th, .lab td { border-color:var(--surface-2); }
+td.num { font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+.cut { font-family:var(--font-mono); font-size:.86rem; white-space:nowrap; }
+
+/* Code */
+.code { position:relative; background:var(--code-bg); color:var(--code-fg); border-radius:var(--radius-s); border:1px solid var(--nord3); }
+.code pre { margin:0; padding:12px 14px; overflow-x:auto; font-family:var(--font-mono); font-size:.9em; line-height:1.5; }
+.code code { font-size:1em; background:none; padding:0; }
+.code .copy { position:absolute; top:6px; right:6px; background:var(--nord1); color:var(--nord6); border:1px solid var(--nord3); border-radius:4px; font-size:.76rem; padding:2px 8px; cursor:pointer; }
+.k { color:var(--nord9); } .s { color:var(--nord14); } .n { color:var(--nord15); } .f { color:var(--nord8); }
+.c { color:var(--nord4); opacity:.72; font-style:italic; }
+
+/* Anwendungen */
+.uses { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.uses div { background:var(--surface); border-radius:var(--radius-s); padding:12px 14px; font-size:.94rem; min-width:0; }
+.uses b { display:block; font-family:var(--label-font); font-weight:600; }
+@media (max-width:560px) { .uses { grid-template-columns:minmax(0,1fr); } }
+
+/* Quiz */
+.q { display:grid; gap:8px; padding-block:14px; border-bottom:1px solid var(--surface-2); }
+.q:last-child { border-bottom:0; }
+.q p { font-weight:600; }
+.opts { display:grid; gap:6px; }
+.opt { text-align:left; background:var(--bg); border:1px solid var(--surface-2); border-radius:var(--radius-s); padding:8px 12px; cursor:pointer; color:var(--text); }
+.opt:hover:not(:disabled) { border-color:var(--accent); }
+.opt:disabled { cursor:default; }
+.opt.right { background:var(--tint-ok); border-color:var(--ok); }
+.opt.wrong { background:var(--tint-bad); border-color:var(--bad); }
+footer { padding-block:40px; color:var(--text-muted); font-size:.86rem; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div class="topbar">
+      <span class="brand">Hash-Labor · Kryptologie</span>
+    </div>
+    <div class="hero-grid">
+      <div>
+        <h1>Der Fingerabdruck von Daten</h1>
+        <p class="lede">Eine Hashfunktion macht aus beliebigen Daten eine kurze Zeichenfolge mit fester Länge. Tippen Sie etwas ein und beobachten Sie, was mit dem Hash passiert.</p>
+        <label class="field-label" for="heroIn">Ihre Eingabe</label>
+        <textarea id="heroIn" rows="2">Hallo Klasse</textarea>
+        <div class="chips" aria-label="Beispiele">
+          <button type="button" class="chip" data-t="Hallo Klasse">Hallo Klasse</button>
+          <button type="button" class="chip" data-t="hallo Klasse">hallo Klasse</button>
+          <button type="button" class="chip" data-t="">leer</button>
+          <button type="button" class="chip" data-t="Wer reitet so spät durch Nacht und Wind? Es ist der Vater mit seinem Kind; er hat den Knaben wohl in dem Arm, er fasst ihn sicher, er hält ihn warm.">Goethe, Erlkönig</button>
+        </div>
+        <div class="field-label" style="margin-top:14px">SHA-256-Hash</div>
+        <div class="hashline" id="heroHash" aria-live="polite"></div>
+        <div class="stats"><span>Eingabe <b id="heroLen"></b></span><span>Hash <b>256 Bit</b></span><span>Hex-Zeichen <b>64</b></span></div>
+      </div>
+      <figure class="fp">
+        <div class="grid256" id="heroGrid" aria-hidden="true"></div>
+        <figcaption>Die 256 Bit des Hashs als Raster. Jedes helle oder dunkle Feld ist ein Bit, gelesen Zeile für Zeile. Ein Hex-Zeichen fasst 4 Bit zusammen, darum sind es 64 Zeichen.</figcaption>
+      </figure>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+<nav class="toc" aria-label="Inhalt">
+  <ol>
+    <li><a href="#idee">Die Idee</a></li>
+    <li><a href="#wozu">Wozu?</a></li>
+    <li><a href="#vonhand">Von Hand</a></li>
+    <li><a href="#sha">SHA-256</a></li>
+    <li><a href="#eigenschaften">Eigenschaften</a></li>
+    <li><a href="#passwoerter">Passwörter</a></li>
+    <li><a href="#dateien">Dateien</a></li>
+    <li><a href="#quiz">Quiz</a></li>
+  </ol>
+</nav>
+<main>
+
+<section id="idee">
+  <h2>Die Idee</h2>
+  <p>Ein Fingerabdruck ist viel kleiner als ein Mensch und passt doch nur zu dieser einen Person. Aus dem Abdruck lässt sich die Person aber nicht rekonstruieren. Ein Hash funktioniert gleich: Er kennzeichnet Daten, verrät aber nichts über ihren Inhalt.</p>
+  <div class="flow" role="img" aria-label="Eine Eingabe beliebiger Länge geht durch die Hashfunktion und ergibt einen Hash mit fester Länge. Der Rückweg ist nicht möglich.">
+    <div><b>Eingabe</b>beliebig lang: ein Wort, ein Foto, ein Film</div>
+    <i>→</i>
+    <div class="fn"><b>Hashfunktion</b>rechnet nur in diese Richtung</div>
+    <i>→</i>
+    <div><b>Hash</b>immer gleich lang, bei SHA-256 sind es 256 Bit</div>
+  </div>
+  <p>Das Wort kommt vom englischen <em>to hash</em>, zerhacken. Die Daten werden so stark zerhackt und durchmischt, dass aus dem Ergebnis nicht mehr auf die Eingabe zu schliessen ist.</p>
+</section>
+
+<section id="wozu">
+  <h2>Wozu braucht man das?</h2>
+  <p><strong>Mit einem Hash lässt sich prüfen, ob zwei Dinge gleich sind, ohne sie selbst anzuschauen.</strong></p>
+  <p>Stellen Sie sich zwei dicke Bücher vor. Sie möchten wissen, ob sie Wort für Wort gleich sind. Von Hand dauert das Tage. Hat jedes Buch einen kurzen Fingerabdruck, genügt ein Blick: gleicher Abdruck, gleiches Buch.</p>
+  <div class="lab">
+    <h3>Finden Sie den Unterschied</h3>
+    <div class="lab-body">
+      <p>Diese zwei Texte unterscheiden sich in genau einem Buchstaben. Sehen Sie ihn? Der Hash zeigt es sofort. Ändern Sie die Texte ruhig selbst.</p>
+      <div class="two">
+        <div><label class="field-label" for="cmpA">Text 1</label><textarea id="cmpA" rows="5">Wer reitet so spät durch Nacht und Wind? Es ist der Vater mit seinem Kind; er hat den Knaben wohl in dem Arm, er fasst ihn sicher, er hält ihn warm.</textarea><div class="hashline" id="cmpHA" style="background:var(--bg)"></div></div>
+        <div><label class="field-label" for="cmpB">Text 2</label><textarea id="cmpB" rows="5">Wer reitet so spät durch Nacht und Wind? Es ist der Vater mit seinem Kind; er hat den Knaben wohl in dem Arm, er fasst ihn sicher, er hält ihn warn.</textarea><div class="hashline" id="cmpHB" style="background:var(--bg)"></div></div>
+      </div>
+      <div class="status" id="cmpOut" aria-live="polite"></div>
+    </div>
+  </div>
+  <p>Der Hash hat zwei Vorteile: Er ist immer kurz, und er verrät den Inhalt nicht. Darum steckt er in vielen Diensten, die Sie täglich nutzen.</p>
+  <h3>Wo Hashes arbeiten</h3>
+  <div class="uses">
+    <div><b>Passwörter</b>Der Server speichert nur den Hash Ihres Passworts. Mehr dazu unter <a href="#passwoerter">Passwörter</a>.</div>
+    <div><b>Downloads</b>Die Prüfsumme zeigt, ob eine Datei unverändert angekommen ist. Mehr dazu unter <a href="#dateien">Dateien</a>.</div>
+    <div><b>Cloud-Speicher</b>Haben zwei Dateien denselben Hash, muss der Dienst sie nur einmal speichern.</div>
+    <div><b>Virenscanner</b>Der Scanner vergleicht den Hash einer Datei mit einer Liste bekannter Schadprogramme.</div>
+    <div><b>Git</b>Jede gespeicherte Version eines Programms erhält einen Hash als eindeutigen Namen.</div>
+    <div><b>Digitale Unterschrift</b>Unterschrieben wird nur der Hash. Ändert jemand das Dokument, passt die Unterschrift nicht mehr.</div>
+  </div>
+</section>
+
+<section id="vonhand">
+  <h2>Ein Hash von Hand</h2>
+  <p>Eine echte Hashfunktion ist zu lang zum Nachrechnen. Darum beginnen wir mit einem Spielzeug-Hash, der in eine Zeile passt. Jedes Zeichen hat einen Zahlencode (zum Beispiel <code>A</code> = 65). Der Zwischenwert <code>h</code> startet bei 7 und verarbeitet ein Zeichen nach dem anderen:</p>
+  <div class="calc">h = (h × 31 + code) mod 256</div>
+  <p><code>mod 256</code> bedeutet: der Rest beim Teilen durch 256. So bleibt <code>h</code> immer zwischen 0 und 255 und passt in 8 Bit, egal wie lang die Eingabe ist.</p>
+
+  <div class="lab">
+    <h3>Spielzeug-Hash Schritt für Schritt</h3>
+    <div class="lab-body">
+      <div>
+        <label class="field-label" for="toyIn">Wort (bis 12 Zeichen)</label>
+        <input type="text" id="toyIn" value="HASH" maxlength="12" autocomplete="off">
+      </div>
+      <div class="tiles" id="toyTiles" aria-hidden="true"></div>
+      <div class="calc" id="toyCalc" aria-live="polite"></div>
+      <div class="btnrow">
+        <button type="button" class="btn alt" id="toyPrev">← Zurück</button>
+        <button type="button" class="btn" id="toyNext">Vor →</button>
+        <button type="button" class="btn alt" id="toyEnd">Zum Ergebnis</button>
+        <span class="muted small" id="toyPos"></span>
+      </div>
+    </div>
+  </div>
+
+  <p>Warum die Multiplikation mit 31? Würden wir nur die Codes addieren, hätten <code>AB</code> und <code>BA</code> denselben Wert. Durch die Multiplikation zählt auch die Reihenfolge: <code>AB</code> ergibt <span id="toyAB" class="mono"></span>, <code>BA</code> ergibt <span id="toyBA" class="mono"></span>.</p>
+
+  <div class="code"><button type="button" class="copy">Kopieren</button><pre><code><span class="k">def</span> <span class="f">spielzeug_hash</span>(text):
+    h = <span class="n">7</span>                              <span class="c"># Startwert</span>
+    <span class="k">for</span> zeichen <span class="k">in</span> text:
+        h = (h * <span class="n">31</span> + <span class="f">ord</span>(zeichen)) % <span class="n">256</span>
+    <span class="k">return</span> h
+
+<span class="f">print</span>(<span class="f">spielzeug_hash</span>(<span class="s">"HASH"</span>))</code></pre></div>
+
+  <div class="lab">
+    <h3>Kollisionen suchen</h3>
+    <div class="lab-body">
+      <p>Eine <strong>Kollision</strong> liegt vor, wenn zwei verschiedene Eingaben denselben Hash ergeben. Der Spielzeug-Hash hat nur 256 mögliche Werte. Dieses Labor erzeugt zufällige Fantasiewörter, bis zwei davon denselben Wert haben.</p>
+      <div class="btnrow"><button type="button" class="btn" id="colBtn">Neue Kollision suchen</button></div>
+      <div class="status warn" id="colOut" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="merke"><strong>Schubfachprinzip</strong> Spätestens beim 257. Wort muss sich ein Wert wiederholen, denn es gibt nur 256 Schubfächer. Im Durchschnitt passiert es schon nach rund 20 Wörtern, weil jedes neue Wort mit allen bisherigen kollidieren kann. Kollisionen lassen sich bei keiner Hashfunktion ganz vermeiden: Es gibt unendlich viele Eingaben, aber nur endlich viele Hashes.</div>
+</section>
+
+<section id="sha">
+  <h2>Das echte Werkzeug: SHA-256</h2>
+  <p>SHA-256 folgt derselben Grundidee: Ein Zwischenwert nimmt die Daten Stück für Stück auf. Die Daten werden in Blöcke von 512 Bit zerlegt. Jeder Block durchläuft 64 Runden, in denen Bits verschoben, gemischt und addiert werden. Am Ende bleiben 256 Bit übrig.</p>
+  <div class="tbl"><table>
+    <thead><tr><th scope="col"></th><th scope="col">Spielzeug-Hash</th><th scope="col">SHA-256</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Länge des Hashs</th><td>8 Bit</td><td>256 Bit</td></tr>
+      <tr><th scope="row">Mögliche Werte</th><td class="num">256</td><td class="num">2<sup>256</sup> ≈ 1.2 × 10<sup>77</sup></td></tr>
+      <tr><th scope="row">Verarbeitung</th><td>1 Rechnung pro Zeichen</td><td>64 Runden pro Block</td></tr>
+      <tr><th scope="row">Kollision finden</th><td>in Sekundenbruchteilen</td><td>keine bekannt</td></tr>
+      <tr><th scope="row">Letztes Zeichen ändern</th><td>Hash ändert sich vorhersehbar</td><td>rund die Hälfte aller Bits kippt</td></tr>
+    </tbody>
+  </table></div>
+  <p>In Python steht SHA-256 im Modul <code>hashlib</code> bereit. Die Funktion arbeitet mit Bytes, darum wird der Text zuerst kodiert:</p>
+  <div class="code"><button type="button" class="copy">Kopieren</button><pre><code><span class="k">import</span> hashlib
+
+text = <span class="s">"Hallo Klasse"</span>
+daten = text.<span class="f">encode</span>(<span class="s">"utf-8"</span>)
+print(hashlib.<span class="f">sha256</span>(daten).<span class="f">hexdigest</span>())</code></pre></div>
+</section>
+
+<section id="eigenschaften">
+  <h2>Was einen guten Hash ausmacht</h2>
+  <div class="tbl"><table>
+    <thead><tr><th scope="col">Eigenschaft</th><th scope="col">Bedeutung</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Feste Länge</th><td>Jede Eingabe ergibt gleich viele Bits.</td></tr>
+      <tr><th scope="row">Deterministisch</th><td>Gleiche Eingabe, immer gleicher Hash, auf jedem Computer.</td></tr>
+      <tr><th scope="row">Einweg</th><td>Aus dem Hash lässt sich die Eingabe nicht berechnen. Es bleibt nur das Ausprobieren.</td></tr>
+      <tr><th scope="row">Lawineneffekt</th><td>Eine winzige Änderung der Eingabe verändert rund die Hälfte der Bits.</td></tr>
+      <tr><th scope="row">Kollisionsresistenz</th><td>Kollisionen gibt es, aber sie lassen sich praktisch nicht finden.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="lab">
+    <h3>Lawineneffekt</h3>
+    <div class="lab-body">
+      <div class="two">
+        <div><label class="field-label" for="avA">Eingabe A</label><input type="text" id="avA" value="Kantonsschule" autocomplete="off"></div>
+        <div><label class="field-label" for="avB">Eingabe B</label><input type="text" id="avB" value="kantonsschule" autocomplete="off"></div>
+      </div>
+      <div class="three">
+        <figure><div class="grid256" id="gA" aria-hidden="true"></div><figcaption class="small muted">Bits von A</figcaption></figure>
+        <figure><div class="grid256" id="gB" aria-hidden="true"></div><figcaption class="small muted">Bits von B</figcaption></figure>
+        <figure><div class="grid256" id="gD" aria-hidden="true"></div><figcaption class="small muted">Rot: Bit ist verschieden</figcaption></figure>
+      </div>
+      <div class="status warn" id="avOut" aria-live="polite"></div>
+      <div>
+        <div class="field-label">Hash A</div><div class="hashline" id="avHA" style="background:var(--bg)"></div>
+        <div class="field-label" style="margin-top:8px">Hash B, abweichende Zeichen markiert</div><div class="hashline" id="avHB" style="background:var(--bg)"></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Wie sicher ist «Einweg»?</h3>
+  <p>Angenommen, ein Computer probiert eine Milliarde Eingaben pro Sekunde. Um alle 2<sup>256</sup> Werte durchzugehen, bräuchte er rund 3.7 × 10<sup>60</sup> Jahre. Das Universum ist etwa 1.4 × 10<sup>10</sup> Jahre alt.</p>
+  <p>Hashfunktionen altern trotzdem. MD5 und SHA-1 gelten als gebrochen: 2017 wurde eine echte SHA-1-Kollision veröffentlicht. Für das vollständige SHA-256 mit 64 Runden ist keine Kollision bekannt. Die besten Forschungsarbeiten von 2026 erreichen Kollisionsangriffe auf gekürzte Versionen mit 38 Runden.</p>
+
+  <h3>Hashen ist nicht Verschlüsseln</h3>
+  <div class="tbl"><table>
+    <thead><tr><th scope="col"></th><th scope="col">Verschlüsseln</th><th scope="col">Hashen</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Schlüssel</th><td>ja</td><td>nein</td></tr>
+      <tr><th scope="row">Umkehrbar</th><td>ja, mit dem Schlüssel</td><td>nein</td></tr>
+      <tr><th scope="row">Länge des Ergebnisses</th><td>wächst mit der Nachricht</td><td>immer gleich</td></tr>
+      <tr><th scope="row">Ziel</th><td>Inhalt geheim halten</td><td>Inhalt wiedererkennen und prüfen</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="passwoerter">
+  <h2>Anwendung: Passwörter speichern</h2>
+  <p>Ein Login muss nur prüfen, ob die Eingabe stimmt. Dafür muss der Server das Passwort gar nicht kennen. Er speichert einen Hash und vergleicht beim Anmelden die Hashes. Doch was passiert, wenn die Datenbank gestohlen wird? Gehen Sie die drei Stufen durch. Alle Konten sind erfunden.</p>
+  <div class="lab">
+    <h3>Datenleck in drei Stufen</h3>
+    <div class="lab-body">
+      <div class="btnrow" role="group" aria-label="Speicherverfahren wählen">
+        <button type="button" class="btn alt" id="stPrev">← Zurück</button>
+        <strong id="stName"></strong>
+        <button type="button" class="btn" id="stNext">Vor →</button>
+      </div>
+      <div class="tbl"><table>
+        <thead id="stHead"></thead>
+        <tbody id="stBody"></tbody>
+      </table></div>
+      <div class="status" id="stOut" aria-live="polite"></div>
+      <p class="small muted">Der Angreifer besitzt eine fertige Tabelle mit den Hashes von 20 häufigen Passwörtern und vergleicht sie mit der gestohlenen Datenbank.</p>
+    </div>
+  </div>
+  <div class="merke"><strong>Salt</strong> Ein Salt ist eine zufällige Zeichenfolge pro Konto, die vor dem Hashen an das Passwort gehängt wird. Er ist nicht geheim und liegt offen in der Datenbank. Seine Aufgabe: Gleiche Passwörter ergeben verschiedene Hashes, und vorberechnete Tabellen werden wertlos. Der Angreifer muss für jedes Konto einzeln rechnen.</div>
+
+  <div class="lab">
+    <h3>Anmeldung nachspielen</h3>
+    <div class="lab-body">
+      <div class="two">
+        <div><label class="field-label" for="logU">Konto</label><select id="logU"></select></div>
+        <div><label class="field-label" for="logP">Passwort-Eingabe</label><input type="text" id="logP" value="sommer2026" autocomplete="off"></div>
+      </div>
+      <p class="small muted">Testfeld für die Beispielkonten. Tippen Sie hier keine echten Passwörter ein.</p>
+      <div class="calc" id="logCalc"></div>
+      <div class="status" id="logOut" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="lab">
+    <h3>Kurze Passwörter durchprobieren</h3>
+    <div class="lab-body">
+      <p>Einweg heisst nicht unknackbar. Ist die Menge der möglichen Eingaben klein, probiert der Angreifer einfach alle durch. Ihr Browser macht das hier mit einer 4-stelligen PIN.</p>
+      <div class="two">
+        <div><label class="field-label" for="pinIn">PIN (4 Ziffern)</label><input type="text" id="pinIn" value="4711" maxlength="4" inputmode="numeric" autocomplete="off"></div>
+        <div style="align-self:end"><button type="button" class="btn" id="pinBtn">Hash der PIN knacken</button></div>
+      </div>
+      <div class="status warn" id="pinOut" aria-live="polite"></div>
+      <div class="tbl"><table>
+        <thead><tr><th scope="col">Passwortart</th><th scope="col">Möglichkeiten</th><th scope="col">Zeit mit Ihrem Browser</th></tr></thead>
+        <tbody id="pinTbl"></tbody>
+      </table></div>
+      <p class="small muted">Geschätzt für das Durchprobieren aller Möglichkeiten. Grafikkarten schaffen pro Sekunde viele Milliarden SHA-256-Hashes, also weit mehr als ein Browser.</p>
+    </div>
+  </div>
+  <div class="merke"><strong>Schnell ist hier schlecht</strong> SHA-256 ist auf Tempo gebaut, und genau das hilft dem Angreifer. Für Passwörter setzt man deshalb absichtlich langsame Verfahren wie Argon2, bcrypt oder scrypt ein. Das Prinzip von Hash und Salt bleibt gleich.</div>
+</section>
+
+<section id="dateien">
+  <h2>Anwendung: Dateien prüfen</h2>
+  <p>Wer eine Datei herunterlädt, möchte wissen, ob sie unverändert angekommen ist. Viele Anbieter veröffentlichen dazu den Hash, die sogenannte Prüfsumme. Stimmt der selbst berechnete Hash damit überein, ist die Datei Bit für Bit identisch.</p>
+  <div class="lab">
+    <h3>Zahlungsauftrag prüfen</h3>
+    <div class="lab-body">
+      <div>
+        <div class="field-label">Veröffentlichte Prüfsumme des Originals</div>
+        <div class="hashline" id="intRef" style="background:var(--bg)"></div>
+      </div>
+      <div>
+        <label class="field-label" for="intTxt">Erhaltene Datei <span class="mono">zahlung.txt</span> (bearbeitbar)</label>
+        <textarea id="intTxt" rows="3" class="mono"></textarea>
+      </div>
+      <div class="btnrow">
+        <button type="button" class="btn" id="intFake">Betrag fälschen</button>
+        <button type="button" class="btn alt" id="intReset">Original wiederherstellen</button>
+      </div>
+      <div>
+        <div class="field-label">Berechneter Hash, abweichende Zeichen markiert</div>
+        <div class="hashline" id="intNow" style="background:var(--bg)"></div>
+      </div>
+      <div class="status" id="intOut" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="lab">
+    <h3>Eigene Datei hashen</h3>
+    <div class="lab-body">
+      <p>Wählen Sie eine Datei bis 50 MB. Sie wird nur in Ihrem Browser berechnet und nirgends hochgeladen.</p>
+      <div><label class="field-label" for="fileIn">Datei</label><input type="file" id="fileIn"></div>
+      <div class="hashline" id="fileOut" style="background:var(--bg)" aria-live="polite">Noch keine Datei gewählt.</div>
+      <div>
+        <label class="field-label" for="fileCmp">Prüfsumme zum Vergleichen (optional)</label>
+        <input type="text" id="fileCmp" class="mono" autocomplete="off" placeholder="64 Hex-Zeichen einfügen">
+      </div>
+      <div class="status" id="fileRes" hidden aria-live="polite"></div>
+    </div>
+  </div>
+
+  <p>Dasselbe geht im Terminal:</p>
+  <div class="code"><button type="button" class="copy">Kopieren</button><pre><code><span class="c"># macOS und Linux</span>
+shasum -a <span class="n">256</span> datei.zip
+
+<span class="c"># Windows (Eingabeaufforderung)</span>
+certutil -hashfile datei.zip SHA256</code></pre></div>
+  <div class="merke"><strong>Die Grenze</strong> Eine Prüfsumme hilft nur, wenn sie aus einer vertrauenswürdigen Quelle stammt. Kann ein Angreifer Datei und Prüfsumme gemeinsam austauschen, fällt nichts auf. Dagegen helfen digitale Signaturen, die ebenfalls auf Hashes aufbauen.</div>
+</section>
+
+<section id="quiz">
+  <h2>Quiz</h2>
+  <p>Acht Fragen, die Rückmeldung erscheint sofort nach dem Klick.</p>
+  <div class="status warn" id="qScore" aria-live="polite"></div>
+  <div class="lab"><div class="lab-body" id="qList" style="gap:0"></div></div>
+  <div class="btnrow"><button type="button" class="btn alt" id="qReset">Quiz neu starten</button></div>
+</section>
+
+<footer>Alle Berechnungen laufen in Ihrem Browser. Die Seite speichert nichts.</footer>
+</main>
+</div>
+
+<script>
+/* ---------- SHA-256 ---------- */
+const K=new Uint32Array([
+0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+const W=new Int32Array(64);
+function sha256Bytes(msg){
+  const n=msg.length, total=((n+9+63)>>>6)<<6;
+  const m=new Uint8Array(total); m.set(msg); m[n]=0x80;
+  const dv=new DataView(m.buffer);
+  dv.setUint32(total-8,Math.floor(n/0x20000000)); dv.setUint32(total-4,(n<<3)>>>0);
+  let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;
+  for(let o=0;o<total;o+=64){
+    for(let i=0;i<16;i++) W[i]=dv.getInt32(o+i*4);
+    for(let i=16;i<64;i++){
+      const a=W[i-15],b=W[i-2];
+      const s0=((a>>>7)|(a<<25))^((a>>>18)|(a<<14))^(a>>>3);
+      const s1=((b>>>17)|(b<<15))^((b>>>19)|(b<<13))^(b>>>10);
+      W[i]=(W[i-16]+s0+W[i-7]+s1)|0;
+    }
+    let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;
+    for(let i=0;i<64;i++){
+      const S1=((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7));
+      const ch=(e&f)^(~e&g);
+      const t1=(h+S1+ch+K[i]+W[i])|0;
+      const S0=((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10));
+      const mj=(a&b)^(a&c)^(b&c);
+      const t2=(S0+mj)|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;
+    }
+    h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;h5=(h5+f)|0;h6=(h6+g)|0;h7=(h7+h)|0;
+  }
+  const out=new Uint8Array(32), odv=new DataView(out.buffer);
+  [h0,h1,h2,h3,h4,h5,h6,h7].forEach((v,i)=>odv.setInt32(i*4,v));
+  return out;
+}
+const enc=new TextEncoder();
+const toHex=b=>Array.from(b,x=>x.toString(16).padStart(2,"0")).join("");
+const sha=s=>toHex(sha256Bytes(enc.encode(s)));
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=n=>String(n).replace(/\B(?=(\d{3})+$)/g,"'");
+const bits=h=>Array.from(h,c=>parseInt(c,16).toString(2).padStart(4,"0")).join("");
+
+/* ---------- Bit-Raster ---------- */
+function makeGrid(el){ el.innerHTML="<span></span>".repeat(256); el._c=el.children; }
+function paint(el,h){ const b=bits(h); for(let i=0;i<256;i++) el._c[i].className=b[i]==="1"?"on":""; }
+function paintDiff(el,a,b){ const x=bits(a),y=bits(b); for(let i=0;i<256;i++) el._c[i].className=x[i]!==y[i]?"diff":""; }
+function hexDiff(ref,now){ let o=""; for(let i=0;i<now.length;i++) o+=ref[i]!==now[i]?`<mark class="d">${now[i]}</mark>`:now[i]; return o; }
+["heroGrid","gA","gB","gD"].forEach(i=>makeGrid($(i)));
+
+/* ---------- Kopf ---------- */
+function heroUpdate(){
+  const t=$("heroIn").value, h=sha(t);
+  $("heroHash").textContent=h; paint($("heroGrid"),h);
+  const n=enc.encode(t).length;
+  $("heroLen").textContent=fmt(n)+" Byte";
+}
+$("heroIn").addEventListener("input",heroUpdate);
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{$("heroIn").value=c.dataset.t;heroUpdate();});
+
+/* ---------- Vergleich ---------- */
+function cmpUpdate(){
+  const a=sha($("cmpA").value), b=sha($("cmpB").value), same=a===b;
+  $("cmpHA").textContent=a.slice(0,16)+"…";
+  $("cmpHB").innerHTML=hexDiff(a.slice(0,16),b.slice(0,16))+"…";
+  $("cmpOut").className="status "+(same?"ok":"bad");
+  $("cmpOut").textContent=same?"✓ Gleicher Hash: Die Texte sind gleich.":"✗ Verschiedener Hash: Die Texte sind nicht gleich.";
+}
+$("cmpA").addEventListener("input",cmpUpdate); $("cmpB").addEventListener("input",cmpUpdate);
+
+/* ---------- Spielzeug-Hash ---------- */
+const toyStep=(h,c)=>(h*31+c)%256;
+const toyHash=s=>Array.from(s).reduce((h,c)=>toyStep(h,c.codePointAt(0)),7);
+const hex2=n=>"0x"+n.toString(16).toUpperCase().padStart(2,"0");
+let toyI=0;
+function toyRender(){
+  const ch=Array.from($("toyIn").value), n=ch.length;
+  toyI=Math.min(toyI,n);
+  $("toyTiles").innerHTML=ch.map((c,i)=>`<span class="tile ${i===toyI?"now":i<toyI?"done":""}">${esc(c)}<small>${c.codePointAt(0)}</small></span>`).join("");
+  let h=7; for(let i=0;i<toyI;i++) h=toyStep(h,ch[i].codePointAt(0));
+  let o;
+  if(!n) o="Geben Sie ein Wort ein.";
+  else if(toyI<n){
+    const c=ch[toyI].codePointAt(0), r=h*31+c;
+    o=`Zeichen ${toyI+1}: «${esc(ch[toyI])}» hat den Code ${c}<br>h = (${h} × 31 + ${c}) mod 256<br>h = ${r} mod 256 = <b>${r%256}</b>`;
+  } else o=`Fertig: Hash von «${esc(ch.join(""))}» = <b>${h}</b><br>hexadezimal ${hex2(h)}, binär ${h.toString(2).padStart(8,"0")}`;
+  $("toyCalc").innerHTML=o;
+  $("toyPrev").disabled=toyI===0; $("toyNext").disabled=toyI>=n; $("toyEnd").disabled=toyI>=n;
+  $("toyPos").textContent=n?`Schritt ${Math.min(toyI+1,n)} von ${n}`:"";
+}
+$("toyIn").addEventListener("input",()=>{toyI=0;toyRender();});
+$("toyPrev").onclick=()=>{toyI--;toyRender();};
+$("toyNext").onclick=()=>{toyI++;toyRender();};
+$("toyEnd").onclick=()=>{toyI=Array.from($("toyIn").value).length;toyRender();};
+$("toyAB").textContent=toyHash("AB"); $("toyBA").textContent=toyHash("BA");
+
+const SY="ba be bi bo da de di do fa fe ka ke ki ko la le li lo ma me mi mo na ne ni no pa pe ra re ri ro sa se si so ta te ti to za zo".split(" ");
+function fakeWord(){ let w=""; const n=2+Math.floor(Math.random()*3); for(let i=0;i<n;i++) w+=SY[Math.floor(Math.random()*SY.length)]; return w; }
+function findCollision(){
+  const seen=new Map(); let tries=0;
+  for(;;){
+    const w=fakeWord(); if([...seen.values()].includes(w)) continue;
+    tries++; const h=toyHash(w);
+    if(seen.has(h)){
+      $("colOut").innerHTML=`Nach ${tries} Wörtern: <strong class="mono">${w}</strong> und <strong class="mono">${seen.get(h)}</strong> ergeben beide den Hash <strong class="mono">${h}</strong>.`;
+      return;
+    }
+    seen.set(h,w);
+  }
+}
+$("colBtn").onclick=findCollision;
+
+/* ---------- Lawine ---------- */
+function avUpdate(){
+  const a=sha($("avA").value), b=sha($("avB").value);
+  paint($("gA"),a); paint($("gB"),b); paintDiff($("gD"),a,b);
+  const x=bits(a),y=bits(b); let d=0; for(let i=0;i<256;i++) if(x[i]!==y[i]) d++;
+  $("avHA").textContent=a; $("avHB").innerHTML=hexDiff(a,b);
+  $("avOut").innerHTML=d===0?"Beide Eingaben sind gleich, also sind 0 von 256 Bits verschieden.":`<strong class="mono">${d} von 256 Bits</strong> sind verschieden (${(d/2.56).toFixed(0)} %).`;
+}
+$("avA").addEventListener("input",avUpdate); $("avB").addEventListener("input",avUpdate);
+
+/* ---------- Passwörter ---------- */
+const USERS=[
+  {n:"Lea",p:"sommer2026",s:"f3a91c07"},
+  {n:"Noah",p:"123456",s:"7be20d4e"},
+  {n:"Mia",p:"sommer2026",s:"09c6e1ba"},
+  {n:"Elias",p:"Velo-Regen-Kaffee-42",s:"d41f88a3"}];
+const DICT=["123456","password","123456789","12345678","qwerty","111111","passwort","hallo123","abc123","iloveyou","admin","letmein","welcome","000000","sommer2026","winter2025","schatz","fussball","zuerich","master"];
+const RAIN=new Map(DICT.map(p=>[sha(p),p]));
+const STAGES=["Stufe 1 von 3: Klartext","Stufe 2 von 3: Hash","Stufe 3 von 3: Hash mit Salt"];
+let st=0;
+const short=h=>h.slice(0,16)+"…";
+function stRender(){
+  $("stName").textContent=STAGES[st];
+  $("stPrev").disabled=st===0; $("stNext").disabled=st===2;
+  const cols=["Konto"].concat(st===2?["Salt"]:[],[st===0?"Gespeichert":"Gespeicherter Hash","Angreifer"]);
+  $("stHead").innerHTML="<tr>"+cols.map(c=>`<th scope="col">${c}</th>`).join("")+"</tr>";
+  let found=0;
+  $("stBody").innerHTML=USERS.map(u=>{
+    const v=st===0?u.p:st===1?sha(u.p):sha(u.s+u.p);
+    const hit=st===0?u.p:RAIN.get(v);
+    if(hit) found++;
+    return `<tr><th scope="row">${u.n}</th>${st===2?`<td class="cut">${u.s}</td>`:""}<td class="cut">${st===0?esc(v):short(v)}</td><td>${hit?`✗ gelesen: <span class="cut">${esc(hit)}</span>`:"✓ nicht gefunden"}</td></tr>`;
+  }).join("");
+  const o=$("stOut");
+  o.className="status "+(st===2?"ok":"bad");
+  o.textContent=[
+    "Alle 4 Passwörter sind sofort lesbar. Weil viele Menschen dasselbe Passwort für mehrere Dienste nutzen, trifft das Leck auch andere Konten.",
+    `Der Hash versteckt die Passwörter, aber ${found} von 4 stehen in der fertigen Tabelle. Dazu sieht der Angreifer: Lea und Mia haben denselben Hash, also dasselbe Passwort. Elias ist mit seinem langen Passwort sicher.`,
+    "0 von 4 Treffern in der fertigen Tabelle. Lea und Mia haben trotz gleichem Passwort verschiedene Hashes. Der Angreifer kann nur noch jedes Konto einzeln angreifen."][st];
+}
+$("stPrev").onclick=()=>{st--;stRender();}; $("stNext").onclick=()=>{st++;stRender();};
+$("logU").innerHTML=USERS.map((u,i)=>`<option value="${i}">${u.n}</option>`).join("");
+function logUpdate(){
+  const u=USERS[+$("logU").value], t=$("logP").value, h=sha(u.s+t), ok=h===sha(u.s+u.p);
+  $("logCalc").innerHTML=`SHA-256(<b>${u.s}</b> + Eingabe)<br>berechnet:  ${short(h)}<br>gespeichert: ${short(sha(u.s+u.p))}`;
+  $("logOut").className="status "+(ok?"ok":"bad");
+  $("logOut").textContent=ok?"✓ Hashes stimmen überein, Anmeldung erfolgreich.":"✗ Hashes sind verschieden, Anmeldung abgelehnt.";
+}
+$("logU").onchange=logUpdate; $("logP").addEventListener("input",logUpdate);
+
+/* PIN */
+function dur(s){
+  if(s<1) return "unter 1 Sekunde";
+  if(s<60) return `${Math.round(s)} Sekunden`;
+  if(s<3600) return `${Math.round(s/60)} Minuten`;
+  if(s<86400) return `${Math.round(s/3600)} Stunden`;
+  if(s<86400*365) return `${Math.round(s/86400)} Tage`;
+  const y=s/(86400*365.25);
+  if(y<1e6) return `${fmt(Math.round(y))} Jahre`;
+  const e=Math.floor(Math.log10(y));
+  return `rund ${(y/10**e).toFixed(1)} × 10^${e} Jahre`;
+}
+function pinCrack(){
+  const pin=$("pinIn").value, o=$("pinOut");
+  if(!/^\d{4}$/.test(pin)){ o.className="status bad"; o.textContent="Geben Sie genau 4 Ziffern ein."; return; }
+  o.className="status warn";
+  const target=sha(pin); let found=null, tries=0;
+  for(let i=0;i<10000&&!found;i++){ const g=String(i).padStart(4,"0"); tries++; if(sha(g)===target) found=g; }
+  const t0=performance.now(); let c=0;
+  while(performance.now()-t0<60){ for(let i=0;i<200;i++){ sha(String(c)); c++; } }
+  const rate=c/((performance.now()-t0)/1000);
+  o.innerHTML=`✗ Gefunden: PIN <strong class="mono">${found}</strong> nach ${fmt(tries)} Versuchen. Ihr Browser schafft rund ${fmt(Math.round(rate/1000)*1000)} Hashes pro Sekunde.`;
+  const rows=[["4-stellige PIN","10'000",1e4],["8 Kleinbuchstaben","2.1 × 10^11",26**8],["8 Zeichen gemischt","6.1 × 10^15",94**8],["16 Zeichen gemischt","3.7 × 10^31",94**16]];
+  $("pinTbl").innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${dur(r[2]/rate)}</td></tr>`).join("");
+}
+$("pinBtn").onclick=pinCrack;
+
+/* ---------- Integrität ---------- */
+const ORIG="Empfänger: Verein Schulball\nBetrag: CHF 120.00\nZweck: Material";
+const REF=sha(ORIG);
+function intUpdate(){
+  const h=sha($("intTxt").value), ok=h===REF;
+  $("intNow").innerHTML=hexDiff(REF,h);
+  $("intOut").className="status "+(ok?"ok":"bad");
+  $("intOut").textContent=ok?"✓ Die Hashes stimmen überein. Die Datei ist unverändert.":"✗ Die Hashes sind verschieden. Die Datei wurde verändert oder beschädigt.";
+}
+$("intRef").textContent=REF;
+$("intTxt").value=ORIG;
+$("intTxt").addEventListener("input",intUpdate);
+$("intFake").onclick=()=>{$("intTxt").value=ORIG.replace("120.00","920.00");intUpdate();};
+$("intReset").onclick=()=>{$("intTxt").value=ORIG;intUpdate();};
+
+let fileHash="";
+function fileCompare(){
+  const r=$("fileRes"), c=$("fileCmp").value.trim().toLowerCase();
+  if(!fileHash||!c){ r.hidden=true; return; }
+  r.hidden=false; const ok=c===fileHash;
+  r.className="status "+(ok?"ok":"bad");
+  r.textContent=ok?"✓ Die Prüfsumme stimmt.":"✗ Die Prüfsumme stimmt nicht.";
+}
+$("fileCmp").addEventListener("input",fileCompare);
+$("fileIn").addEventListener("change",e=>{
+  const f=e.target.files[0]; fileHash=""; fileCompare(); if(!f) return;
+  if(f.size>50*1024*1024){ $("fileOut").textContent="Diese Datei ist grösser als 50 MB. Wählen Sie eine kleinere Datei."; return; }
+  $("fileOut").textContent="Hash wird berechnet …";
+  const rd=new FileReader();
+  rd.onerror=()=>{$("fileOut").textContent="Die Datei liess sich nicht lesen. Versuchen Sie es mit einer anderen Datei.";};
+  rd.onload=()=>setTimeout(()=>{ fileHash=toHex(sha256Bytes(new Uint8Array(rd.result))); $("fileOut").textContent=fileHash; fileCompare(); },20);
+  rd.readAsArrayBuffer(f);
+});
+
+/* ---------- Kopieren ---------- */
+document.querySelectorAll(".copy").forEach(b=>b.onclick=()=>{
+  const c=b.parentElement.querySelector("code"), done=()=>{b.textContent="Kopiert";setTimeout(()=>b.textContent="Kopieren",1400);};
+  const sel=()=>{const r=document.createRange();r.selectNodeContents(c);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Markiert";setTimeout(()=>b.textContent="Kopieren",1400);};
+  if(navigator.clipboard) navigator.clipboard.writeText(c.textContent).then(done,sel); else sel();
+});
+
+/* ---------- Quiz ---------- */
+const QUIZ=[
+ {q:"Sie hashen mit SHA-256 ein einzelnes Wort und danach ein ganzes Buch. Wie lang sind die beiden Hashes?",o:["Der Hash des Buchs ist länger.","Beide sind 256 Bit lang.","Beide sind so lang wie die Eingabe."],a:1,e:"SHA-256 liefert immer 256 Bit, das entspricht 64 Hex-Zeichen."},
+ {q:"Sie hashen denselben Text morgen auf einem anderen Computer noch einmal. Was gilt?",o:["Der Hash ist identisch.","Der Hash ist anders, weil der Zufall mitspielt.","Der Hash hängt vom Datum ab."],a:0,e:"Hashfunktionen sind deterministisch. Sonst liesse sich nichts vergleichen."},
+ {q:"Warum muss es bei jeder Hashfunktion Kollisionen geben?",o:["Weil die Programmierer Fehler machen.","Weil Computer ungenau rechnen.","Weil es unendlich viele Eingaben, aber nur endlich viele Hashes gibt."],a:2,e:"Das ist das Schubfachprinzip. Gute Hashfunktionen machen Kollisionen nur praktisch unauffindbar."},
+ {q:"Spielzeug-Hash: h ist 7, das Zeichen A hat den Code 65. Was ergibt (h × 31 + code) mod 256?",o:["282","26","65"],a:1,e:"7 × 31 + 65 = 282. Der Rest beim Teilen durch 256 ist 26."},
+ {q:"Sie ändern in einem Text einen einzigen Buchstaben. Was passiert mit dem SHA-256-Hash?",o:["Rund die Hälfte der Bits ändert sich.","Genau ein Bit ändert sich.","Nur die letzten Zeichen ändern sich."],a:0,e:"Das ist der Lawineneffekt. Ähnliche Eingaben ergeben völlig verschiedene Hashes."},
+ {q:"Was bewirkt ein Salt beim Speichern von Passwörtern?",o:["Es verschlüsselt das Passwort mit einem geheimen Schlüssel.","Es macht aus schwachen Passwörtern starke Passwörter.","Gleiche Passwörter ergeben verschiedene Hashes, fertige Tabellen nützen nichts mehr."],a:2,e:"Der Salt ist nicht geheim. Ein schwaches Passwort bleibt schwach, aber jedes Konto muss einzeln angegriffen werden."},
+ {q:"Der Hash einer heruntergeladenen Datei stimmt nicht mit der veröffentlichten Prüfsumme überein. Was folgt daraus?",o:["Die Datei ist sicher, nur die Prüfsumme ist alt.","Die Datei unterscheidet sich vom Original.","Der Computer rechnet falsch."],a:1,e:"Schon ein verändertes Bit ergibt einen ganz anderen Hash. Löschen Sie die Datei und laden Sie sie neu aus sicherer Quelle."},
+ {q:"Eine Kollegin sagt: «Mit dem richtigen Schlüssel kann man einen SHA-256-Hash wieder entschlüsseln.» Stimmt das?",o:["Ja, jeder Hash hat einen eigenen Schlüssel.","Ja, aber nur mit einem Supercomputer.","Nein, Hashen verwendet keinen Schlüssel und ist nicht umkehrbar."],a:2,e:"Hashen ist keine Verschlüsselung. Man kann Eingaben nur ausprobieren und die Hashes vergleichen."}];
+let qDone={};
+function qScore(){
+  const n=Object.keys(qDone).length, r=Object.values(qDone).filter(Boolean).length;
+  $("qScore").textContent=n===0?`0 von ${QUIZ.length} Fragen beantwortet.`:`${n} von ${QUIZ.length} Fragen beantwortet, davon ${r} richtig.`+(n===QUIZ.length?(r===QUIZ.length?" Ausgezeichnet, alles richtig!":" Lesen Sie die Erklärungen zu den falschen Antworten nochmals."):"");
+}
+function qRender(){
+  qDone={};
+  $("qList").innerHTML=QUIZ.map((q,i)=>`<div class="q"><p>${i+1}. ${q.q}</p><div class="opts">${q.o.map((o,j)=>`<button type="button" class="opt" data-q="${i}" data-o="${j}">${o}</button>`).join("")}</div><div class="status" id="qf${i}" hidden></div></div>`).join("");
+  $("qList").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.q, j=+b.dataset.o, q=QUIZ[i], ok=j===q.a, box=b.parentElement;
+    qDone[i]=ok;
+    box.querySelectorAll(".opt").forEach((x,k)=>{ x.disabled=true; if(k===q.a){x.classList.add("right");x.textContent="✓ "+x.textContent;} else if(k===j){x.classList.add("wrong");x.textContent="✗ "+x.textContent;} });
+    const f=$("qf"+i); f.hidden=false; f.className="status "+(ok?"ok":"bad");
+    f.textContent=(ok?"Richtig. ":"Nicht ganz. ")+q.e;
+    qScore();
+  });
+  qScore();
+}
+$("qReset").onclick=qRender;
+
+/* ---------- Start ---------- */
+heroUpdate(); cmpUpdate(); toyRender(); findCollision(); avUpdate(); stRender(); logUpdate(); pinCrack(); intUpdate(); qRender();
+</script>
+</body>
+</html>
