@@ -440,10 +440,10 @@ print(hashlib.<span class="f">sha256</span>(daten).<span class="f">hexdigest</sp
       </div>
       <div class="status warn" id="pinOut" aria-live="polite"></div>
       <div class="tbl"><table>
-        <thead><tr><th scope="col">Passwortart</th><th scope="col">Möglichkeiten</th><th scope="col">Zeit mit Ihrem Browser</th></tr></thead>
+        <thead><tr><th scope="col">Passwortart</th><th scope="col">Möglichkeiten</th><th scope="col">Zeit im Browser</th></tr></thead>
         <tbody id="pinTbl"></tbody>
       </table></div>
-      <p class="small muted">Geschätzt für das Durchprobieren aller Möglichkeiten. Grafikkarten schaffen pro Sekunde viele Milliarden SHA-256-Hashes, also weit mehr als ein Browser.</p>
+      <p class="small muted">Zeit für das Durchprobieren aller Möglichkeiten, wenn ein Browser 1 Million Hashes pro Sekunde schafft (angenommener Wert). Grafikkarten schaffen pro Sekunde viele Milliarden SHA-256-Hashes.</p>
     </div>
   </div>
   <div class="merke"><strong>Schnell ist hier schlecht</strong> SHA-256 ist auf Tempo gebaut, und genau das hilft dem Angreifer. Für Passwörter setzt man deshalb absichtlich langsame Verfahren wie Argon2, bcrypt oder scrypt ein. Das Prinzip von Hash und Salt bleibt gleich.</div>
@@ -691,18 +691,16 @@ function dur(s){
   const e=Math.floor(Math.log10(y));
   return `rund ${(y/10**e).toFixed(1)} × 10^${e} Jahre`;
 }
+const HASH_RATE=1000000; /* angenommenes Tempo, bewusst konstant */
 function pinCrack(){
   const pin=$("pinIn").value, o=$("pinOut");
   if(!/^\d{4}$/.test(pin)){ o.className="status bad"; o.textContent="Geben Sie genau 4 Ziffern ein."; return; }
   o.className="status warn";
   const target=sha(pin); let found=null, tries=0;
   for(let i=0;i<10000&&!found;i++){ const g=String(i).padStart(4,"0"); tries++; if(sha(g)===target) found=g; }
-  const t0=performance.now(); let c=0;
-  while(performance.now()-t0<60){ for(let i=0;i<200;i++){ sha(String(c)); c++; } }
-  const rate=c/((performance.now()-t0)/1000);
-  o.innerHTML=`✗ Gefunden: PIN <strong class="mono">${found}</strong> nach ${fmt(tries)} Versuchen. Ihr Browser schafft rund ${fmt(Math.round(rate/1000)*1000)} Hashes pro Sekunde.`;
+  o.innerHTML=`✗ Gefunden: PIN <strong class="mono">${found}</strong> nach ${fmt(tries)} Versuchen.`;
   const rows=[["4-stellige PIN","10'000",1e4],["8 Kleinbuchstaben","2.1 × 10^11",26**8],["8 Zeichen gemischt","6.1 × 10^15",94**8],["16 Zeichen gemischt","3.7 × 10^31",94**16]];
-  $("pinTbl").innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${dur(r[2]/rate)}</td></tr>`).join("");
+  $("pinTbl").innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${dur(r[2]/HASH_RATE)}</td></tr>`).join("");
 }
 $("pinBtn").onclick=pinCrack;
 
