@@ -1,0 +1,634 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Kryptologie), Selbststudium für Schüler:innen, Gymnasium, ohne Formeln (Shannon nur erwähnt)
+  Zielgruppe/Gerät: Schüler:innen, Desktop und Handy; Beamer-Modus-Schalter für den Unterricht
+  Inhalt: Prinzip mit Buchstaben (mod 26) als Einstieg, danach Bits mit XOR; Begründung der Unknackbarkeit; vier Voraussetzungen; Grenzen in der Praxis
+  Funktionen: Ver-/Entschlüsseln-Tool (mod 26 und XOR, Zufallsschlüssel via crypto.getRandomValues), Unknackbar-Demo (jeder Klartext passt zum Geheimtext), Quiz mit sofortiger Rückmeldung und Begründung
+  Datenhaltung: keine; localStorage nur für gewählte Variante und Beamer-Modus
+  Export: keiner (Kopierknopf beim Codebeispiel)
+  Design: Nord-Farben, Open Sans + Google Sans Code, Hell/Dunkel folgt System
+    Variante A – Klar: hell und sachlich, feine Linien, Frost nur als Akzent
+    Variante B – Technisch: Kopf und Codeflächen in Polar Night auch im Hellmodus, Labels und Schrittnummern in Google Sans Code, kantige Formen
+-->
+<title>Das One-Time-Pad</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: eine Lernspalte (~70 Zeichen), Werkzeuge dürfen breiter werden; Kopfband oben, nummerierte Lernschritte */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+
+  /* Variante A, hell */
+  --bg:var(--nord6);--surface:var(--nord5);--surface-2:var(--nord4);--line:var(--nord4);
+  --text:var(--nord0);--muted:var(--nord3);
+  --accent:var(--nord10);--accent-soft:var(--nord9);--on-accent:var(--nord6);
+  --ok:var(--nord14);--warn:var(--nord13);--err:var(--nord11);--special:var(--nord15);--info:var(--nord8);
+  --head-bg:var(--nord6);--head-text:var(--nord0);--head-muted:var(--nord3);--head-line:var(--nord4);
+  --code-bg:var(--nord5);--code-text:var(--nord0);--code-muted:var(--nord3);--code-line:var(--nord4);--code-accent:var(--nord10);
+  --syn-kw:var(--nord10);--syn-str:var(--nord3);--syn-num:var(--nord15);--syn-com:var(--nord3);--syn-fn:var(--nord10);
+
+  --radius:6px;--radius-lg:10px;
+  --label-font:var(--font);--label-case:none;--label-track:0;--label-size:.8rem;--label-weight:600;
+  --h-weight:600;--title-weight:700;
+}
+:root[data-variant="b"]{
+  --head-bg:var(--nord0);--head-text:var(--nord6);--head-muted:var(--nord4);--head-line:var(--nord2);
+  --code-bg:var(--nord0);--code-text:var(--nord6);--code-muted:var(--nord4);--code-line:var(--nord2);--code-accent:var(--nord8);
+  --syn-kw:var(--nord9);--syn-str:var(--nord14);--syn-num:var(--nord15);--syn-com:var(--nord3);--syn-fn:var(--nord8);
+  --radius:2px;--radius-lg:3px;
+  --label-font:var(--font-mono);--label-case:uppercase;--label-track:.08em;--label-size:.74rem;--label-weight:400;
+  --h-weight:700;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--line:var(--nord2);
+    --text:var(--nord6);--muted:var(--nord4);
+    --accent:var(--nord8);--accent-soft:var(--nord9);--on-accent:var(--nord0);
+    --head-bg:var(--nord0);--head-text:var(--nord6);--head-muted:var(--nord4);--head-line:var(--nord2);
+    --code-bg:var(--nord1);--code-text:var(--nord6);--code-muted:var(--nord4);--code-line:var(--nord2);--code-accent:var(--nord8);
+    --syn-kw:var(--nord9);--syn-str:var(--nord14);--syn-num:var(--nord15);--syn-com:var(--nord4);--syn-fn:var(--nord8);
+    color-scheme:dark;
+  }
+  :root[data-variant="b"]:not([data-theme="light"]){
+    --head-bg:var(--nord1);--head-line:var(--nord3);
+    --code-bg:var(--nord1);--code-line:var(--nord3);--syn-com:var(--nord3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--line:var(--nord2);
+  --text:var(--nord6);--muted:var(--nord4);
+  --accent:var(--nord8);--accent-soft:var(--nord9);--on-accent:var(--nord0);
+  --head-bg:var(--nord0);--head-text:var(--nord6);--head-muted:var(--nord4);--head-line:var(--nord2);
+  --code-bg:var(--nord1);--code-text:var(--nord6);--code-muted:var(--nord4);--code-line:var(--nord2);--code-accent:var(--nord8);
+  --syn-kw:var(--nord9);--syn-str:var(--nord14);--syn-num:var(--nord15);--syn-com:var(--nord4);--syn-fn:var(--nord8);
+  color-scheme:dark;
+}
+:root[data-theme="dark"][data-variant="b"]{
+  --head-bg:var(--nord1);--head-line:var(--nord3);
+  --code-bg:var(--nord1);--code-line:var(--nord3);--syn-com:var(--nord3);
+}
+
+html.beamer{font-size:22px}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:1.0625rem;line-height:1.6;-webkit-text-size-adjust:100%}
+html.beamer body{font-weight:600}
+*{box-sizing:border-box}
+button,input{font:inherit;color:inherit}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code,kbd,.mono{font-family:var(--font-mono)}
+p code,li code,td code{font-size:.9em;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:0 .3em}
+
+.inner{max-width:60rem;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.prose{max-width:42rem}
+
+/* Kopf */
+.band-head{background:var(--head-bg);color:var(--head-text);border-bottom:1px solid var(--head-line)}
+.band-head .inner{padding-block:1.25rem 2.5rem}
+.topbar{display:flex;flex-wrap:wrap;gap:.75rem 1rem;align-items:center;justify-content:space-between;margin-bottom:2.25rem}
+.kicker{font-family:var(--label-font);text-transform:var(--label-case);letter-spacing:var(--label-track);font-size:var(--label-size);font-weight:var(--label-weight);color:var(--head-muted)}
+.controls{display:flex;gap:.5rem;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--head-line);border-radius:var(--radius);overflow:hidden}
+.seg button,.toggle{background:transparent;border:0;color:var(--head-text);padding:.35rem .7rem;font-size:.85rem;cursor:pointer;font-family:var(--label-font)}
+.seg button[aria-pressed="true"]{background:var(--head-text);color:var(--head-bg);font-weight:600}
+.toggle{border:1px solid var(--head-line);border-radius:var(--radius)}
+.toggle[aria-pressed="true"]{background:var(--head-text);color:var(--head-bg);font-weight:600}
+h1{font-size:clamp(2.1rem,6vw,3.4rem);line-height:1.1;margin:0 0 .9rem;font-weight:var(--title-weight);text-wrap:balance;letter-spacing:-.01em}
+:root[data-variant="b"] h1 .pad{font-family:var(--font-mono);font-weight:600;color:var(--nord8)}
+.lead{font-size:1.15rem;max-width:40rem;margin:0;color:var(--head-text)}
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:1rem;margin-top:2rem}
+.glance div{border-top:1px solid var(--head-line);padding-top:.7rem;min-width:0}
+.glance b{display:block;font-family:var(--label-font);text-transform:var(--label-case);letter-spacing:var(--label-track);font-size:var(--label-size);color:var(--head-muted);font-weight:var(--label-weight);margin-bottom:.2rem}
+.glance span{font-size:.97rem}
+.hero-strip{font-family:var(--font-mono);font-size:.95rem;margin-top:1.8rem;overflow-x:auto;white-space:nowrap;color:var(--head-muted);line-height:1.7}
+.hero-strip em{font-style:normal;color:var(--head-text);font-weight:600}
+
+/* Abschnitte */
+main .inner{padding-block:1rem 4rem}
+section{padding-top:3rem}
+.sec-head{display:flex;gap:.9rem;align-items:baseline;margin-bottom:.8rem}
+.num{font-family:var(--label-font);font-size:.9rem;color:var(--muted);min-width:1.6rem}
+:root[data-variant="b"] .num{color:var(--code-accent);background:var(--nord0);color:var(--nord8);padding:.05rem .45rem;border-radius:var(--radius)}
+h2{font-size:1.65rem;line-height:1.2;margin:0;font-weight:var(--h-weight);text-wrap:balance}
+h3{font-size:1.15rem;margin:1.8rem 0 .4rem;font-weight:var(--h-weight)}
+p{margin:.6rem 0}
+.label{font-family:var(--label-font);text-transform:var(--label-case);letter-spacing:var(--label-track);font-size:var(--label-size);font-weight:var(--label-weight);color:var(--muted)}
+
+.box{border:1px solid var(--line);border-radius:var(--radius-lg);padding:1rem 1.15rem;margin:1.2rem 0;background:var(--surface);max-width:42rem}
+.box.merke{border-color:var(--special);background:color-mix(in srgb,var(--nord15) 10%,var(--surface))}
+.box.warnung{border-color:var(--warn);background:color-mix(in srgb,var(--nord13) 12%,var(--surface))}
+.box .label{display:block;margin-bottom:.25rem;color:var(--text)}
+.box p:last-child{margin-bottom:0}.box p:first-of-type{margin-top:0}
+
+/* Werkzeuge */
+.tool{border:1px solid var(--code-line);border-radius:var(--radius-lg);background:var(--code-bg);color:var(--code-text);margin:1.4rem 0;overflow:hidden}
+.tool-head{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.6rem 1rem;border-bottom:1px solid var(--code-line)}
+.tool-head .label{color:var(--code-muted)}
+.tool-body{padding:1rem;display:grid;gap:1rem}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:.9rem}
+.field{display:grid;gap:.3rem;min-width:0}
+.field label{font-size:.85rem;font-weight:600;color:var(--code-text)}
+.field .row{display:flex;gap:.5rem}
+input[type="text"]{width:100%;min-width:0;font-family:var(--font-mono);font-size:1rem;padding:.5rem .65rem;border:1px solid var(--code-line);border-radius:var(--radius);background:var(--bg);color:var(--text);letter-spacing:.06em}
+.btn{border:1px solid var(--code-accent);background:transparent;color:var(--code-text);border-radius:var(--radius);padding:.45rem .8rem;font-size:.88rem;cursor:pointer;white-space:nowrap}
+.btn:hover{background:color-mix(in srgb,var(--nord8) 18%,transparent)}
+.btn.primary{background:var(--code-accent);color:var(--code-bg);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+.chips .label{color:var(--code-muted);margin-right:.2rem}
+.chip{font-family:var(--font-mono);font-size:.82rem;border:1px solid var(--code-line);background:transparent;color:var(--code-text);border-radius:999px;padding:.2rem .65rem;cursor:pointer}
+:root[data-variant="b"] .chip{border-radius:var(--radius)}
+.chip:hover{border-color:var(--code-accent)}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.grid{border-collapse:collapse;font-family:var(--font-mono);font-size:.95rem;font-variant-numeric:tabular-nums}
+table.grid th{position:sticky;left:0;background:var(--code-bg);text-align:left;font-family:var(--font);font-weight:600;font-size:.8rem;padding:.3rem .8rem .3rem 0;white-space:nowrap;color:var(--code-muted)}
+table.grid td{text-align:center;min-width:2.1em;padding:.28rem .2rem;border-left:1px solid var(--code-line)}
+table.grid tr.big td{font-size:1.1rem;font-weight:600}
+table.grid tr.res td{color:var(--code-text);font-weight:600;font-size:1.1rem;border-top:1px solid var(--code-line)}
+table.grid tr.res th{border-top:1px solid var(--code-line)}
+table.grid tr.small td{color:var(--code-muted);font-size:.8rem}
+.dot{display:inline-block;width:.6em;height:.6em;border-radius:2px;margin-right:.45em;vertical-align:.05em}
+.dot.k{background:var(--nord10)}.dot.s{background:var(--nord15)}.dot.g{background:var(--nord14)}
+
+table.bits{border-collapse:collapse;font-family:var(--font-mono);font-size:.95rem}
+table.bits th,table.bits td{padding:.32rem .7rem;text-align:left;white-space:nowrap;border-bottom:1px solid var(--code-line)}
+table.bits thead th{font-family:var(--font);font-size:.78rem;color:var(--code-muted);font-weight:600}
+table.bits td.ch{font-weight:600;font-size:1.05rem}
+table.bits .flip{background:color-mix(in srgb,var(--nord13) 40%,transparent);border-radius:2px}
+table.bits td.hex{color:var(--code-muted)}
+
+.status{font-size:.92rem;display:flex;gap:.5rem;align-items:flex-start;padding:.55rem .75rem;border-radius:var(--radius);border:1px solid var(--code-line)}
+.status.ok{border-color:var(--ok);background:color-mix(in srgb,var(--nord14) 14%,transparent)}
+.status.warn{border-color:var(--warn);background:color-mix(in srgb,var(--nord13) 16%,transparent)}
+.status.err{border-color:var(--err);background:color-mix(in srgb,var(--nord11) 14%,transparent)}
+.status .ico{font-weight:700}
+.out{display:grid;gap:.25rem}
+.out .val{font-family:var(--font-mono);font-size:1.25rem;font-weight:600;word-break:break-all;letter-spacing:.08em}
+.out .label{color:var(--code-muted)}
+
+.truth{border-collapse:collapse;font-family:var(--font-mono);margin:.8rem 0}
+.truth th,.truth td{border:1px solid var(--line);padding:.3rem .9rem;text-align:center}
+.truth th{background:var(--surface);font-weight:600}
+
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem;margin:1.2rem 0}
+.compare > div{border:1px solid var(--line);border-radius:var(--radius-lg);padding:1rem;background:var(--surface);min-width:0}
+.compare h3{margin-top:0}
+.compare .mono{font-size:.9rem;line-height:1.7;overflow-x:auto;white-space:nowrap;padding:.4rem 0}
+.hit{font-weight:600;text-decoration:underline;text-decoration-color:var(--ok);text-decoration-thickness:2px}
+
+/* Voraussetzungen */
+.req{display:grid;grid-template-columns:repeat(auto-fit,minmax(17rem,1fr));gap:1rem;margin-top:1rem}
+.req article{border:1px solid var(--line);border-radius:var(--radius-lg);padding:1.1rem;background:var(--surface);display:grid;gap:.35rem;align-content:start;min-width:0}
+.req .n{font-family:var(--font-mono);font-size:.85rem;color:var(--muted)}
+.req h3{margin:0}
+.req .if{margin-top:.5rem;padding-top:.6rem;border-top:1px dashed var(--line);font-size:.93rem}
+.req .if b{color:var(--text)}
+:root[data-variant="b"] .req article{border-top:3px solid var(--nord8)}
+
+/* Code */
+.code{position:relative;border:1px solid var(--code-line);border-radius:var(--radius-lg);background:var(--code-bg);color:var(--code-text);margin:1.2rem 0;max-width:46rem}
+.code pre{margin:0;padding:1rem;overflow-x:auto;font-family:var(--font-mono);font-size:.9em;line-height:1.5}
+.code .bar{display:flex;justify-content:space-between;align-items:center;padding:.4rem .4rem .4rem 1rem;border-bottom:1px solid var(--code-line)}
+.code .bar .label{color:var(--code-muted)}
+.kw{color:var(--syn-kw);font-weight:600}.st{color:var(--syn-str)}.nu{color:var(--syn-num)}.co{color:var(--syn-com);font-style:italic}.fn{color:var(--syn-fn)}
+
+/* Quiz */
+.quiz{display:grid;gap:1.2rem;margin-top:1rem}
+.q{border:1px solid var(--line);border-radius:var(--radius-lg);padding:1.1rem;background:var(--surface)}
+.q p.qt{font-weight:600;margin:.2rem 0 .8rem}
+.opts{display:grid;gap:.5rem}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:var(--radius);padding:.6rem .8rem;cursor:pointer;display:flex;gap:.6rem;align-items:flex-start;color:var(--text)}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt .mark{font-family:var(--font-mono);font-size:.85rem;color:var(--muted);min-width:1.2rem}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--nord14) 16%,var(--bg))}
+.opt.wrong{border-color:var(--err);background:color-mix(in srgb,var(--nord11) 13%,var(--bg))}
+.fb{margin-top:.8rem;font-size:.95rem}
+.fb b{display:block}
+.score{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;border:1px solid var(--line);border-radius:var(--radius-lg);padding:.8rem 1rem;margin-top:1rem}
+.score .btn{border-color:var(--accent);color:var(--text)}
+
+footer{border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+footer .inner{padding-block:1.2rem 2rem}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="band-head">
+  <div class="inner">
+    <div class="topbar">
+      <span class="kicker">Kryptologie · Informatik</span>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Design-Variante">
+          <button type="button" id="var-a" data-v="a" aria-pressed="true">Variante A</button>
+          <button type="button" id="var-b" data-v="b" aria-pressed="false">B</button>
+        </div>
+        <button type="button" class="toggle" id="beamer" aria-pressed="false">Beamer-Modus</button>
+      </div>
+    </div>
+    <h1>Das One-Time-<span class="pad">Pad</span></h1>
+    <p class="lead">Das einzige Verschlüsselungsverfahren, von dem bewiesen ist, dass niemand es knacken kann. Auch nicht mit unbegrenzter Rechenleistung. Hier siehst du, wie es funktioniert, warum es unknackbar ist und welche Bedingungen dafür erfüllt sein müssen.</p>
+    <div class="hero-strip" aria-label="Beispiel einer Verschlüsselung">
+      Klartext&nbsp;&nbsp;&nbsp; <em>T R E F F P U N K T</em><br>
+      Schlüssel&nbsp;&nbsp; <em>X M C K L Q A Z V D</em><br>
+      Geheimtext <em>Q D G P Q F U M F W</em>
+    </div>
+    <div class="glance">
+      <div><b>Idee</b><span>Jeder Buchstabe wird um einen eigenen, zufälligen Wert verschoben.</span></div>
+      <div><b>Warum sicher</b><span>Zum Geheimtext passt jeder sinnvolle Klartext gleicher Länge.</span></div>
+      <div><b>Der Haken</b><span>Der Schlüssel ist so lang wie die Nachricht und darf nur einmal gebraucht werden.</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="inner">
+
+<section id="idee">
+  <div class="sec-head"><span class="num">1</span><h2>Die Idee</h2></div>
+  <div class="prose">
+    <p>Du kennst vielleicht die Caesar-Verschlüsselung: Alle Buchstaben werden um denselben Wert verschoben, zum Beispiel um 3. Das One-Time-Pad treibt diese Idee auf die Spitze. <b>Jeder einzelne Buchstabe bekommt seine eigene, zufällige Verschiebung.</b> Die Liste dieser Verschiebungen ist der Schlüssel. Er ist genau so lang wie die Nachricht und wird nach einmaligem Gebrauch vernichtet.</p>
+    <p>Der Name kommt aus der Spionage: Agenten trugen kleine Blöcke (englisch <i>pad</i>) mit Zufallsbuchstaben bei sich. Jedes Blatt wurde für eine einzige Nachricht verwendet (<i>one time</i>) und danach verbrannt.</p>
+  </div>
+  <div class="box">
+    <span class="label">Etwas Geschichte</span>
+    <p>1917 baute Gilbert Vernam ein Fernschreibgerät, das jedes Zeichen mit einem Zeichen von einem Lochstreifen-Schlüssel verknüpfte. Joseph Mauborgne ergänzte, dass dieser Schlüssel zufällig sein und nur einmal verwendet werden muss. 1949 bewies Claude Shannon mathematisch, dass das Verfahren unter diesen Bedingungen absolut sicher ist.</p>
+  </div>
+</section>
+
+<section id="buchstaben">
+  <div class="sec-head"><span class="num">2</span><h2>Verschlüsseln mit Buchstaben</h2></div>
+  <div class="prose">
+    <p>Zuerst wird jeder Buchstabe in eine Zahl übersetzt: <code>A = 0</code>, <code>B = 1</code>, … <code>Z = 25</code>.</p>
+    <p><b>Verschlüsseln:</b> Klartext-Zahl plus Schlüssel-Zahl. Ist das Ergebnis 26 oder grösser, ziehst du 26 ab. Das nennt man <i>Rechnen modulo 26</i>: Nach Z geht es wieder bei A weiter.</p>
+    <p><b>Entschlüsseln:</b> Geheimtext-Zahl minus Schlüssel-Zahl. Ist das Ergebnis negativ, zählst du 26 dazu.</p>
+    <p>Beispiel: <code>T</code> (19) + <code>X</code> (23) = 42. 42 − 26 = 16, also <code>Q</code>. Zurück: 16 − 23 = −7, −7 + 26 = 19, also wieder <code>T</code>.</p>
+  </div>
+
+  <div class="tool" id="tool-mod">
+    <div class="tool-head"><span class="label">Werkzeug · Buchstaben modulo 26</span></div>
+    <div class="tool-body">
+      <div class="fields">
+        <div class="field">
+          <label for="m-klar">Klartext</label>
+          <input type="text" id="m-klar" value="TREFFPUNKT BAHNHOF" maxlength="40" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="m-key">Schlüssel</label>
+          <div class="row">
+            <input type="text" id="m-key" maxlength="40" autocomplete="off" spellcheck="false">
+            <button type="button" class="btn primary" id="m-neu">Neu würfeln</button>
+          </div>
+        </div>
+      </div>
+      <div class="scroll"><table class="grid" id="m-grid"></table></div>
+      <div class="status" id="m-status"></div>
+      <div class="fields">
+        <div class="out"><span class="label">Geheimtext</span><span class="val" id="m-geheim"></span></div>
+        <div class="out"><span class="label">Probe: Geheimtext − Schlüssel</span><span class="val" id="m-probe"></span></div>
+      </div>
+    </div>
+  </div>
+  <p class="prose label" style="text-transform:none;letter-spacing:0;font-family:var(--font)">Tipp: Tippe als Schlüssel einmal nur <code>AAAA…</code> ein. Was passiert, und warum ist das ein schlechter Schlüssel, obwohl er die richtige Länge hat?</p>
+</section>
+
+<section id="bits">
+  <div class="sec-head"><span class="num">3</span><h2>Verschlüsseln mit Bits</h2></div>
+  <div class="prose">
+    <p>Computer speichern Text als Bytes, also als Folgen von Nullen und Einsen. Das One-Time-Pad funktioniert damit genau gleich, nur rechnet man jetzt <b>modulo 2</b> statt modulo 26. Diese Rechnung heisst <b>XOR</b> (Symbol ⊕): Das Ergebnis ist 1, wenn genau eines der beiden Bits 1 ist.</p>
+  </div>
+  <table class="truth" aria-label="Wahrheitstabelle XOR">
+    <thead><tr><th>Klartext-Bit</th><th>Schlüssel-Bit</th><th>Geheim-Bit</th></tr></thead>
+    <tbody><tr><td>0</td><td>0</td><td>0</td></tr><tr><td>0</td><td>1</td><td>1</td></tr><tr><td>1</td><td>0</td><td>1</td></tr><tr><td>1</td><td>1</td><td>0</td></tr></tbody>
+  </table>
+  <div class="prose">
+    <p>Merk dir die einfache Regel: <b>Wo der Schlüssel eine 1 hat, kippt das Bit. Wo er eine 0 hat, bleibt es.</b> Wendest du denselben Schlüssel ein zweites Mal an, kippen dieselben Bits zurück. Deshalb sind Ver- und Entschlüsseln bei XOR dieselbe Operation.</p>
+  </div>
+
+  <div class="tool" id="tool-xor">
+    <div class="tool-head"><span class="label">Werkzeug · Bits mit XOR</span></div>
+    <div class="tool-body">
+      <div class="field">
+        <label for="x-klar">Klartext (höchstens 12 Zeichen)</label>
+        <div class="row">
+          <input type="text" id="x-klar" value="Hallo!" maxlength="12" autocomplete="off" spellcheck="false">
+          <button type="button" class="btn primary" id="x-neu">Neu würfeln</button>
+        </div>
+      </div>
+      <div class="scroll"><table class="bits" id="x-table"></table></div>
+      <div class="fields">
+        <div class="out"><span class="label">Geheimtext (hexadezimal)</span><span class="val" id="x-hex" style="font-size:1rem"></span></div>
+        <div class="out"><span class="label">Probe: Geheimtext ⊕ Schlüssel</span><span class="val" id="x-probe"></span></div>
+      </div>
+      <p style="margin:0;font-size:.88rem;color:var(--code-muted)"><span class="flip-demo" style="background:color-mix(in srgb,var(--nord13) 40%,transparent);padding:0 .3em;border-radius:2px">Markiert</span> sind die Bits, die der Schlüssel gekippt hat. Umlaute belegen in UTF-8 zwei Bytes.</p>
+    </div>
+  </div>
+
+  <div class="code">
+    <div class="bar"><span class="label">Python</span><button type="button" class="btn" id="copy">Kopieren</button></div>
+<pre><code id="py"><span class="kw">import</span> secrets
+
+<span class="kw">def</span> <span class="fn">otp</span>(daten: bytes, schluessel: bytes) -&gt; bytes:
+    <span class="co"># Ver- und Entschlüsseln sind dieselbe Operation</span>
+    <span class="kw">assert</span> <span class="fn">len</span>(schluessel) &gt;= <span class="fn">len</span>(daten), <span class="st">"Schlüssel zu kurz"</span>
+    <span class="kw">return</span> <span class="fn">bytes</span>(d ^ s <span class="kw">for</span> d, s <span class="kw">in</span> <span class="fn">zip</span>(daten, schluessel))
+
+nachricht  = <span class="st">"Treffpunkt 9 Uhr"</span>.encode()
+schluessel = secrets.token_bytes(<span class="fn">len</span>(nachricht))   <span class="co"># kryptografischer Zufall</span>
+geheim     = otp(nachricht, schluessel)
+<span class="fn">print</span>(geheim.hex())
+<span class="fn">print</span>(otp(geheim, schluessel).decode())            <span class="co"># Treffpunkt 9 Uhr</span></code></pre>
+  </div>
+</section>
+
+<section id="unknackbar">
+  <div class="sec-head"><span class="num">4</span><h2>Weshalb es unknackbar ist</h2></div>
+  <div class="prose">
+    <p>Die übliche Methode, eine Verschlüsselung zu knacken, heisst <b>Brute Force</b>: Man probiert einfach alle möglichen Schlüssel durch und schaut, welcher einen sinnvollen Text ergibt. Vergleiche, was dabei herauskommt:</p>
+  </div>
+  <div class="compare">
+    <div>
+      <h3>Caesar</h3>
+      <p>Nur 25 mögliche Schlüssel. Genau einer ergibt einen sinnvollen Text, und der ist die Lösung.</p>
+      <div class="mono">
+        Geheimtext: ZLU VLQG GD<br>−1 YKT UKPF FC<br>−2 XJS TJOE EB<br>−3 <span class="hit">WIR SIND DA</span> ← Treffer<br>−4 VHQ RHMC CZ …
+      </div>
+      <p><b>✗ In Sekunden geknackt.</b></p>
+    </div>
+    <div>
+      <h3>One-Time-Pad</h3>
+      <p>Bei 13 Buchstaben gibt es 26<sup>13</sup>, also rund 2,5 Trillionen Schlüssel. Durchprobiert ergeben sie <b>jeden</b> denkbaren Text mit 13 Buchstaben.</p>
+      <div class="mono">
+        <span class="hit">ANGRIFFUMNEUN</span><br><span class="hit">RUECKZUGJETZT</span><br><span class="hit">ALLESISTRUHIG</span><br>QWXPLMZTRBKAE …
+      </div>
+      <p><b>✓ Viele sinnvolle Treffer. Welcher stimmt, bleibt offen.</b></p>
+    </div>
+  </div>
+
+  <div class="tool" id="tool-demo">
+    <div class="tool-head"><span class="label">Demo · Jeder Klartext passt</span></div>
+    <div class="tool-body">
+      <div class="out"><span class="label">Abgefangener Geheimtext</span><span class="val" id="d-geheim"></span></div>
+      <div class="field">
+        <label for="d-kand">Welche Nachricht könnte dahinter stecken? Gib einen Text mit genau 13 Buchstaben ein.</label>
+        <input type="text" id="d-kand" value="ANGRIFFUMNEUN" maxlength="20" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="chips"><span class="label">Beispiele</span>
+        <button type="button" class="chip" data-t="ANGRIFFUMNEUN">ANGRIFFUMNEUN</button>
+        <button type="button" class="chip" data-t="RUECKZUGJETZT">RUECKZUGJETZT</button>
+        <button type="button" class="chip" data-t="ALLESISTRUHIG">ALLESISTRUHIG</button>
+        <button type="button" class="chip" data-t="PIZZAUMSIEBEN">PIZZAUMSIEBEN</button>
+      </div>
+      <div class="scroll"><table class="grid" id="d-grid"></table></div>
+      <div class="status" id="d-status"></div>
+    </div>
+  </div>
+
+  <div class="prose">
+    <h3>Der Kern des Arguments</h3>
+    <p>Weil der Schlüssel echt zufällig ist, ist jede Buchstabenfolge als Schlüssel <b>gleich wahrscheinlich</b>. Also ist auch jeder Klartext gleicher Länge gleich gut mit dem Geheimtext vereinbar. Wer den Geheimtext abfängt, weiss danach über den Inhalt genau so viel wie vorher: nichts. Verraten wird einzig die <b>Länge</b> der Nachricht.</p>
+    <p>Claude Shannon nannte diese Eigenschaft <b>perfekte Sicherheit</b>. Sie hängt nicht davon ab, wie schnell Computer sind. Auch ein Quantencomputer hilft nicht, weil es schlicht keine Information gibt, die er herausrechnen könnte.</p>
+  </div>
+  <div class="box merke">
+    <span class="label">Merke</span>
+    <p>«Unknackbar» heisst beim One-Time-Pad nicht «sehr schwierig», sondern <b>unmöglich</b>. Heutige Verfahren wie AES gelten als sicher, weil das Knacken zu lange dauern würde. Das One-Time-Pad ist sicher, weil der Geheimtext gar keine verwertbare Information enthält.</p>
+  </div>
+</section>
+
+<section id="voraussetzungen">
+  <div class="sec-head"><span class="num">5</span><h2>Die vier Voraussetzungen</h2></div>
+  <div class="prose"><p>Die perfekte Sicherheit gilt nur, wenn <b>alle vier</b> Bedingungen erfüllt sind. Fällt eine weg, bricht die Sicherheit zusammen.</p></div>
+  <div class="req">
+    <article>
+      <span class="n">1</span>
+      <h3>Echter Zufall</h3>
+      <p>Der Schlüssel muss wirklich zufällig sein, etwa aus Würfeln, elektronischem Rauschen oder einem kryptografischen Zufallsgenerator.</p>
+      <p class="if"><b>Sonst:</b> Ein Pseudozufallsgenerator wie <code>random()</code> berechnet seine Zahlen aus einem Startwert. Wer den Startwert errät, kennt den ganzen Schlüssel. Auch ein «ausgedachter» Schlüssel hat Muster.</p>
+    </article>
+    <article>
+      <span class="n">2</span>
+      <h3>Mindestens so lang wie die Nachricht</h3>
+      <p>Für jedes Zeichen der Nachricht braucht es ein eigenes Schlüsselzeichen.</p>
+      <p class="if"><b>Sonst:</b> Wiederholt sich ein kurzer Schlüssel, entsteht die Vigenère-Verschlüsselung. Die lässt sich über wiederkehrende Muster und Buchstabenhäufigkeiten knacken.</p>
+    </article>
+    <article>
+      <span class="n">3</span>
+      <h3>Nur ein einziges Mal verwenden</h3>
+      <p>Jeder Schlüssel wird für genau eine Nachricht gebraucht und danach vernichtet.</p>
+      <p class="if"><b>Sonst:</b> Verknüpft man zwei Geheimtexte mit gleichem Schlüssel per XOR, hebt sich der Schlüssel auf: <code>G₁ ⊕ G₂ = K₁ ⊕ K₂</code>. Übrig bleiben zwei vermischte Klartexte, die man mit Sprachwissen trennen kann. So entschlüsselten die USA im Projekt Venona ab den 1940er-Jahren Teile sowjetischer Funksprüche, weil Schlüsselblätter doppelt gedruckt worden waren.</p>
+    </article>
+    <article>
+      <span class="n">4</span>
+      <h3>Geheim halten und sicher übergeben</h3>
+      <p>Sender und Empfänger brauchen denselben Schlüssel. Er muss vorher auf sicherem Weg übergeben werden, etwa persönlich, und darf niemand anderem in die Hände fallen.</p>
+      <p class="if"><b>Sonst:</b> Wer den Schlüssel kennt, liest alles mit. Die beste Mathematik nützt nichts, wenn das Schlüsselblatt gestohlen wird.</p>
+    </article>
+  </div>
+</section>
+
+<section id="grenzen">
+  <div class="sec-head"><span class="num">6</span><h2>Warum es trotzdem kaum jemand nutzt</h2></div>
+  <div class="prose">
+    <p><b>Schlüsselverteilung:</b> Für ein Video von 1 GB brauchst du 1 GB Schlüssel, und den musst du vorher sicher zum Empfänger bringen. Hättest du diesen sicheren Weg, könntest du gleich die Nachricht darüber schicken. Im Internet mit Milliarden von Verbindungen ist das nicht machbar.</p>
+    <p><b>Kein Schutz vor Veränderung:</b> Das One-Time-Pad hält eine Nachricht geheim, schützt sie aber nicht vor Manipulation. Kennt ein Angreifer den Aufbau, etwa <code>ZAHLE 100 CHF</code>, kann er gezielt Bits im Geheimtext kippen und daraus <code>ZAHLE 900 CHF</code> machen, ohne den Schlüssel zu kennen.</p>
+    <p><b>Länge sichtbar:</b> Eine kurze Nachricht bleibt kurz. Manchmal verrät schon das etwas.</p>
+    <p>Deshalb setzt man heute Verfahren wie AES mit kurzen Schlüsseln (z.&nbsp;B. 256 Bit) ein, kombiniert mit Prüfsummen gegen Manipulation. Das One-Time-Pad blieb Spezialfällen vorbehalten, etwa diplomatischen Verbindungen und Agentenfunk im Kalten Krieg.</p>
+  </div>
+</section>
+
+<section id="quiz">
+  <div class="sec-head"><span class="num">7</span><h2>Teste dich</h2></div>
+  <div class="prose"><p>Wähle jeweils eine Antwort. Du siehst sofort, ob sie stimmt, und weshalb.</p></div>
+  <div class="quiz" id="quiz-list"></div>
+  <div class="score"><span id="q-score">0 von 7 beantwortet</span><button type="button" class="btn" id="q-reset">Quiz zurücksetzen</button></div>
+</section>
+
+</div>
+</main>
+<footer><div class="inner">One-Time-Pad · Lernmaterial Kryptologie</div></footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  function store(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function load(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+
+  /* Variante und Beamer */
+  var vBtns = document.querySelectorAll('.seg button');
+  function setVariant(v){
+    root.setAttribute('data-variant', v);
+    vBtns.forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === v)); });
+    store('otp-variant', v);
+  }
+  vBtns.forEach(function(b){ b.addEventListener('click', function(){ setVariant(b.dataset.v); }); });
+  setVariant(load('otp-variant') === 'b' ? 'b' : 'a');
+  var beamerBtn = document.getElementById('beamer');
+  function setBeamer(on){ root.classList.toggle('beamer', on); beamerBtn.setAttribute('aria-pressed', String(on)); store('otp-beamer', on ? '1' : '0'); }
+  beamerBtn.addEventListener('click', function(){ setBeamer(!root.classList.contains('beamer')); });
+  setBeamer(load('otp-beamer') === '1');
+
+  /* Zufall ohne Verzerrung */
+  var hasCrypto = !!(window.crypto && crypto.getRandomValues);
+  function randInt(n){
+    if(!hasCrypto) return Math.floor(Math.random()*n);
+    var lim = Math.floor(4294967296 / n) * n, a = new Uint32Array(1);
+    do { crypto.getRandomValues(a); } while (a[0] >= lim);
+    return a[0] % n;
+  }
+  function randLetters(n){ var s=''; for(var i=0;i<n;i++) s += String.fromCharCode(65+randInt(26)); return s; }
+  function randBytes(n){ var a=[]; for(var i=0;i<n;i++) a.push(randInt(256)); return a; }
+
+  var A = 65;
+  function norm(s){
+    return s.toUpperCase().replace(/Ä/g,'AE').replace(/Ö/g,'OE').replace(/Ü/g,'UE').replace(/ß/g,'SS').replace(/[^A-Z]/g,'');
+  }
+  function val(c){ return c.charCodeAt(0) - A; }
+  function chr(v){ return String.fromCharCode(A + ((v % 26) + 26) % 26); }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function row(label, cls, cells){ return '<tr class="'+cls+'"><th scope="row">'+label+'</th>'+cells.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>'; }
+  function setStatus(el, kind, ico, html){ el.className = 'status ' + kind; el.innerHTML = '<span class="ico" aria-hidden="true">'+ico+'</span><span>'+html+'</span>'; }
+
+  /* Werkzeug modulo 26 */
+  var mKlar = document.getElementById('m-klar'), mKey = document.getElementById('m-key');
+  var mAuto = true;
+  function mRender(){
+    var K = norm(mKlar.value), S = norm(mKey.value);
+    if (mAuto && S.length < K.length){ S = S + randLetters(K.length - S.length); mKey.value = S; }
+    var kl=[],kv=[],sl=[],sv=[],sum=[],gl=[],G='',P='';
+    for (var i=0;i<K.length;i++){
+      var k = val(K[i]); kl.push(K[i]); kv.push(k);
+      if (i < S.length){
+        var s = val(S[i]); sl.push(S[i]); sv.push(s);
+        var g = (k+s)%26; sum.push((k+s)+(k+s>=26?'−26':'')); gl.push(chr(g)); G += chr(g); P += chr(g - s);
+      } else { sl.push('–'); sv.push('–'); sum.push('–'); gl.push('?'); G += '?'; P += '?'; }
+    }
+    document.getElementById('m-grid').innerHTML =
+      row('<span class="dot k"></span>Klartext','big',kl) + row('Zahl','small',kv) +
+      row('<span class="dot s"></span>Schlüssel','big',sl) + row('Zahl','small',sv) +
+      row('Summe','small',sum) + row('<span class="dot g"></span>Geheimtext','res',gl);
+    document.getElementById('m-geheim').textContent = G || '–';
+    document.getElementById('m-probe').textContent = P || '–';
+    var st = document.getElementById('m-status');
+    var note = (mKlar.value.replace(/\s/g,'').toUpperCase() !== K) ? ' Umlaute werden zu AE, OE, UE; Leer- und Satzzeichen fallen weg.' : '';
+    if (!K.length) setStatus(st,'warn','!','Gib einen Klartext ein.');
+    else if (S.length < K.length) setStatus(st,'err','✗','Der Schlüssel ist '+(K.length-S.length)+' Buchstaben zu kurz. Ohne ihn zu wiederholen, lässt sich der Rest nicht verschlüsseln.'+note);
+    else if (/^A+$/.test(S.slice(0,K.length))) setStatus(st,'err','✗','Der Schlüssel besteht nur aus A, also Verschiebung 0. Der Geheimtext ist gleich dem Klartext. Ein Schlüssel muss zufällig sein, nicht nur lang genug.');
+    else if (S.length > K.length) setStatus(st,'warn','!','Der Schlüssel ist länger als nötig. Die übrigen '+(S.length-K.length)+' Buchstaben bleiben unbenutzt und dürfen nicht für eine andere Nachricht verwendet werden.'+note);
+    else setStatus(st,'ok','✓','Der Schlüssel ist genau so lang wie die Nachricht.'+note);
+  }
+  mKlar.addEventListener('input', mRender);
+  mKey.addEventListener('input', function(){ mAuto = false; mRender(); });
+  document.getElementById('m-neu').addEventListener('click', function(){ mAuto = true; mKey.value = randLetters(norm(mKlar.value).length); mRender(); });
+  mKey.value = randLetters(norm(mKlar.value).length);
+  mRender();
+
+  /* Werkzeug XOR */
+  var xKlar = document.getElementById('x-klar'), xKey = [];
+  var enc = new TextEncoder(), dec = new TextDecoder();
+  function bits(b){ return ('0000000'+b.toString(2)).slice(-8); }
+  function hex(b){ return ('0'+b.toString(16)).slice(-2).toUpperCase(); }
+  function xRender(){
+    var chars = Array.from(xKlar.value), items = [];
+    chars.forEach(function(c){ var bs = enc.encode(c); for (var j=0;j<bs.length;j++) items.push({c: j===0 ? c : '·', b: bs[j]}); });
+    if (xKey.length < items.length) xKey = xKey.concat(randBytes(items.length - xKey.length));
+    var html = '<thead><tr><th>Zeichen</th><th><span class="dot k"></span>Klartext</th><th><span class="dot s"></span>Schlüssel</th><th><span class="dot g"></span>Geheimtext</th><th>Hex</th></tr></thead><tbody>';
+    var cipher = [];
+    items.forEach(function(it,i){
+      var k = xKey[i], g = it.b ^ k; cipher.push(g);
+      var kb = bits(k), gb = bits(g), gh = '';
+      for (var p=0;p<8;p++) gh += kb[p]==='1' ? '<span class="flip">'+gb[p]+'</span>' : gb[p];
+      html += '<tr><td class="ch">'+(it.c===' ' ? '␣' : esc(it.c))+'</td><td>'+bits(it.b)+'</td><td>'+kb+'</td><td>'+gh+'</td><td class="hex">'+hex(g)+'</td></tr>';
+    });
+    document.getElementById('x-table').innerHTML = html + '</tbody>';
+    document.getElementById('x-hex').textContent = cipher.map(hex).join(' ') || '–';
+    var plain = cipher.map(function(g,i){ return g ^ xKey[i]; });
+    document.getElementById('x-probe').textContent = plain.length ? dec.decode(new Uint8Array(plain)) : '–';
+  }
+  xKlar.addEventListener('input', xRender);
+  document.getElementById('x-neu').addEventListener('click', function(){ xKey = []; xRender(); });
+  xRender();
+
+  /* Demo: jeder Klartext passt */
+  var DG = 'XQKBTMWZFOLDS';
+  document.getElementById('d-geheim').textContent = DG;
+  var dKand = document.getElementById('d-kand');
+  function dRender(){
+    var K = norm(dKand.value).slice(0, DG.length), gl=[], kl=[], sl=[], key='';
+    for (var i=0;i<DG.length;i++){
+      gl.push(DG[i]);
+      if (i < K.length){ kl.push(K[i]); var s = chr(val(DG[i]) - val(K[i])); sl.push(s); key += s; }
+      else { kl.push('?'); sl.push('?'); }
+    }
+    document.getElementById('d-grid').innerHTML =
+      row('<span class="dot g"></span>Geheimtext','big',gl) + row('<span class="dot k"></span>Vermutung','big',kl) + row('<span class="dot s"></span>Nötiger Schlüssel','res',sl);
+    var st = document.getElementById('d-status'), n = norm(dKand.value).length;
+    if (n === DG.length) setStatus(st,'ok','✓','Mit dem Schlüssel <b class="mono">'+key+'</b> ergibt der Geheimtext genau diese Nachricht. Dieser Schlüssel ist so wahrscheinlich wie jeder andere. Wer nur den Geheimtext hat, kann nicht entscheiden, welche Nachricht die echte ist.');
+    else if (n > DG.length) setStatus(st,'warn','!','Dein Text hat '+n+' Buchstaben. Der Geheimtext hat 13, deshalb kommen nur Nachrichten mit genau 13 Buchstaben in Frage. Die Länge ist das Einzige, was der Geheimtext verrät.');
+    else setStatus(st,'warn','!','Noch '+(DG.length-n)+' Buchstaben. Der Geheimtext hat 13, also passen nur Nachrichten mit genau 13 Buchstaben.');
+  }
+  dKand.addEventListener('input', dRender);
+  document.querySelectorAll('#tool-demo .chip').forEach(function(c){ c.addEventListener('click', function(){ dKand.value = c.dataset.t; dRender(); }); });
+  dRender();
+
+  /* Kopieren */
+  var copyBtn = document.getElementById('copy');
+  copyBtn.addEventListener('click', function(){
+    var t = document.getElementById('py').textContent;
+    function done(){ copyBtn.textContent = 'Kopiert'; setTimeout(function(){ copyBtn.textContent = 'Kopieren'; }, 1600); }
+    function fallback(){ var r = document.createRange(); r.selectNodeContents(document.getElementById('py')); var s = getSelection(); s.removeAllRanges(); s.addRange(r); copyBtn.textContent = 'Markiert – Ctrl+C'; }
+    try { navigator.clipboard.writeText(t).then(done, fallback); } catch(e){ fallback(); }
+  });
+
+  /* Quiz */
+  var Q = [
+    {q:'Welche Bedingung gehört zwingend zum One-Time-Pad?', o:['Der Schlüssel ist mindestens so lang wie die Nachricht.','Der Schlüssel ist mindestens 256 Bit lang.','Der Schlüssel besteht nur aus Grossbuchstaben.','Der Schlüssel wird regelmässig, z. B. monatlich, gewechselt.'], a:0,
+     e:'Jedes Zeichen der Nachricht braucht ein eigenes Schlüsselzeichen. Eine feste Länge wie 256 Bit reicht nur für kurze Nachrichten, und ein monatlicher Wechsel erlaubt Wiederverwendung.'},
+    {q:'Ein Angreifer hat unbegrenzte Rechenleistung und probiert alle Schlüssel durch. Was erhält er?', o:['Nach genügend Zeit den richtigen Klartext.','Alle möglichen Texte dieser Länge, darunter viele sinnvolle.','Eine Fehlermeldung, weil es zu viele Schlüssel sind.','Den Schlüssel, aber nicht den Klartext.'], a:1,
+     e:'Jeder Klartext gleicher Länge lässt sich mit einem passenden Schlüssel erzeugen. Der Angreifer findet also auch alle sinnvollen Nachrichten und kann nicht sagen, welche stimmt.'},
+    {q:'Was verrät ein OTP-Geheimtext über die Nachricht?', o:['Nichts, nicht einmal die Länge.','Die Buchstabenhäufigkeiten.','Nur die Länge.','Den ersten Buchstaben.'], a:2,
+     e:'Der Geheimtext ist gleich lang wie der Klartext. Über den Inhalt sagt er sonst nichts aus, weil jeder Schlüssel gleich wahrscheinlich ist.'},
+    {q:'Alice verwendet denselben Schlüssel für zwei Nachrichten. Was kann ein Angreifer tun?', o:['Nichts, das One-Time-Pad bleibt sicher.','Die beiden Geheimtexte per XOR verknüpfen, wodurch sich der Schlüssel aufhebt.','Den Schlüssel direkt aus einem Geheimtext ablesen.','Nur die zweite Nachricht lesen.'], a:1,
+     e:'G₁ ⊕ G₂ = K₁ ⊕ K₂. Der Schlüssel fällt weg, übrig bleiben zwei vermischte Klartexte, die sich mit Sprachwissen trennen lassen. So funktionierte das Projekt Venona.'},
+    {q:'Wie entschlüsselt man bei der Bit-Variante?', o:['Geheimtext ⊕ Schlüssel','Geheimtext AND Schlüssel','Geheimtext minus Schlüssel, dann umkehren','Mit einem zweiten, geheimen Entschlüsselungsschlüssel'], a:0,
+     e:'XOR mit demselben Schlüssel kippt genau die gleichen Bits zurück. Ver- und Entschlüsseln sind dieselbe Operation.'},
+    {q:'Jemand erzeugt den Schlüssel mit einem gewöhnlichen Pseudozufallsgenerator aus einem Startwert. Was ist das Problem?', o:['Keines, solange der Schlüssel lang genug ist.','Der Schlüssel wird zu lang.','Wer den Startwert errät, kann den ganzen Schlüssel nachrechnen.','Pseudozufall enthält keine Buchstaben.'], a:2,
+     e:'Ein Pseudozufallsgenerator ist eine Rechenvorschrift. Es gibt nur so viele verschiedene Schlüssel wie Startwerte, und die lassen sich durchprobieren.'},
+    {q:'Weshalb wird das One-Time-Pad im Internet kaum eingesetzt?', o:['Es ist zu leicht zu knacken.','Der Schlüssel muss so gross sein wie alle Daten und vorher sicher übergeben werden.','Computer können kein XOR berechnen.','Es funktioniert nur mit Buchstaben.'], a:1,
+     e:'Das Problem ist die Schlüsselverteilung. Wer einen sicheren Weg für so viel Schlüsselmaterial hätte, könnte darüber gleich die Daten schicken.'}
+  ];
+  var list = document.getElementById('quiz-list'), answered = 0, right = 0;
+  function score(){ document.getElementById('q-score').textContent = answered + ' von ' + Q.length + ' beantwortet' + (answered ? ' · ' + right + ' richtig' : ''); }
+  function build(){
+    answered = 0; right = 0; list.innerHTML = '';
+    Q.forEach(function(item, qi){
+      var div = document.createElement('div'); div.className = 'q';
+      var html = '<span class="label">Frage '+(qi+1)+'</span><p class="qt">'+esc(item.q)+'</p><div class="opts">';
+      item.o.forEach(function(t, oi){ html += '<button type="button" class="opt" data-i="'+oi+'"><span class="mark">'+'ABCD'[oi]+'</span><span>'+esc(t)+'</span></button>'; });
+      html += '</div><div class="fb" aria-live="polite"></div>';
+      div.innerHTML = html;
+      div.querySelectorAll('.opt').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var pick = +btn.dataset.i, ok = pick === item.a;
+          div.querySelectorAll('.opt').forEach(function(b){ b.disabled = true; var i = +b.dataset.i;
+            if (i === item.a){ b.classList.add('right'); b.querySelector('.mark').textContent = '✓'; }
+            else if (i === pick){ b.classList.add('wrong'); b.querySelector('.mark').textContent = '✗'; } });
+          answered++; if (ok) right++;
+          div.querySelector('.fb').innerHTML = '<b>'+(ok ? '✓ Richtig.' : '✗ Leider nicht.')+'</b>'+esc(item.e);
+          score();
+        });
+      });
+      list.appendChild(div);
+    });
+    score();
+  }
+  document.getElementById('q-reset').addEventListener('click', build);
+  build();
+})();
+</script>
+
+</body></html>

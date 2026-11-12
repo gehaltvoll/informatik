@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Kryptologie), Zielgruppe Schüler:innen Gymnasium, Anrede «du»
+  Gerät: gemischt (Desktop + Handy; breite Tabellen horizontal scrollbar)
+  Inhalte: 1 Buchstaben → Zahl → Binär (Bits anklickbar) · 2 XOR-Regel (zwei Schalter + Wahrheitstabelle) · 3 ein Buchstabe Bit für Bit (Vor/Zurück) · 4 ganzer Text mit wiederholtem Schlüsselwort (Spalte wählen, Bit-Detail) · 5 Entschlüsseln (richtiger/falscher Schlüssel) · 6 Python mit ord(), chr() und ^ · Schwächen und Ausblick One-Time-Pad
+  Ohne Übungen (nicht gewünscht); Python ohne f-Strings
+  Eingaben: nur ASCII 32–126; Geheimtext als Hex/Dezimal/Binär, weil XOR-Ergebnisse oft nicht druckbar sind
+  Datenhaltung: keine
+  Export: Kopierknopf am Python-Code
+  Variante: A „Funkraum“ gewählt; Variante B und Umschalter entfernt
+  Ablage: gehaltvoll/informatik/kryptologie/XOR-Verschlüsselung.html, im Index unter «Symmetrische Verfahren» vor dem One-Time-Pad
+-->
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>XOR-Verschlüsselung</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: Lesespalte in sechs Schritten; jede Übung als Panel mit Bit-Zeilen (Klartext · Schlüssel · Ergebnis) */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+
+  --bg:var(--nord6);--surface:var(--nord5);--surface-2:var(--nord4);
+  --text:var(--nord0);--text-muted:var(--nord3);
+  --accent:var(--nord10);--accent-soft:var(--nord9);
+  --ok:var(--nord14);--warn:var(--nord13);--err:var(--nord11);--merke:var(--nord15);
+  --inline-code:var(--nord5);
+
+  /* Zeilenfarben */
+  --c-plain:var(--nord8);--c-key:var(--nord13);--c-ciph:var(--nord15);
+
+  /* Panels – im Funkraum unten mit Polar Night überschrieben */
+  --panel:var(--nord5);--panel-2:var(--nord4);--panel-fg:var(--nord0);--panel-muted:var(--nord3);--panel-line:var(--nord4);--panel-accent:var(--nord10);
+
+  --term:var(--nord0);--term-2:var(--nord1);--term-line:var(--nord2);--term-fg:var(--nord6);--term-muted:var(--nord4);
+
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --radius:10px;--radius-lg:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);
+  --text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);--inline-code:var(--nord1);
+  --panel:var(--nord1);--panel-2:var(--nord2);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord2);--panel-accent:var(--nord8);
+  --term:var(--nord1);--term-2:var(--nord2);--term-line:var(--nord3);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);
+  --text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);--inline-code:var(--nord1);
+  --panel:var(--nord1);--panel-2:var(--nord2);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord2);--panel-accent:var(--nord8);
+  --term:var(--nord1);--term-2:var(--nord2);--term-line:var(--nord3);
+  color-scheme:dark}
+body{--panel:var(--nord0);--panel-2:var(--nord1);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord2);--panel-accent:var(--nord8)}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:17px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:940px;margin:0 auto}
+.read{max-width:70ch}
+h1,h2,h3{text-wrap:balance;line-height:1.2}
+h1{font-size:clamp(2.1rem,6.5vw,3.1rem);font-weight:700}
+h2{font-size:1.55rem;font-weight:700;margin-bottom:.6rem}
+h3{font-size:1.1rem;font-weight:600;margin:1.2rem 0 .35rem}
+p+p{margin-top:.75rem}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+code,.mono{font-family:var(--font-mono);font-size:.9em}
+code{background:var(--inline-code);padding:.08em .35em;border-radius:5px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.eyebrow{font-family:var(--font-mono);font-size:.78rem;letter-spacing:.06em;color:var(--text-muted)}
+
+/* Kopf */
+.hero{background:var(--panel);color:var(--panel-fg);border:1px solid var(--panel-line);border-radius:var(--radius-lg);padding:24px 22px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center}
+.hero .lead{color:var(--panel-muted);margin-top:.6rem;max-width:56ch}
+@media (max-width:720px){.hero{grid-template-columns:1fr}}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+nav.toc a{text-decoration:none;font-size:.88rem;border:1px solid var(--surface-2);background:var(--surface);color:var(--text);border-radius:999px;padding:.25rem .75rem}
+nav.toc a:hover{border-color:var(--accent)}
+
+section{margin-top:52px}
+.kicker{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem}
+
+/* Bit-Raster */
+.bitgrid{display:grid;grid-template-columns:auto repeat(8,minmax(0,1fr)) auto;gap:5px 5px;align-items:center;font-family:var(--font-mono);min-width:0}
+.bitgrid .rl{font-size:.78rem;color:var(--panel-muted);padding-right:6px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.bitgrid .rl i{width:10px;height:10px;border-radius:3px;background:var(--rc);flex:none}
+.bitgrid .rv{font-size:.82rem;padding-left:8px;white-space:nowrap;color:var(--panel-fg)}
+.bitgrid .pv{font-size:.66rem;color:var(--panel-muted);text-align:center}
+.bit{height:34px;border-radius:6px;display:grid;place-items:center;font-weight:600;font-size:1rem;border:1.5px solid var(--panel-line);color:var(--panel-fg);background:transparent;transition:background .15s,border-color .15s,transform .15s}
+.bit.one{background:var(--rc);border-color:var(--rc);color:var(--nord0)}
+.bit.flip{box-shadow:0 0 0 2px var(--c-key) inset}
+.bit.pending{opacity:.25}
+.bit.now{transform:translateY(-3px);box-shadow:0 0 0 2px var(--panel-accent)}
+.bitgrid .op{grid-column:1/-1;height:1px;background:var(--panel-line);margin:2px 0}
+button.bit{cursor:pointer}
+button.bit:hover{border-color:var(--panel-accent)}
+.r-plain{--rc:var(--c-plain)}.r-key{--rc:var(--c-key)}.r-ciph{--rc:var(--c-ciph)}
+
+.panel{background:var(--panel);color:var(--panel-fg);border:1px solid var(--panel-line);border-radius:var(--radius-lg);padding:18px;margin-top:16px;display:grid;gap:14px;min-width:0}
+.label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--panel-muted)}
+.panel .scroll{overflow-x:auto;min-width:0}
+.panel .scroll .bitgrid{min-width:420px}
+.note{font-size:.95rem;min-height:2.6em}
+.note b{font-family:var(--font-mono)}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--panel-line);background:var(--panel-2);color:var(--panel-fg);border-radius:8px;padding:.4rem .85rem;cursor:pointer;font-size:.9rem}
+.btn:hover:not(:disabled){border-color:var(--panel-accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--panel-accent);border-color:var(--panel-accent);color:var(--nord0);font-weight:600}
+.count{font-family:var(--font-mono);font-size:.8rem;color:var(--panel-muted)}
+.field{display:grid;gap:4px;min-width:0}
+.field input{font-family:var(--font-mono);font-size:1rem;padding:.45rem .6rem;border-radius:8px;border:1px solid var(--panel-line);background:var(--panel-2);color:var(--panel-fg);width:100%}
+.field .hint{font-size:.8rem;color:var(--panel-muted)}
+.field .hint.bad{color:var(--nord11)}
+.fields{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+@media (max-width:560px){.fields{grid-template-columns:1fr}}
+
+/* Kapitel 1 */
+.letters{display:flex;flex-wrap:wrap;gap:6px}
+.letters button{font-family:var(--font-mono);font-weight:600;width:38px;height:38px;border-radius:8px;border:1px solid var(--panel-line);background:var(--panel-2);color:var(--panel-fg);cursor:pointer}
+.letters button[aria-pressed="true"]{border-color:var(--c-plain);box-shadow:0 0 0 2px var(--c-plain) inset}
+.big{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;font-family:var(--font-mono)}
+.big .ch{font-size:2.6rem;font-weight:600;width:1.4em;text-align:center;border:2px solid var(--c-plain);border-radius:10px;line-height:1.25}
+.big .arrow{color:var(--panel-muted)}
+.big .num{font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums}
+.sum{font-family:var(--font-mono);font-size:.92rem;color:var(--panel-muted);overflow-wrap:anywhere}
+.sum b{color:var(--panel-fg)}
+
+/* Kapitel 2 */
+.xorplay{display:flex;flex-wrap:wrap;align-items:center;gap:14px;font-family:var(--font-mono);font-size:1.4rem;font-weight:600}
+.toggle{width:64px;height:64px;border-radius:12px;border:2px solid var(--rc);background:transparent;color:var(--panel-fg);font:inherit;cursor:pointer}
+.toggle.one{background:var(--rc);color:var(--nord0)}
+.res{width:64px;height:64px;border-radius:12px;display:grid;place-items:center;border:2px solid var(--c-ciph)}
+.res.one{background:var(--c-ciph);color:var(--nord0)}
+.truth{border-collapse:collapse;font-family:var(--font-mono);font-size:.95rem;min-width:260px}
+.truth th,.truth td{padding:.35rem .9rem;text-align:center;border-bottom:1px solid var(--panel-line)}
+.truth th{font-family:var(--font);font-weight:600;font-size:.85rem;color:var(--panel-muted)}
+.truth tr.cur td{background:rgba(136,192,208,.18)}
+.truth tr:last-child td{border-bottom:0}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:640px){.two{grid-template-columns:1fr}}
+
+/* Kapitel 4 */
+.strip{overflow-x:auto;padding-bottom:4px}
+.strip table{border-collapse:separate;border-spacing:4px;font-family:var(--font-mono)}
+.strip th{font-family:var(--font);font-weight:600;font-size:.75rem;color:var(--panel-muted);text-align:right;padding-right:6px;white-space:nowrap}
+.strip td{min-width:40px;text-align:center;padding:4px 2px;border-radius:6px;font-size:.92rem;font-variant-numeric:tabular-nums}
+.strip tr.pl td{border:1.5px solid var(--c-plain);font-weight:600;cursor:pointer}
+.strip tr.ky td{border:1.5px dashed var(--c-key)}
+.strip tr.ct td{background:rgba(180,142,173,.22);border:1.5px solid var(--c-ciph);font-weight:600}
+.strip tr.np td{font-size:.68rem;color:var(--panel-muted);padding:0}
+.strip td.sel{box-shadow:0 0 0 2px var(--panel-accent)}
+.strip tr.pl td.sel{background:rgba(136,192,208,.25)}
+.out-line{font-family:var(--font-mono);font-size:.95rem;background:var(--panel-2);border:1px solid var(--panel-line);border-radius:8px;padding:8px 12px;overflow-wrap:anywhere}
+.out-line .lbl{display:block;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--panel-muted);margin-bottom:2px}
+.pick{display:flex;flex-wrap:wrap;gap:6px}
+.pick button{font-size:.8rem;border:1px solid var(--panel-line);background:var(--panel-2);color:var(--panel-fg);border-radius:999px;padding:.15rem .65rem;cursor:pointer}
+.pick button:hover{border-color:var(--panel-accent)}
+
+.box{border-radius:var(--radius);padding:14px 16px;margin-top:16px;border:1px solid var(--surface-2);background:var(--surface)}
+.box.merke{border-left:4px solid var(--merke)}
+.box.warn{border-left:4px solid var(--warn)}
+.box .bt{font-weight:700;margin-bottom:.25rem}
+
+/* Code */
+.codebox{position:relative;margin-top:12px;background:var(--term);border:1px solid var(--term-line);border-radius:8px;min-width:0}
+.codebox pre{font-family:var(--font-mono);font-size:.9rem;line-height:1.5;color:var(--term-fg);padding:12px 14px;overflow-x:auto;white-space:pre}
+.codebox .bar{display:flex;justify-content:flex-end;padding:6px 8px 0}
+.codebox .bar button{font-size:.75rem;border:1px solid var(--term-line);background:var(--term-2);color:var(--term-fg);border-radius:6px;padding:.15rem .55rem;cursor:pointer}
+.codebox .out{border-top:1px dashed var(--term-line);padding:8px 14px 10px;font-family:var(--font-mono);font-size:.88rem;color:var(--term-muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.codebox .out::before{content:"Ausgabe";display:block;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--nord8);margin-bottom:2px}
+.kw{color:var(--nord9)}.st{color:var(--nord14)}.nu{color:var(--nord15)}.cm{color:var(--nord4);opacity:.65;font-style:italic}.fn{color:var(--nord8)}.op{color:var(--nord13)}
+.cheat{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:12px}
+.cheat div{background:var(--surface);border:1px solid var(--surface-2);border-radius:8px;padding:10px 12px}
+.cheat code{font-size:.95rem}
+.cheat p{font-size:.9rem;color:var(--text-muted);margin-top:4px}
+footer{margin-top:56px;font-size:.85rem;color:var(--text-muted)}
+
+/* Funkraum */
+.hero,.panel{border-radius:8px}
+h2{font-weight:600}
+.box,.cheat div{border-radius:6px}
+
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <span class="eyebrow">Informatik · Kryptologie · Symmetrische Verfahren</span>
+  </div>
+
+  <header class="hero">
+    <div>
+      <h1>XOR-Verschlüsselung</h1>
+      <p class="lead">Computer verschlüsseln nicht Buchstaben, sondern Bits. Die einfachste Bit-Operation dafür heisst XOR. Hier lernst du Schritt für Schritt, wie aus einem Buchstaben eine Folge von Nullen und Einsen wird und wie XOR daraus einen Geheimtext macht – und wieder zurück.</p>
+    </div>
+    <div class="bitgrid" id="heroGrid" aria-label="Beispiel: H XOR K ergibt 00000011" style="min-width:300px"></div>
+  </header>
+  <nav class="toc" aria-label="Inhalt">
+    <a href="#binaer">1 Buchstaben → Bits</a><a href="#regel">2 Die XOR-Regel</a><a href="#einzeln">3 Ein Buchstabe</a><a href="#text">4 Ganzer Text</a><a href="#zurueck">5 Entschlüsseln</a><a href="#python">6 Python</a>
+  </nav>
+
+  <!-- 1 BINÄR -->
+  <section id="binaer" style="--kc:var(--nord8)">
+    <div class="read">
+      <div class="kicker">Schritt 1 · Buchstaben → Bits</div>
+      <h2>Jeder Buchstabe ist eine Zahl</h2>
+      <p>Im Computer hat jedes Zeichen eine Nummer. Diese Zuordnung heisst <b>ASCII-Tabelle</b>: <code>A</code> ist 65, <code>B</code> ist 66 und so weiter, das Leerzeichen ist 32. Gespeichert wird diese Zahl im <b>Binärsystem</b> mit 8 Bits, also einem Byte.</p>
+      <p>Jedes Bit hat einen Stellenwert: 128, 64, 32, 16, 8, 4, 2, 1. Die Zahl ist die Summe der Stellenwerte, an denen eine 1 steht.</p>
+    </div>
+    <div class="panel" aria-label="Buchstabe in Binär umwandeln">
+      <div class="ctrls" style="justify-content:space-between">
+        <div class="letters" id="letters" role="group" aria-label="Buchstabe wählen"></div>
+        <div class="field" style="width:9rem"><label class="label" for="ownChar">Eigenes Zeichen</label><input id="ownChar" maxlength="1" autocomplete="off" spellcheck="false" placeholder="z. B. ?"></div>
+      </div>
+      <div class="big" aria-live="polite"><span class="ch" id="bigCh">H</span><span class="arrow">→</span><span class="num" id="bigNum">72</span><span class="arrow">→</span><span class="num" id="bigBin">01001000</span></div>
+      <div class="scroll"><div class="bitgrid" id="binGrid"></div></div>
+      <p class="sum" id="binSum"></p>
+      <p class="note" style="min-height:0;color:var(--panel-muted)">Tipp: Klicke auf ein Bit, um es umzulegen. Du siehst sofort, welcher Buchstabe daraus wird.</p>
+    </div>
+    <p class="read" style="margin-top:12px">Mehr dazu findest du im <a href="ASCII-Bin%C3%A4r-Wandler.html">ASCII-Binär-Wandler</a>.</p>
+  </section>
+
+  <!-- 2 REGEL -->
+  <section id="regel" style="--kc:var(--nord13)">
+    <div class="read">
+      <div class="kicker">Schritt 2 · Die XOR-Regel</div>
+      <h2>XOR: «entweder – oder»</h2>
+      <p>XOR steht für <i>exclusive or</i>, auf Deutsch «exklusives Oder». Es vergleicht zwei Bits und liefert <b>1, wenn sie verschieden sind</b>, und <b>0, wenn sie gleich sind</b>. Das Zeichen dafür ist <code>⊕</code>, in Python <code>^</code>.</p>
+    </div>
+    <div class="panel">
+      <div class="two">
+        <div>
+          <div class="label" style="margin-bottom:10px">Probiere es aus – klicke auf die Bits</div>
+          <div class="xorplay">
+            <button type="button" class="toggle r-plain" id="tA" aria-label="Bit A umschalten">0</button>
+            <span>⊕</span>
+            <button type="button" class="toggle r-key" id="tB" aria-label="Bit B umschalten">0</button>
+            <span>=</span>
+            <span class="res" id="tR" aria-live="polite">0</span>
+          </div>
+          <p class="note" id="tNote" style="margin-top:10px"></p>
+        </div>
+        <div class="scroll">
+          <table class="truth" id="truth" aria-label="Wahrheitstabelle XOR">
+            <thead><tr><th>Bit A</th><th>Bit B</th><th>A ⊕ B</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="box merke read">
+      <div class="bt">Zwei Arten, sich XOR zu merken</div>
+      <p><b>Ungleich ergibt 1.</b> Sind beide Bits gleich, kommt 0 heraus.</p>
+      <p><b>Der Schlüssel ist ein Schalter.</b> Steht im Schlüssel eine 1, wird das Bit umgekippt (0 → 1, 1 → 0). Steht eine 0, bleibt es, wie es ist. Genau das macht die Verschlüsselung.</p>
+    </div>
+  </section>
+
+  <!-- 3 EIN BUCHSTABE -->
+  <section id="einzeln" style="--kc:var(--nord15)">
+    <div class="read">
+      <div class="kicker">Schritt 3 · Ein Buchstabe</div>
+      <h2>H ⊕ K, Bit für Bit</h2>
+      <p>Wir verschlüsseln den Buchstaben <code>H</code> mit dem Schlüsselbuchstaben <code>K</code>. Beide werden in Bits umgewandelt und dann Spalte für Spalte mit XOR verknüpft.</p>
+    </div>
+    <div class="panel">
+      <div class="scroll"><div class="bitgrid" id="oneGrid"></div></div>
+      <p class="note" id="oneNote" aria-live="polite"></p>
+      <div class="ctrls">
+        <button class="btn" type="button" id="oneBack">◀ Zurück</button>
+        <button class="btn primary" type="button" id="oneNext">Nächstes Bit ▶</button>
+        <button class="btn" type="button" id="oneAll">Alle auf einmal</button>
+        <button class="btn" type="button" id="oneReset">Von vorne</button>
+        <span class="count" id="oneCount"></span>
+      </div>
+    </div>
+    <p class="read" style="margin-top:12px">Das Ergebnis <code>00000011</code> ist die Zahl 3. In der ASCII-Tabelle ist 3 kein druckbares Zeichen, sondern ein Steuerzeichen. Darum schreibt man Geheimtexte meist als Zahlen, zum Beispiel <b>hexadezimal</b>: <code>03</code>.</p>
+  </section>
+
+  <!-- 4 TEXT -->
+  <section id="text" style="--kc:var(--nord14)">
+    <div class="read">
+      <div class="kicker">Schritt 4 · Ganzer Text</div>
+      <h2>Ein Schlüsselwort, das sich wiederholt</h2>
+      <p>Für einen ganzen Text schreibt man das Schlüsselwort so oft unter den Klartext, bis er abgedeckt ist – wie bei der <a href="Vigen%C3%A8re-Verschl%C3%BCsselung.html">Vigenère-Verschlüsselung</a>. Dann wird jedes Zeichen mit dem Schlüsselzeichen darunter XOR-verknüpft. Klicke auf ein Zeichen, um die Bits zu sehen.</p>
+    </div>
+    <div class="panel">
+      <div class="fields">
+        <div class="field"><label class="label" for="pt">Klartext</label><input id="pt" value="HALLO WELT" maxlength="24" autocomplete="off" spellcheck="false"><span class="hint" id="ptHint">Höchstens 24 Zeichen, ohne Umlaute.</span></div>
+        <div class="field"><label class="label" for="ky">Schlüssel</label><input id="ky" value="KEY" maxlength="12" autocomplete="off" spellcheck="false"><span class="hint" id="kyHint">1 bis 12 Zeichen.</span></div>
+      </div>
+      <div class="pick" aria-label="Beispiele"><span class="label" style="align-self:center">Beispiele:</span><button type="button" data-p="HALLO WELT" data-k="KEY">HALLO WELT</button><button type="button" data-p="AAAAAAAAA" data-k="KEY">AAAAAAAAA</button><button type="button" data-p="Treffpunkt 18 Uhr" data-k="geheim">Treffpunkt 18 Uhr</button></div>
+      <div class="strip"><table id="strip" aria-label="Klartext, Schlüssel und Geheimtext Zeichen für Zeichen"></table></div>
+      <div class="scroll"><div class="bitgrid" id="txtGrid"></div></div>
+      <p class="note" id="txtNote" aria-live="polite"></p>
+      <div class="ctrls">
+        <button class="btn" type="button" id="txtBack">◀ Vorheriges Zeichen</button>
+        <button class="btn primary" type="button" id="txtNext">Nächstes Zeichen ▶</button>
+        <span class="count" id="txtCount"></span>
+      </div>
+      <div class="out-line"><span class="lbl">Geheimtext hexadezimal</span><span id="hexOut"></span></div>
+    </div>
+    <div class="box read">
+      <div class="bt">Fällt dir etwas auf?</div>
+      <p>Bei <code>HALLO WELT</code> steht an Stelle 8 der Geheimtext <code>00</code>: Dort trifft <code>E</code> auf den Schlüsselbuchstaben <code>E</code>. Gleiche Bits ergeben bei XOR immer 0. Und das Leerzeichen wird mit <code>Y</code> zum druckbaren <code>y</code>.</p>
+      <p>Probiere das Beispiel <code>AAAAAAAAA</code>: Der Geheimtext wiederholt das Muster <code>0A 04 18</code>. Der Schlüssel schimmert durch.</p>
+    </div>
+  </section>
+
+  <!-- 5 ZURÜCK -->
+  <section id="zurueck" style="--kc:var(--nord8)">
+    <div class="read">
+      <div class="kicker">Schritt 5 · Entschlüsseln</div>
+      <h2>Zweimal XOR hebt sich auf</h2>
+      <p>Das Besondere an XOR: Zum Entschlüsseln macht man <b>genau dasselbe</b> noch einmal. Wer ein Bit zweimal mit derselben 1 umkippt, ist wieder am Anfang. Eine 0 lässt es zweimal stehen.</p>
+      <p style="font-family:var(--font-mono);font-size:1.05rem;margin-top:12px">(Klartext ⊕ Schlüssel) ⊕ Schlüssel = Klartext</p>
+    </div>
+    <div class="panel">
+      <div class="field"><label class="label" for="dk">Schlüssel zum Entschlüsseln</label><input id="dk" value="KEY" maxlength="12" autocomplete="off" spellcheck="false"><span class="hint">Der Geheimtext kommt aus Schritt 4. Ändere den Schlüssel und schau, was passiert.</span></div>
+      <div class="out-line"><span class="lbl">Geheimtext (aus Schritt 4)</span><span id="decIn"></span></div>
+      <div class="scroll"><div class="bitgrid" id="decGrid"></div></div>
+      <div class="out-line"><span class="lbl">Ergebnis</span><span id="decOut" style="font-size:1.15rem;font-weight:600"></span></div>
+      <p class="note" id="decNote" aria-live="polite"></p>
+    </div>
+    <div class="box warn read">
+      <div class="bt">Wie sicher ist das?</div>
+      <p>Mit einem kurzen, sich wiederholenden Schlüssel nicht sehr: Wer ein Stück Klartext errät, rechnet <code>Klartext ⊕ Geheimtext</code> und erhält direkt den Schlüssel. Und die Wiederholung verrät die Schlüssellänge, wie beim <a href="Kasiski-Labor.html">Kasiski-Test</a>.</p>
+      <p>Ist der Schlüssel aber <b>zufällig, genauso lang wie die Nachricht und wird nur einmal verwendet</b>, ist XOR beweisbar unknackbar. Das ist das <a href="Das%20One-Time-Pad.html">One-Time-Pad</a>. Auch moderne Verfahren wie AES verwenden XOR in jeder Runde.</p>
+    </div>
+  </section>
+
+  <!-- 6 PYTHON -->
+  <section id="python" class="read" style="--kc:var(--nord14)">
+    <div class="kicker">Schritt 6 · Python</div>
+    <h2>XOR in Python</h2>
+    <p>Drei Bausteine genügen:</p>
+    <div class="cheat">
+      <div><code>ord("H")</code><p>Zeichen → Zahl, hier 72</p></div>
+      <div><code>chr(72)</code><p>Zahl → Zeichen, hier H</p></div>
+      <div><code>72 ^ 75</code><p>XOR zweier Zahlen, hier 3</p></div>
+    </div>
+    <h3>Ein Buchstabe</h3>
+    <div class="codebox"><pre class="code">k = ord("H")                # 72
+s = ord("K")                # 75
+print(format(k, "08b"))     # Binärdarstellung mit 8 Stellen
+print(format(s, "08b"))
+print(format(k ^ s, "08b"))
+print(k ^ s)
+print(chr((k ^ s) ^ s))     # zurück zum Klartext</pre><div class="out">01001000
+01001011
+00000011
+3
+H</div></div>
+
+    <h3>Ein ganzer Text</h3>
+    <p>Mit <code>i % len(schluessel)</code> wiederholt sich der Schlüssel: Bei 3 Zeichen ergibt das 0, 1, 2, 0, 1, 2, …</p>
+    <div class="codebox"><pre class="code">klartext = "HALLO WELT"
+schluessel = "KEY"
+
+# Verschlüsseln
+geheim = []
+for i in range(len(klartext)):
+    k = ord(klartext[i])                        # Buchstabe -> Zahl
+    s = ord(schluessel[i % len(schluessel)])    # Schlüssel wiederholen
+    geheim.append(k ^ s)                        # ^ ist XOR
+print(geheim)
+
+# Entschlüsseln: nochmals XOR mit demselben Schlüssel
+text = ""
+for i in range(len(geheim)):
+    s = ord(schluessel[i % len(schluessel)])
+    text = text + chr(geheim[i] ^ s)
+print(text)</pre><div class="out">[3, 4, 21, 7, 10, 121, 28, 0, 21, 31]
+HALLO WELT</div></div>
+    <p style="margin-top:12px">Der Geheimtext ist eine Liste von Zahlen und kein Text, weil viele XOR-Ergebnisse keine druckbaren Zeichen sind.</p>
+  </section>
+
+  <footer>Kantonsschule Zürcher Unterland · Informatik · Kryptologie</footer>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const bin=n=>n.toString(2).padStart(8,'0');
+const hex=n=>n.toString(16).toUpperCase().padStart(2,'0');
+const PV=[128,64,32,16,8,4,2,1];
+const printable=n=>n>=32&&n<=126;
+const show=n=>n===32?'␣':printable(n)?String.fromCharCode(n):'·';
+
+/* Bit-Raster bauen: rows = [{cls,label,value,state:[...]}] */
+function grid(el,rows,opts={}){el.innerHTML='';
+  if(opts.pv){el.insertAdjacentHTML('beforeend','<span></span>'+PV.map(p=>`<span class="pv">${p}</span>`).join('')+'<span></span>')}
+  rows.forEach((r,ri)=>{
+    if(r.sep){el.insertAdjacentHTML('beforeend','<span class="op" aria-hidden="true"></span>');return}
+    const lab=document.createElement('span');lab.className='rl '+r.cls;lab.innerHTML=`<i></i>${r.label}`;el.appendChild(lab);
+    const b=bin(r.value);
+    for(let i=0;i<8;i++){const st=r.state?r.state[i]:'';const tag=r.click?'button':'span';const c=document.createElement(tag);
+      if(tag==='button'){c.type='button';c.setAttribute('aria-label',`Bit mit Stellenwert ${PV[i]}: ${b[i]}`);c.onclick=()=>r.click(i)}
+      c.className=`bit ${r.cls}${st!=='pending'&&b[i]==='1'?' one':''}${st?' '+st:''}`;c.textContent=st==='pending'?'?':b[i];el.appendChild(c)}
+    const v=document.createElement('span');v.className='rv';v.textContent=r.right??'';el.appendChild(v)})}
+
+/* Hero */
+grid($('heroGrid'),[{cls:'r-plain',label:'H',value:72,right:'72'},{cls:'r-key',label:'K',value:75,right:'75'},{sep:1},{cls:'r-ciph',label:'⊕',value:3,right:'= 3'}]);
+
+/* 1 Binär */
+let cur=72;
+const LET='HALOWET';
+const lb=$('letters');
+[...LET].forEach(ch=>{const b=document.createElement('button');b.type='button';b.textContent=ch;b.onclick=()=>{cur=ch.charCodeAt(0);$('ownChar').value='';drawBin()};lb.appendChild(b)});
+$('ownChar').addEventListener('input',e=>{const v=e.target.value;if(!v)return;const c=v.charCodeAt(0);if(c>255){e.target.value='';return}cur=c;drawBin()});
+function drawBin(){
+  [...lb.children].forEach(b=>b.setAttribute('aria-pressed',String(b.textContent.charCodeAt(0)===cur)));
+  $('bigCh').textContent=cur===32?'␣':printable(cur)?String.fromCharCode(cur):'·';
+  $('bigNum').textContent=cur;$('bigBin').textContent=bin(cur);
+  grid($('binGrid'),[{cls:'r-plain',label:'Bits',value:cur,click:i=>{cur^=PV[i];$('ownChar').value='';drawBin()}}],{pv:true});
+  const parts=PV.filter(p=>cur&p);
+  $('binSum').innerHTML=parts.length?`${parts.map(p=>'<b>'+p+'</b>').join(' + ')} = <b>${cur}</b>`+(printable(cur)?'':' · kein druckbares Zeichen'):'Alle Bits sind 0 → <b>0</b> · kein druckbares Zeichen'}
+drawBin();
+
+/* 2 Regel */
+let A=0,B=0;
+const tb=$('truth').querySelector('tbody');
+[[0,0],[0,1],[1,0],[1,1]].forEach(([a,b])=>{const tr=document.createElement('tr');tr.dataset.k=a+''+b;tr.innerHTML=`<td>${a}</td><td>${b}</td><td><b>${a^b}</b></td><td style="font-family:var(--font);font-size:.8rem">${a===b?'gleich':'verschieden'}</td>`;tb.appendChild(tr)});
+function drawT(){$('tA').textContent=A;$('tB').textContent=B;$('tA').classList.toggle('one',!!A);$('tB').classList.toggle('one',!!B);
+  const r=A^B;$('tR').textContent=r;$('tR').classList.toggle('one',!!r);
+  tb.querySelectorAll('tr').forEach(tr=>tr.classList.toggle('cur',tr.dataset.k===A+''+B));
+  $('tNote').textContent=A===B?`Beide Bits sind ${A} – gleich, also 0.`:'Die Bits sind verschieden – also 1.'}
+$('tA').onclick=()=>{A^=1;drawT()};$('tB').onclick=()=>{B^=1;drawT()};drawT();
+
+/* 3 Ein Buchstabe */
+let os=0;
+function drawOne(){const p=72,k=75,c=p^k,pb=bin(p),kb=bin(k),cb=bin(c);
+  const st=Array.from({length:8},(_,i)=>i<os?(kb[i]==='1'?'flip':''):'pending');
+  if(os>0&&os<=8)st[os-1]+=' now';
+  const kst=Array.from({length:8},(_,i)=>i===os-1?'now':'');
+  const pst=Array.from({length:8},(_,i)=>i===os-1?'now':'');
+  grid($('oneGrid'),[{cls:'r-plain',label:'H',value:p,right:'72',state:pst},{cls:'r-key',label:'K',value:k,right:'75',state:kst},{sep:1},{cls:'r-ciph',label:'⊕',value:c,right:os===8?'= 3 = 03':'',state:st}],{pv:true});
+  let n;
+  if(os===0)n='Oben steht H als Bits, darunter der Schlüssel K. Klicke auf «Nächstes Bit», um von links nach rechts zu verknüpfen.';
+  else if(os<=8){const i=os-1,a=pb[i],b=kb[i];n=`Spalte ${os} (Stellenwert ${PV[i]}): <b>${a} ⊕ ${b} = ${a^b}</b> – ${a===b?'gleich, also 0':'verschieden, also 1'}.${b==='1'?' Der Schlüssel hat hier eine 1 und kippt das Bit.':' Der Schlüssel hat hier eine 0, das Bit bleibt.'}`;
+    if(os===8)n+=' Fertig: <b>01001000 ⊕ 01001011 = 00000011</b>.'}
+  $('oneNote').innerHTML=n;$('oneCount').textContent=`Bit ${os} von 8`;
+  $('oneBack').disabled=os===0;$('oneNext').disabled=os===8}
+$('oneNext').onclick=()=>{if(os<8){os++;drawOne()}};$('oneBack').onclick=()=>{if(os>0){os--;drawOne()}};
+$('oneAll').onclick=()=>{os=8;drawOne()};$('oneReset').onclick=()=>{os=0;drawOne()};drawOne();
+
+/* 4 Text */
+let P='HALLO WELT',K='KEY',sel=0,C=[];
+const okStr=s=>[...s].every(ch=>{const c=ch.charCodeAt(0);return c>=32&&c<=126});
+function encrypt(){C=[...P].map((ch,i)=>ch.charCodeAt(0)^K.charCodeAt(i%K.length))}
+function drawText(){encrypt();if(sel>=P.length)sel=P.length-1;if(sel<0)sel=0;
+  const t=$('strip');
+  const rowP=[...P].map((ch,i)=>`<td class="${i===sel?'sel':''}" data-i="${i}" tabindex="0" role="button" aria-label="Zeichen ${i+1}: ${esc(ch===' '?'Leerzeichen':ch)}">${esc(show(ch.charCodeAt(0)))}</td>`).join('');
+  const rowK=[...P].map((_,i)=>`<td class="${i===sel?'sel':''}">${esc(show(K.charCodeAt(i%K.length)))}</td>`).join('');
+  const rowC=C.map((c,i)=>`<td class="${i===sel?'sel':''}">${hex(c)}</td>`).join('');
+  const rowN=C.map(c=>`<td>${printable(c)?esc(show(c)):'–'}</td>`).join('');
+  const rowI=[...P].map((_,i)=>`<td>${i+1}</td>`).join('');
+  t.innerHTML=`<tr class="np"><th></th>${rowI}</tr><tr class="pl"><th>Klartext</th>${rowP}</tr><tr class="ky"><th>Schlüssel</th>${rowK}</tr><tr class="ct"><th>Geheim (hex)</th>${rowC}</tr><tr class="np"><th>als Zeichen</th>${rowN}</tr>`;
+  t.querySelectorAll('tr.pl td').forEach(td=>{const go=()=>{sel=+td.dataset.i;drawText()};td.onclick=go;td.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
+  const p=P.charCodeAt(sel),k=K.charCodeAt(sel%K.length),c=p^k,kb=bin(k);
+  grid($('txtGrid'),[{cls:'r-plain',label:esc(show(p)),value:p,right:String(p)},{cls:'r-key',label:esc(show(k)),value:k,right:String(k)},{sep:1},{cls:'r-ciph',label:'⊕',value:c,right:`= ${c} = ${hex(c)}`,state:[...kb].map(b=>b==='1'?'flip':'')}],{pv:true});
+  let n=`Zeichen ${sel+1}: <b>${esc(show(p))}</b> (${p}) ⊕ Schlüssel <b>${esc(show(k))}</b> (${k}) = <b>${c}</b>, hexadezimal <b>${hex(c)}</b>. Umrandete Bits wurden vom Schlüssel gekippt.`;
+  if(c===0)n+=' Klartext und Schlüssel sind hier gleich, darum ist alles 0.';
+  else if(!printable(c))n+=' Das Ergebnis ist kein druckbares Zeichen.';
+  else n+=` Zufällig ist das Ergebnis druckbar: <b>${esc(show(c))}</b>.`;
+  $('txtNote').innerHTML=n;$('txtCount').textContent=`Zeichen ${sel+1} von ${P.length}`;
+  $('txtBack').disabled=sel===0;$('txtNext').disabled=sel===P.length-1;
+  $('hexOut').textContent=C.map(hex).join(' ');
+  drawDec()}
+function setInputs(){const p=$('pt').value,k=$('ky').value;let ok=true;
+  if(!p.length||!okStr(p)){ok=false;$('ptHint').textContent=!p.length?'Bitte mindestens ein Zeichen eingeben.':'✗ Nur Zeichen aus der ASCII-Tabelle, ohne Umlaute.';$('ptHint').classList.add('bad')}else{$('ptHint').textContent='Höchstens 24 Zeichen, ohne Umlaute.';$('ptHint').classList.remove('bad')}
+  if(!k.length||!okStr(k)){ok=false;$('kyHint').textContent=!k.length?'Bitte mindestens ein Zeichen eingeben.':'✗ Nur Zeichen aus der ASCII-Tabelle, ohne Umlaute.';$('kyHint').classList.add('bad')}else{$('kyHint').textContent='1 bis 12 Zeichen.';$('kyHint').classList.remove('bad')}
+  if(ok){P=p;K=k;drawText()}}
+$('pt').addEventListener('input',setInputs);
+$('ky').addEventListener('input',()=>{setInputs();if(okStr($('ky').value)&&$('ky').value){$('dk').value=$('ky').value;drawDec()}});
+document.querySelectorAll('.pick button').forEach(b=>b.onclick=()=>{$('pt').value=b.dataset.p;$('ky').value=b.dataset.k;$('dk').value=b.dataset.k;sel=0;setInputs()});
+$('txtNext').onclick=()=>{if(sel<P.length-1){sel++;drawText()}};$('txtBack').onclick=()=>{if(sel>0){sel--;drawText()}};
+
+/* 5 Entschlüsseln */
+function drawDec(){const dk=$('dk').value;
+  $('decIn').textContent=C.map(hex).join(' ');
+  if(!dk.length||!okStr(dk)){$('decOut').textContent='–';$('decNote').textContent='Bitte einen Schlüssel aus ASCII-Zeichen eingeben.';$('decGrid').innerHTML='';return}
+  const D=C.map((c,i)=>c^dk.charCodeAt(i%dk.length));
+  $('decOut').textContent=D.map(n=>printable(n)?String.fromCharCode(n):'·').join('');
+  const i=sel,k=dk.charCodeAt(i%dk.length),c=C[i],d=c^k;
+  grid($('decGrid'),[{cls:'r-ciph',label:'Geh.',value:c,right:`${c} = ${hex(c)}`},{cls:'r-key',label:esc(show(k)),value:k,right:String(k)},{sep:1},{cls:'r-plain',label:'⊕',value:d,right:`= ${d} → ${esc(show(d))}`,state:[...bin(k)].map(b=>b==='1'?'flip':'')}],{pv:true});
+  const right=dk===K;
+  $('decNote').innerHTML=(right?'✓ Richtiger Schlüssel: Die Bits werden genau dort zurückgekippt, wo sie beim Verschlüsseln gekippt wurden – der Klartext ist wieder da.':'✗ Falscher Schlüssel: Andere Bits werden gekippt, heraus kommt Unsinn. Nur wer den Schlüssel kennt, kann lesen.')+` <span style="color:var(--panel-muted)">(Bits für Zeichen ${i+1}; wähle in Schritt 4 ein anderes.)</span>`}
+$('dk').addEventListener('input',drawDec);
+drawText();
+
+/* Code-Hervorhebung + Kopieren */
+const KW=new Set(['for','in','range','if','else','return','def','while']);const FN=new Set(['print','ord','chr','format','len','range','append']);
+function hl(src){const re=/(#[^\n]*)|("(?:[^"\\\n]|\\.)*")|(\b\d+\b)|([A-Za-z_]\w*)|(\^|%|=|\+)/g;let out='',last=0,m;
+  while((m=re.exec(src))){out+=esc(src.slice(last,m.index));const t=m[0];
+    if(m[1])out+=`<span class="cm">${esc(t)}</span>`;else if(m[2])out+=`<span class="st">${esc(t)}</span>`;else if(m[3])out+=`<span class="nu">${t}</span>`;
+    else if(m[4])out+=FN.has(t)?`<span class="fn">${t}</span>`:KW.has(t)?`<span class="kw">${t}</span>`:t;else out+=`<span class="op">${esc(t)}</span>`;last=re.lastIndex}
+  return out+esc(src.slice(last))}
+document.querySelectorAll('pre.code').forEach(pre=>{const raw=pre.textContent;pre.innerHTML=hl(raw);
+  const bar=document.createElement('div');bar.className='bar';const cp=document.createElement('button');cp.type='button';cp.textContent='Kopieren';
+  cp.onclick=async()=>{try{await navigator.clipboard.writeText(raw);cp.textContent='✓ Kopiert'}catch(e){const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);cp.textContent='Markiert – Cmd/Ctrl+C'}setTimeout(()=>cp.textContent='Kopieren',1800)};
+  bar.appendChild(cp);pre.parentElement.insertBefore(bar,pre)});
+})();
+</script>
+
+</body>
+</html>

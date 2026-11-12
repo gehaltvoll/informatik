@@ -1,0 +1,654 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik, Selbststudium Schüler:innen (mit Beamer-Modus-Schalter)
+  Übernommen aus dem Kasiski-Labor: Zielgruppe, eigene Eingaben, Weg bis zum Klartext
+  Funktion: Skytale und Gartenzaun je mit eigenem Text + Schlüssel, Ver- und Entschlüsseln,
+            Schritt-für-Schritt-Simulation (Vor/Zurück/Abspielen), drehbarer Stab,
+            Knacken durch Ausprobieren aller Schlüssel mit Bigramm-Bewertung,
+            Vergleich (Transposition erhält die Häufigkeiten), Python-Code mit Kopierknopf,
+            4 Übungen mit Prüfen-Knopf und einblendbarer Lösung
+  Datenhaltung: localStorage nur für Variante, Beamer-Modus und Eingaben (Komfort)
+  Design: Nord-Palette, Open Sans + Google Sans Code; Codeblöcke in beiden Varianten dunkel
+    Variante A – Klar: hell, viel Weissraum, feine Linien, Frost nur als Akzent
+    Variante B – Technisch: dunkle Kopfzeile, Mono-Labels, eckige Formen
+  Zeilenfarben (Aurora/Frost) tragen Information: gleiche Farbe = gleiche Zeile bzw. Stabseite
+  Sprache: Deutsch, Schweizer Rechtschreibung
+-->
+<title>Skytale und Gartenzaun</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: eine Lesespalte; je Verfahren ein Labor (Eingabe → Bild → Bänder → Code), danach Knacken, Vergleich, Übungen */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+
+  --bg:var(--nord6);--surface:var(--nord5);--surface-2:var(--nord4);--line:var(--nord4);
+  --text:var(--nord0);--muted:var(--nord3);--accent:var(--nord10);
+  --panel-bg:var(--nord6);--panel-line:var(--nord4);
+  --head-bg:var(--nord6);--head-fg:var(--nord0);--head-muted:var(--nord3);
+  --py-bg:var(--nord0);--py-fg:var(--nord6);--py-cmt:var(--nord4);
+  --rod:var(--nord3);--rod-end:var(--nord2);--rod-shine:var(--nord6);
+  --chip-bg:transparent;--chip-fg:var(--nord10);--chip-line:var(--nord9);
+  --radius:10px;--radius-sm:6px;--label-font:var(--font);--h-weight:600;--label-case:none;--label-track:0;
+  --r0:var(--nord13);--r1:var(--nord14);--r2:var(--nord8);--r3:var(--nord15);--r4:var(--nord12);--r5:var(--nord7);--r6:var(--nord9);--r7:var(--nord11);
+  --base:17px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--line:var(--nord2);
+  --text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);
+  --panel-bg:var(--nord0);--panel-line:var(--nord2);
+  --head-bg:var(--nord0);--head-fg:var(--nord6);--head-muted:var(--nord4);
+  --py-bg:var(--nord1);--py-fg:var(--nord6);--py-cmt:var(--nord4);
+  --rod:var(--nord2);--rod-end:var(--nord3);--rod-shine:var(--nord6);
+  --chip-fg:var(--nord8);--chip-line:var(--nord9);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--line:var(--nord2);
+  --text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);
+  --panel-bg:var(--nord0);--panel-line:var(--nord2);
+  --head-bg:var(--nord0);--head-fg:var(--nord6);--head-muted:var(--nord4);
+  --py-bg:var(--nord1);--py-fg:var(--nord6);--py-cmt:var(--nord4);
+  --rod:var(--nord2);--rod-end:var(--nord3);--rod-shine:var(--nord6);
+  --chip-fg:var(--nord8);--chip-line:var(--nord9);
+  color-scheme:dark}
+
+:root[data-variant="b"]{
+  --panel-bg:var(--nord5);
+  --head-bg:var(--nord0);--head-fg:var(--nord6);--head-muted:var(--nord4);
+  --chip-bg:var(--nord0);--chip-fg:var(--nord8);--chip-line:var(--nord0);
+  --radius:3px;--radius-sm:2px;--label-font:var(--font-mono);--h-weight:700;--label-case:uppercase;--label-track:.06em;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"])[data-variant="b"]{
+  --panel-bg:var(--nord1);--head-bg:var(--nord1);
+  --chip-bg:var(--nord8);--chip-fg:var(--nord0);--chip-line:var(--nord8);}}
+:root[data-theme="dark"][data-variant="b"]{
+  --panel-bg:var(--nord1);--head-bg:var(--nord1);
+  --chip-bg:var(--nord8);--chip-fg:var(--nord0);--chip-line:var(--nord8);}
+:root[data-beamer="1"]{--base:22px}
+
+html{font-size:var(--base)}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:1rem;line-height:1.6}
+:root[data-beamer="1"] body{font-weight:600}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+
+.wrap{max-width:62rem;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{background:var(--head-bg);color:var(--head-fg);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-block:1.5rem 1.6rem;display:flex;flex-wrap:wrap;gap:1rem 2rem;align-items:flex-start;justify-content:space-between}
+.title-block{min-width:0;flex:1 1 28rem;display:grid;gap:.6rem}
+.eyebrow{font-family:var(--label-font);text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;color:var(--head-muted);margin:0}
+h1{font-size:2.1rem;line-height:1.15;margin:0;font-weight:700;text-wrap:balance}
+:root[data-variant="b"] h1{font-family:var(--font-mono);font-weight:600}
+.lede{margin:0;max-width:42rem;color:var(--head-muted)}
+.jump{display:flex;flex-wrap:wrap;gap:.3rem 1.1rem;font-size:.9rem}
+.jump a{color:var(--head-fg);text-underline-offset:3px}
+.toggles{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--head-muted);border-radius:999px;overflow:hidden}
+:root[data-variant="b"] .seg{border-radius:var(--radius-sm)}
+.seg button{background:transparent;border:0;padding:.3rem .8rem;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--head-fg)}
+.seg button[aria-pressed="true"]{background:var(--head-fg);color:var(--head-bg)}
+.seg .lbl{padding:.3rem .2rem .3rem .8rem;font-size:.82rem;color:var(--head-muted);font-family:var(--label-font)}
+
+main .wrap{padding-block:1rem 3rem}
+section.part{padding-block:2.5rem;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr);gap:1.15rem}
+.part-head{display:flex;gap:.9rem;align-items:baseline}
+.num{flex:none;font-family:var(--font-mono);font-weight:600;font-size:.95rem;color:var(--chip-fg);background:var(--chip-bg);border:1.5px solid var(--chip-line);border-radius:999px;width:2rem;height:2rem;display:inline-grid;place-items:center;transform:translateY(-.15rem)}
+:root[data-variant="b"] .num{border-radius:var(--radius-sm);width:auto;padding:0 .55rem}
+h2{font-size:1.5rem;line-height:1.25;margin:0;font-weight:var(--h-weight);text-wrap:balance}
+h3{font-size:1.05rem;margin:0;font-weight:600}
+p{margin:0;max-width:44rem}
+.muted{color:var(--muted)}.small{font-size:.86rem}
+.label{font-family:var(--label-font);text-transform:var(--label-case);letter-spacing:var(--label-track);font-size:.78rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.35rem}
+.panel{background:var(--panel-bg);border:1px solid var(--panel-line);border-radius:var(--radius);padding:1rem 1.1rem;min-width:0}
+.controls{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:1rem}
+@media (max-width:720px){.controls{grid-template-columns:minmax(0,1fr)}}
+textarea,input[type=text],select{width:100%;background:var(--bg);border:1px solid var(--surface-2);border-radius:var(--radius-sm);padding:.55rem .7rem;line-height:1.5}
+textarea{min-height:5.5rem;resize:vertical}
+input.mono,textarea.mono{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em}
+.tabs{display:flex;gap:.4rem;flex-wrap:wrap}
+.tabs button,.btn{background:transparent;border:1px solid var(--surface-2);border-radius:var(--radius-sm);padding:.38rem .85rem;font-size:.88rem;font-weight:600;cursor:pointer}
+.tabs button[aria-selected="true"],.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn:hover,.tabs button:hover{border-color:var(--accent)}
+.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:.75rem;align-content:start}
+
+.callout{border-left:4px solid var(--nord15);background:var(--surface);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:.85rem 1rem;max-width:46rem}
+.callout.info{border-left-color:var(--nord8)}
+.callout strong{display:block;margin-bottom:.2rem}
+.warn{display:inline-block;background:var(--nord13);color:var(--nord0);border-radius:var(--radius-sm);padding:.2rem .6rem;font-size:.85rem;font-weight:600}
+
+/* Schrittsteuerung */
+.player{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .8rem}
+.player .btns{display:flex;gap:.3rem}
+.player button{min-width:2.3rem;height:2.2rem;border:1px solid var(--surface-2);background:transparent;border-radius:var(--radius-sm);cursor:pointer;font-weight:700}
+.player button:hover{border-color:var(--accent)}
+.player button.play{min-width:6.5rem;background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.player input[type=range]{flex:1 1 12rem;accent-color:var(--accent);min-width:0}
+.stepinfo{font-size:.92rem;min-height:1.6em}
+.stepinfo b{font-family:var(--font-mono)}
+
+/* Bänder */
+.strip{display:flex;flex-wrap:wrap;gap:.45rem .8rem}
+.grp{display:inline-flex;flex-wrap:wrap;gap:2px;max-width:100%}
+.cell{font-family:var(--font-mono);font-weight:600;font-size:.95rem;width:1.5em;height:1.9em;display:inline-grid;place-items:center;background:var(--surface);border-bottom:3px solid var(--rc,var(--line));border-radius:2px}
+.cell.todo{color:transparent;border-bottom-color:var(--line)}
+.cell.used{opacity:.4}
+.cell.now{outline:2px solid var(--accent);outline-offset:1px;opacity:1}
+.cell.pad{color:var(--muted)}
+.r0{--rc:var(--r0)}.r1{--rc:var(--r1)}.r2{--rc:var(--r2)}.r3{--rc:var(--r3)}.r4{--rc:var(--r4)}.r5{--rc:var(--r5)}.r6{--rc:var(--r6)}.r7{--rc:var(--r7)}
+.grp-label{font-family:var(--font-mono);font-size:.68rem;color:var(--muted);align-self:flex-end;margin-right:.15rem}
+
+.scroll-x{overflow-x:auto;min-width:0}
+svg text{font-family:var(--font-mono)}
+.rodsvg .rodbody{fill:var(--rod)}
+.rodsvg .rodend{fill:var(--rod-end)}
+.rodsvg .shine{fill:var(--rod-shine);opacity:.13}
+.rodsvg .band{fill:var(--nord13);stroke:var(--nord0);stroke-opacity:.35}
+.rodsvg .band.now{stroke:var(--nord10);stroke-width:2.5;stroke-opacity:1}
+.rodsvg .lt{fill:var(--nord0);font-weight:600;font-size:17px}
+.rodsvg .ghost{fill:var(--nord0);opacity:.38;font-size:11px}
+.rodsvg .cap{fill:var(--muted);font-size:11px}
+.rodbar{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem}
+.rodbar .face{font-family:var(--font-mono);font-weight:600}
+
+table.grid{border-collapse:separate;border-spacing:2px;font-family:var(--font-mono)}
+table.grid th{font-size:.7rem;color:var(--muted);font-weight:600;padding:0 .5rem 0 0;text-align:right;white-space:nowrap}
+table.grid thead th{text-align:center;padding:0}
+table.grid td{width:1.6em;height:1.9em;text-align:center;font-weight:600;background:var(--surface);border-bottom:3px solid var(--rc,var(--line));border-radius:2px}
+table.grid td.empty{color:transparent}
+table.grid td.now{outline:2px solid var(--accent);outline-offset:1px}
+table.grid td.read{opacity:.45}
+table.grid tr.face th{color:var(--accent)}
+table.grid tr.face td{background:var(--surface-2)}
+
+.fence text.lt{fill:var(--text);font-weight:600;font-size:15px}
+.fence text.lbl{fill:var(--muted);font-size:11px}
+.fence .rowband{opacity:.18}
+.fence .path-all{fill:none;stroke:var(--muted);stroke-width:1.2;stroke-dasharray:3 4;opacity:.6}
+.fence .path-done{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.fence .nowring{fill:none;stroke:var(--accent);stroke-width:2}
+.fence .read{opacity:.4}
+
+/* Python */
+.codebox{position:relative;min-width:0}
+pre.py{margin:0;background:var(--py-bg);color:var(--py-fg);border-radius:var(--radius);padding:1rem 1.1rem;overflow-x:auto;font-family:var(--font-mono);font-size:.86rem;line-height:1.5}
+pre.py .kw{color:var(--nord9);font-weight:600}.py .st{color:var(--nord14)}.py .nu{color:var(--nord15)}.py .cm{color:var(--py-cmt);font-style:italic;opacity:.8}.py .fn{color:var(--nord8)}
+.copy{position:absolute;top:.5rem;right:.5rem;background:var(--nord2);color:var(--nord6);border:1px solid var(--nord3);border-radius:var(--radius-sm);font-size:.78rem;padding:.2rem .6rem;cursor:pointer}
+details.code summary{cursor:pointer;font-weight:600;color:var(--accent)}
+details.code[open] summary{margin-bottom:.6rem}
+
+table.data{border-collapse:collapse;width:100%;font-size:.9rem}
+table.data th,table.data td{text-align:left;padding:.45rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+table.data th{font-family:var(--label-font);text-transform:var(--label-case);letter-spacing:var(--label-track);font-size:.74rem;color:var(--muted);font-weight:600}
+table.data td.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+table.data tr.best{background:var(--surface)}
+.pill{display:inline-block;background:var(--nord14);color:var(--nord0);border-radius:999px;padding:.05rem .55rem;font-size:.75rem;font-weight:700;margin-left:.4rem;font-family:var(--font)}
+.radio{display:flex;gap:1rem;flex-wrap:wrap}
+.radio label{display:flex;gap:.35rem;align-items:center;cursor:pointer}
+.radio input{accent-color:var(--accent)}
+
+.pool{font-family:var(--font-mono);font-size:.88rem;letter-spacing:.08em;overflow-wrap:anywhere;background:var(--surface);border-radius:var(--radius-sm);padding:.55rem .7rem}
+.ok-badge{display:inline-flex;gap:.4rem;align-items:center;background:var(--nord14);color:var(--nord0);font-weight:600;border-radius:var(--radius-sm);padding:.3rem .7rem}
+
+.tasks{display:grid;gap:1rem}
+.task{display:grid;gap:.6rem}
+.task .q{display:flex;gap:.7rem;align-items:baseline}
+.task .tn{font-family:var(--font-mono);font-weight:600;color:var(--accent)}
+.code-inline{font-family:var(--font-mono);background:var(--surface);padding:.05rem .35rem;border-radius:4px;font-size:.9em;letter-spacing:.04em;overflow-wrap:anywhere}
+.answer{display:flex;gap:.5rem;flex-wrap:wrap}
+.answer input{flex:1 1 14rem;width:auto;min-width:0}
+.fb{font-weight:600;font-size:.9rem;padding:.2rem .6rem;border-radius:var(--radius-sm);color:var(--nord0)}
+.fb.ok{background:var(--nord14)}.fb.no{background:var(--nord13)}
+details.sol summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:.92rem}
+details.sol div{margin-top:.5rem;display:grid;gap:.4rem}
+footer{color:var(--muted);font-size:.82rem;padding-block:0 3rem}
+@media (max-width:520px){h1{font-size:1.7rem}h2{font-size:1.28rem}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="title-block">
+      <p class="eyebrow">Kryptologie · Transpositionsverfahren</p>
+      <h1>Skytale und Gartenzaun</h1>
+      <p class="lede">Caesar und Vigenère ersetzen Buchstaben durch andere. Skytale und Gartenzaun machen etwas ganz anderes: Sie behalten jeden Buchstaben und ändern nur die Reihenfolge. Probiere beide Verfahren mit eigenen Texten aus.</p>
+      <nav class="jump" aria-label="Abschnitte"><a href="#skytale">Skytale</a><a href="#gartenzaun">Gartenzaun</a><a href="#knacken">Knacken</a><a href="#vergleich">Vergleich</a><a href="#uebungen">Übungen</a></nav>
+    </div>
+    <div class="toggles">
+      <div class="seg" role="group" aria-label="Design-Variante"><span class="lbl">Variante</span>
+        <button type="button" id="varA" aria-pressed="true">A</button><button type="button" id="varB" aria-pressed="false">B</button></div>
+      <div class="seg" role="group" aria-label="Beamer-Modus"><button type="button" id="beamer" aria-pressed="false">Beamer-Modus</button></div>
+    </div>
+  </div>
+</header>
+
+<main><div class="wrap">
+
+<!-- ================= SKYTALE ================= -->
+<section class="part" id="skytale">
+  <div class="part-head"><span class="num">1</span><h2>Die Skytale</h2></div>
+  <p>Die Skytale (griechisch für «Stab») wird mit Sparta in Verbindung gebracht. Plutarch beschreibt, wie ein Lederstreifen spiralförmig um einen Holzstab gewickelt und der Text der Länge nach auf den Stab geschrieben wurde. Wickelt man den Streifen ab, stehen die Buchstaben durcheinander. Lesen kann ihn nur, wer einen Stab mit gleichem Durchmesser hat. Ob die Skytale wirklich zur Geheimhaltung diente, ist unter Historikern umstritten.</p>
+  <div class="callout info"><strong>Der Schlüssel ist der Stabumfang</strong>Er bestimmt, wie viele Buchstaben auf eine Windung des Streifens passen. Bei <span class="mono">k</span> Buchstaben pro Windung hat der Stab <span class="mono">k</span> Seiten, auf die man schreiben kann. Ist der Text zu kurz, wird er mit <span class="mono">X</span> aufgefüllt, damit jede Windung voll ist.</div>
+
+  <div class="tabs" role="tablist" aria-label="Skytale-Modus">
+    <button type="button" role="tab" id="skyEnc" aria-selected="true">Verschlüsseln</button>
+    <button type="button" role="tab" id="skyDec" aria-selected="false">Entschlüsseln</button>
+  </div>
+  <div class="controls">
+    <div class="panel"><label class="label" for="skyText" id="skyTextLbl">Klartext</label><textarea id="skyText" spellcheck="false"></textarea>
+      <p class="small muted" style="margin-top:.35rem">Nur A–Z zählen. Umlaute werden zu AE, OE, UE. Höchstens 120 Buchstaben.</p></div>
+    <div class="panel stack">
+      <div><label class="label" for="skyK">Buchstaben pro Windung (k)</label><select id="skyK"></select></div>
+      <p class="small muted" id="skyInfo"></p>
+    </div>
+  </div>
+
+  <div class="panel stack">
+    <div class="rodbar">
+      <span class="label" style="margin:0">Der Stab</span>
+      <div class="player"><div class="btns">
+        <button type="button" id="rodUp" aria-label="Stab nach oben drehen">▲</button>
+        <button type="button" id="rodDown" aria-label="Stab nach unten drehen">▼</button></div></div>
+      <span class="small">Sichtbare Seite: <span class="face" id="rodFace"></span></span>
+    </div>
+    <div class="scroll-x" id="rod"></div>
+    <p class="small muted">Drehe den Stab: Auf jeder Seite steht eine Zeile des Klartexts. Die Buchstaben oben und unten am Rand gehören zu den Nachbarseiten.</p>
+  </div>
+
+  <div class="panel stack">
+    <span class="label" style="margin:0">Der Stab abgerollt (k Seiten × Windungen)</span>
+    <div class="scroll-x"><table class="grid" id="skyGrid"></table></div>
+  </div>
+
+  <div class="panel stack">
+    <div class="player" id="skyPlayer"></div>
+    <div class="stepinfo" id="skyStep" aria-live="polite"></div>
+    <div><span class="label" id="skyInLbl">Klartext</span><div class="strip" id="skyIn"></div></div>
+    <div><span class="label" id="skyOutLbl">Lederstreifen (Geheimtext)</span><div class="strip" id="skyOut"></div></div>
+  </div>
+
+  <details class="code"><summary>Python-Code anzeigen</summary>
+    <div class="codebox"><button class="copy" type="button">Kopieren</button><pre class="py" data-code="sky"></pre></div>
+  </details>
+</section>
+
+<!-- ================= GARTENZAUN ================= -->
+<section class="part" id="gartenzaun">
+  <div class="part-head"><span class="num">2</span><h2>Der Gartenzaun</h2></div>
+  <p>Beim Gartenzaun-Verfahren (englisch <em>Rail Fence</em>, auch Zickzack-Verfahren) schreibt man den Text im Zickzack auf mehrere Zeilen, wie die Latten eines Zauns. Danach liest man Zeile für Zeile ab und hängt alles aneinander. Der Schlüssel ist die Anzahl Zeilen.</p>
+
+  <div class="tabs" role="tablist" aria-label="Gartenzaun-Modus">
+    <button type="button" role="tab" id="rfEnc" aria-selected="true">Verschlüsseln</button>
+    <button type="button" role="tab" id="rfDec" aria-selected="false">Entschlüsseln</button>
+  </div>
+  <div class="controls">
+    <div class="panel"><label class="label" for="rfText" id="rfTextLbl">Klartext</label><textarea id="rfText" spellcheck="false"></textarea>
+      <p class="small muted" style="margin-top:.35rem">Nur A–Z zählen. Höchstens 120 Buchstaben.</p></div>
+    <div class="panel stack">
+      <div><label class="label" for="rfZ">Anzahl Zeilen (z)</label><select id="rfZ"></select></div>
+      <p class="small muted" id="rfInfo"></p>
+    </div>
+  </div>
+
+  <div class="panel stack">
+    <span class="label" style="margin:0">Der Zaun</span>
+    <div class="scroll-x" id="fence"></div>
+  </div>
+
+  <div class="panel stack">
+    <div class="player" id="rfPlayer"></div>
+    <div class="stepinfo" id="rfStep" aria-live="polite"></div>
+    <div><span class="label" id="rfInLbl">Klartext</span><div class="strip" id="rfIn"></div></div>
+    <div><span class="label" id="rfOutLbl">Geheimtext (Zeile für Zeile)</span><div class="strip" id="rfOut"></div></div>
+  </div>
+
+  <div class="callout"><strong>So entschlüsselt man</strong>Aus Textlänge und Zeilenzahl weiss man, wie viele Buchstaben auf jede Zeile kommen. Man schneidet den Geheimtext in diese Stücke, legt sie auf die Zeilen und liest dann wieder im Zickzack.</div>
+
+  <details class="code"><summary>Python-Code anzeigen</summary>
+    <div class="codebox"><button class="copy" type="button">Kopieren</button><pre class="py" data-code="rf"></pre></div>
+  </details>
+</section>
+
+<!-- ================= KNACKEN ================= -->
+<section class="part" id="knacken">
+  <div class="part-head"><span class="num">3</span><h2>Knacken durch Ausprobieren</h2></div>
+  <p>Beide Verfahren haben nur wenige mögliche Schlüssel. Bei einem Text mit 50 Buchstaben gibt es höchstens 49 sinnvolle Werte für k oder z. Ein Angreifer probiert einfach alle aus (Brute Force). Damit der Computer erkennt, welche Lösung nach Deutsch aussieht, zählt er häufige Buchstabenpaare wie ER, EN, CH, EI und DE.</p>
+  <div class="panel stack">
+    <div><label class="label" for="bfText">Geheimtext</label><textarea id="bfText" class="mono" spellcheck="false"></textarea></div>
+    <div class="radio" role="radiogroup" aria-label="Verfahren">
+      <label><input type="radio" name="bfm" value="rf" checked> Gartenzaun</label>
+      <label><input type="radio" name="bfm" value="sky"> Skytale</label>
+    </div>
+  </div>
+  <div class="scroll-x"><table class="data" id="bfTbl"><thead><tr><th>Schlüssel</th><th>Entschlüsselung</th><th>Deutsch-Punkte</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<!-- ================= VERGLEICH ================= -->
+<section class="part" id="vergleich">
+  <div class="part-head"><span class="num">4</span><h2>Vergleich: Transposition statt Substitution</h2></div>
+  <div class="scroll-x"><table class="data">
+    <thead><tr><th></th><th>Skytale</th><th>Gartenzaun</th><th>Caesar (zum Vergleich)</th></tr></thead>
+    <tbody>
+      <tr><th>Art</th><td>Transposition</td><td>Transposition</td><td>Substitution</td></tr>
+      <tr><th>Schlüssel</th><td>Buchstaben pro Windung k</td><td>Anzahl Zeilen z</td><td>Verschiebung 1–25</td></tr>
+      <tr><th>Was passiert?</th><td>Spalten eines Rasters werden zu Zeilen</td><td>Zickzack schreiben, zeilenweise lesen</td><td>Jeder Buchstabe wird ersetzt</td></tr>
+      <tr><th>Häufigkeiten</th><td>bleiben gleich</td><td>bleiben gleich</td><td>werden verschoben</td></tr>
+      <tr><th>Schwäche</th><td colspan="2">Wenige Schlüssel, Brute Force genügt. Häufigkeiten verraten das Verfahren.</td><td>25 Schlüssel, Häufigkeitsanalyse</td></tr>
+    </tbody></table></div>
+  <p>Weil eine Transposition nur umsortiert, enthält der Geheimtext genau dieselben Buchstaben wie der Klartext. Ein Angreifer sieht an der normalen deutschen Häufigkeitsverteilung (viele E, N, I, R), dass keine Substitution im Spiel ist. Hier die Buchstaben deines Gartenzaun-Beispiels, alphabetisch sortiert:</p>
+  <div class="panel stack">
+    <div><span class="label">Klartext sortiert</span><div class="pool" id="poolP"></div></div>
+    <div><span class="label">Geheimtext sortiert</span><div class="pool" id="poolC"></div></div>
+    <div id="poolRes"></div>
+  </div>
+  <div class="callout info"><strong>Heute noch wichtig</strong>Allein sind Transpositionen schwach. Moderne Verfahren wie AES kombinieren aber Substitution (Buchstaben bzw. Bytes ersetzen) und Transposition (Positionen vertauschen) in vielen Runden. Claude Shannon nannte diese beiden Zutaten Konfusion und Diffusion.</div>
+</section>
+
+<!-- ================= ÜBUNGEN ================= -->
+<section class="part" id="uebungen">
+  <div class="part-head"><span class="num">5</span><h2>Übungen</h2></div>
+  <div class="tasks">
+    <div class="panel task">
+      <div class="q"><span class="tn">A1</span><p>Eine Skytale mit <b>k = 4</b> Buchstaben pro Windung. Entschlüssle den Streifen <span class="code-inline">AFRANBGUGEEERINNIMGXFORX</span>.</p></div>
+      <div class="answer"><input type="text" class="mono" id="a1" aria-label="Antwort A1" autocomplete="off"><button class="btn" type="button" data-check="a1">Prüfen</button><span id="a1fb" aria-live="polite"></span></div>
+      <details class="sol"><summary>Lösung anzeigen</summary><div><p>Nimm jeden 4. Buchstaben, beginnend beim 1., dann beim 2. usw.: <span class="code-inline">AFRANBGUGEEERINNIMGXFORX</span> → <span class="code-inline">ANGRIF · FBEIMO · RGENGR · AUENXX</span></p><p><b>ANGRIFF BEI MORGENGRAUEN</b>. Die zwei X am Schluss sind Füllbuchstaben.</p></div></details>
+    </div>
+    <div class="panel task">
+      <div class="q"><span class="tn">A2</span><p>Verschlüssle <span class="code-inline">KANTONSSCHULE</span> mit dem Gartenzaun und <b>z = 3</b> Zeilen.</p></div>
+      <div class="answer"><input type="text" class="mono" id="a2" aria-label="Antwort A2" autocomplete="off"><button class="btn" type="button" data-check="a2">Prüfen</button><span id="a2fb" aria-live="polite"></span></div>
+      <details class="sol"><summary>Lösung anzeigen</summary><div>
+<pre class="py" style="letter-spacing:.2em">K . . . O . . . C . . . E
+. A . T . N . S . H . L .
+. . N . . . S . . . U . .</pre>
+        <p>Zeile 1: KOCE, Zeile 2: ATNSHL, Zeile 3: NSU → <b class="mono">KOCEATNSHLNSU</b></p></div></details>
+    </div>
+    <div class="panel task">
+      <div class="q"><span class="tn">A3</span><p>Dieser Text wurde mit dem Gartenzaun verschlüsselt, die Zeilenzahl ist unbekannt: <span class="code-inline">TNSELBNREWNNDRUEMREEFIUAHSHBIUNFRCCEN</span>. Wie viele Zeilen wurden verwendet, und wie lautet der Klartext? Tipp: Abschnitt 3 hilft.</p></div>
+      <div class="answer"><input type="text" class="mono" id="a3" aria-label="Antwort A3 (Klartext)" placeholder="Klartext" autocomplete="off"><button class="btn" type="button" data-check="a3">Prüfen</button><span id="a3fb" aria-live="polite"></span></div>
+      <details class="sol"><summary>Lösung anzeigen</summary><div><p>z = 4: <b>TREFFEN WIR UNS NACH DER SCHULE BEIM BRUNNEN</b></p><button class="btn" type="button" id="a3load">In Abschnitt 3 laden</button></div></details>
+    </div>
+    <div class="panel task">
+      <div class="q"><span class="tn">A4</span><p>Du findest einen Geheimtext, in dem E, N, I und R die häufigsten Buchstaben sind. Was schliesst du daraus über das Verfahren? Und warum hilft hier der Kasiski-Test nicht weiter?</p></div>
+      <details class="sol"><summary>Lösung anzeigen</summary><div><p>Die Häufigkeiten entsprechen dem Deutschen. Die Buchstaben wurden also nicht ersetzt, sondern nur umsortiert: Es ist sehr wahrscheinlich eine Transposition wie Skytale oder Gartenzaun.</p><p>Der Kasiski-Test sucht wiederholte Buchstabenfolgen, die durch einen sich wiederholenden Substitutionsschlüssel entstehen. Bei einer Transposition gibt es keinen solchen Schlüssel. Hier probiert man besser alle Zeilenzahlen bzw. Stabumfänge aus.</p></div></details>
+    </div>
+  </div>
+</section>
+
+</div></main>
+<footer><div class="wrap">Alle Berechnungen laufen in deinem Browser.</div></footer>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const root=document.documentElement;
+const store={get(k){try{return localStorage.getItem('skygz.'+k)}catch(e){return null}},set(k,v){try{localStorage.setItem('skygz.'+k,v)}catch(e){}}};
+const MAXN=120;
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function norm(s){return (s||'').toUpperCase().replace(/Ä/g,'AE').replace(/Ö/g,'OE').replace(/Ü/g,'UE').replace(/ß/g,'SS').replace(/[ÀÁÂ]/g,'A').replace(/[ÈÉÊË]/g,'E').replace(/[ÎÏ]/g,'I').replace(/[ÔÓ]/g,'O').replace(/Ç/g,'C').replace(/[^A-Z]/g,'');}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------- Verfahren ---------- */
+const pad=(t,k)=>{while(t.length%k)t+='X';return t};
+const skyDec=(c,k)=>{let o='';for(let r=0;r<k;r++)for(let i=r;i<c.length;i+=k)o+=c[i];return o};
+const skyEnc=(t,k)=>{t=pad(t,k);const L=t.length/k;let o='';for(let j=0;j<L;j++)for(let r=0;r<k;r++)o+=t[r*L+j];return o};
+const zig=(n,z)=>{const p=2*(z-1);return Array.from({length:n},(_,i)=>Math.min(i%p,p-i%p))};
+const rfOrder=(n,z)=>{const m=zig(n,z);return Array.from({length:n},(_,i)=>i).sort((a,b)=>m[a]-m[b]||a-b)};
+const rfEnc=(t,z)=>rfOrder(t.length,z).map(i=>t[i]).join('');
+const rfDec=(c,z)=>{const o=[];rfOrder(c.length,z).forEach((p,j)=>o[p]=c[j]);return o.join('')};
+
+/* ---------- Darstellung ---------- */
+function setVariant(v){root.setAttribute('data-variant',v);$('varA').setAttribute('aria-pressed',v==='a');$('varB').setAttribute('aria-pressed',v==='b');store.set('variant',v);}
+function setBeamer(on){if(on)root.setAttribute('data-beamer','1');else root.removeAttribute('data-beamer');$('beamer').setAttribute('aria-pressed',on);store.set('beamer',on?'1':'0');}
+$('varA').onclick=()=>setVariant('a');$('varB').onclick=()=>setVariant('b');
+$('beamer').onclick=()=>setBeamer(root.getAttribute('data-beamer')!=='1');
+setVariant(store.get('variant')==='b'?'b':'a');setBeamer(store.get('beamer')==='1');
+
+/* ---------- Schritt-Player ---------- */
+function makePlayer(el,ctl){
+  el.innerHTML='<div class="btns"><button type="button" data-a="first" aria-label="Zum Anfang">⏮</button><button type="button" data-a="prev" aria-label="Schritt zurück">◀</button><button type="button" data-a="next" aria-label="Schritt vor">▶</button><button type="button" data-a="last" aria-label="Zum Ende">⏭</button></div><button type="button" class="play" data-a="play">Abspielen</button><input type="range" min="0" value="0" aria-label="Schritt">';
+  const range=el.querySelector('input'),play=el.querySelector('.play');let timer=null;
+  const stop=()=>{clearInterval(timer);timer=null;play.textContent='Abspielen';};
+  el.addEventListener('click',e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;const max=ctl.max();
+    if(a==='play'){if(timer){stop();return;}if(ctl.step>=max)ctl.set(0);play.textContent='Pause';
+      timer=setInterval(()=>{if(ctl.step>=ctl.max()){stop();return;}ctl.set(ctl.step+1);},reduce?700:330);return;}
+    stop();ctl.set(a==='first'?0:a==='last'?max:a==='prev'?Math.max(0,ctl.step-1):Math.min(max,ctl.step+1));});
+  range.addEventListener('input',()=>{stop();ctl.set(+range.value);});
+  return {sync(){range.max=ctl.max();range.value=ctl.step;},stop};
+}
+
+/* Allgemeines Modell: Alles wird über Klartext-Positionen beschrieben.
+   order1 = Reihenfolge, in der die Eingabe in die Figur gelegt wird
+   order2 = Reihenfolge, in der die Ausgabe aus der Figur gelesen wird */
+function stripHTML(plain,order,rowOf,shown,nowIdx,groups,usedMode,padFrom){
+  let h='',i=0;
+  for(const g of groups){h+='<span class="grp">'+(g.label?'<span class="grp-label">'+g.label+'</span>':'');
+    for(let c=0;c<g.size;c++,i++){const p=order[i];let cls='cell r'+(rowOf(p)%8);
+      if(usedMode){if(i<shown&&i!==nowIdx)cls+=' used';}else if(i>=shown)cls+=' todo';
+      if(i===nowIdx)cls+=' now';if(p>=padFrom)cls+=' pad';
+      h+='<span class="'+cls+'">'+plain[p]+'</span>';}
+    h+='</span>';}
+  return h;}
+function chunk(n,size){const g=[];for(let i=0;i<n;i+=size)g.push({size:Math.min(size,n-i)});return g;}
+
+/* ---------- Skytale ---------- */
+const SKY={mode:store.get('sky.mode')||'enc',text:store.get('sky.text')??'Die Spartaner greifen im Morgengrauen an',k:+(store.get('sky.k')||4),step:0,face:0};
+{let o='';for(let k=2;k<=10;k++)o+='<option value="'+k+'">'+k+'</option>';$('skyK').innerHTML=o;}
+$('skyText').value=SKY.text;$('skyK').value=SKY.k;
+let skyM;
+function skyModel(){
+  const k=SKY.k;let raw=norm(SKY.text).slice(0,MAXN);let plain,cipher,warn='',realLen;
+  if(SKY.mode==='enc'){realLen=raw.length;plain=pad(raw,k);cipher=skyEnc(raw,k);}
+  else{realLen=raw.length;if(raw.length%k)warn='Die Länge ('+raw.length+') ist kein Vielfaches von '+k+'. Mit X aufgefüllt.';cipher=pad(raw,k);plain=skyDec(cipher,k);}
+  const n=plain.length,L=n/k;
+  const band=Array.from({length:n},(_,b)=>(b%k)*L+Math.floor(b/k));
+  const nat=Array.from({length:n},(_,i)=>i);
+  const enc=SKY.mode==='enc';
+  return {k,n,L,plain,cipher,warn,band,nat,order1:enc?band.map((_,i)=>i):band,order2:enc?band:nat,realLen,padFrom:enc?realLen:n,enc};
+}
+const skyCtl={step:0,max:()=>2*(skyM?skyM.n:0),set(s){this.step=s;SKY.step=s;skyDraw();}};
+const skyPlayer=makePlayer($('skyPlayer'),skyCtl);
+function skyRebuild(full){skyM=skyModel();if(full!==false)skyCtl.step=2*skyM.n;if(SKY.face>=skyM.k)SKY.face=0;skyDraw();}
+function skyDraw(){
+  const M=skyM,s=skyCtl.step,n=M.n,rowOf=p=>Math.floor(p/M.L);
+  const placedN=Math.min(s,n),outN=Math.max(0,s-n);
+  const placed=new Set(M.order1.slice(0,placedN)),read=new Set(M.order2.slice(0,outN));
+  let now=-1;if(s>0&&s<=n)now=M.order1[s-1];else if(s>n)now=M.order2[s-n-1];
+  // Info
+  $('skyInfo').textContent=n?(n+' Buchstaben = '+M.k+' Seiten × '+M.L+' Windungen'+(M.enc&&M.realLen<n?' ('+(n-M.realLen)+' × X aufgefüllt)':'')):'Gib einen Text ein.';
+  if(M.warn)$('skyInfo').innerHTML=esc($('skyInfo').textContent)+'<br><span class="warn">'+esc(M.warn)+'</span>';
+  // Stab
+  $('rodFace').textContent=(SKY.face+1)+' von '+M.k;
+  $('rod').innerHTML=rodSVG(M,placed,now);
+  // Raster
+  let g='<thead><tr><th></th>';for(let j=0;j<M.L;j++)g+='<th>'+(j+1)+'</th>';g+='</tr></thead><tbody>';
+  for(let r=0;r<M.k;r++){g+='<tr'+(r===SKY.face?' class="face"':'')+'><th>Seite '+(r+1)+(r===SKY.face?' ◀':'')+'</th>';
+    for(let j=0;j<M.L;j++){const p=r*M.L+j;let c='r'+(r%8);if(!placed.has(p))c+=' empty';if(read.has(p)&&p!==now)c+=' read';if(p===now)c+=' now';g+='<td class="'+c+'">'+M.plain[p]+'</td>';}
+    g+='</tr>';}
+  $('skyGrid').innerHTML=g+'</tbody>';
+  // Bänder
+  const inGroups=M.enc?chunk(n,M.L).map((x,i)=>({size:x.size,label:'S'+(i+1)})):chunk(n,M.k).map((x,i)=>({size:x.size,label:'W'+(i+1)}));
+  const outGroups=M.enc?chunk(n,M.k).map((x,i)=>({size:x.size,label:'W'+(i+1)})):chunk(n,M.L).map((x,i)=>({size:x.size,label:'S'+(i+1)}));
+  $('skyIn').innerHTML=n?stripHTML(M.plain,M.order1,rowOf,placedN,s<=n?s-1:-1,inGroups,true,M.padFrom):'';
+  $('skyOut').innerHTML=n?stripHTML(M.plain,M.order2,rowOf,outN,s>n?s-n-1:-1,outGroups,false,M.padFrom):'';
+  $('skyInLbl').textContent=M.enc?'Klartext (S = Seite des Stabs)':'Lederstreifen (Geheimtext, W = Windung)';
+  $('skyOutLbl').textContent=M.enc?'Lederstreifen (Geheimtext, W = Windung)':'Klartext (S = Seite des Stabs)';
+  // Schritttext
+  let t='';
+  if(!n)t='';
+  else if(s===0)t=M.enc?'Start: Der Streifen liegt leer um den Stab. Drücke ▶.':'Start: Der Streifen ist noch nicht aufgewickelt. Drücke ▶.';
+  else if(s<=n){const p=now,r=rowOf(p),j=p%M.L;
+    t=M.enc?'Schreiben: <b>'+M.plain[p]+'</b> kommt auf Seite '+(r+1)+', Windung '+(j+1)+'.':'Aufwickeln: Streifen-Buchstabe '+s+' <b>'+M.plain[p]+'</b> landet auf Seite '+(r+1)+', Windung '+(j+1)+'.';}
+  else{const p=now,r=rowOf(p),j=p%M.L;
+    t=M.enc?'Abwickeln: Windung '+(j+1)+' liefert <b>'+M.plain[p]+'</b> von Seite '+(r+1)+'.':'Lesen: Seite '+(r+1)+', Windung '+(j+1)+' → <b>'+M.plain[p]+'</b>';}
+  if(n&&s===2*n)t=(M.enc?'Fertig. Geheimtext: <b>'+M.cipher+'</b>':'Fertig. Klartext: <b>'+M.plain+'</b>');
+  $('skyStep').innerHTML='<span class="muted">Schritt '+s+' / '+2*n+' · </span>'+t;
+  skyPlayer.sync();
+}
+function rodSVG(M,placed,now){
+  const cw=32,sk=12,x0=34,H=150,top=28,bot=122,bt=40,bb=110,W=x0+M.L*cw+sk+30;
+  const r=SKY.face,up=(r-1+M.k)%M.k,dn=(r+1)%M.k;
+  let s='<svg class="rodsvg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Skytale-Stab, Seite '+(r+1)+'">';
+  s+='<rect class="rodbody" x="'+(x0-6)+'" y="'+top+'" width="'+(W-x0-8)+'" height="'+(bot-top)+'" rx="14"/>';
+  s+='<ellipse class="rodend" cx="'+(x0-6)+'" cy="'+((top+bot)/2)+'" rx="12" ry="'+((bot-top)/2)+'"/>';
+  for(let j=0;j<M.L;j++){const x=x0+j*cw;
+    const pts=[[x+sk,bt],[x+cw+sk-2,bt],[x+cw-2,bb],[x,bb]].map(p=>p.join(',')).join(' ');
+    const p=r*M.L+j,isNow=[r*M.L+j].includes(now);
+    s+='<polygon class="band'+(now>=0&&now%M.L===j&&Math.floor(now/M.L)===r?' now':'')+'" points="'+pts+'"/>';
+    const cx=x+cw/2+sk/2-1;
+    if(placed.has(p))s+='<text class="lt" x="'+cx+'" y="'+((bt+bb)/2+6)+'" text-anchor="middle">'+M.plain[p]+'</text>';
+    if(M.k>2){const pu=up*M.L+j,pd=dn*M.L+j;
+      if(placed.has(pu))s+='<text class="ghost" x="'+(cx+4)+'" y="'+(bt+11)+'" text-anchor="middle">'+M.plain[pu]+'</text>';
+      if(placed.has(pd))s+='<text class="ghost" x="'+(cx-4)+'" y="'+(bb-4)+'" text-anchor="middle">'+M.plain[pd]+'</text>';}
+    s+='<text class="cap" x="'+(x+cw/2+sk/2)+'" y="'+(H-10)+'" text-anchor="middle">'+(j+1)+'</text>';}
+  s+='<rect class="shine" x="'+(x0-6)+'" y="'+(top+6)+'" width="'+(W-x0-8)+'" height="16" rx="8"/>';
+  s+='<text class="cap" x="'+x0+'" y="16">Windung →</text>';
+  return s+'</svg>';}
+function skySetMode(m){if(m!==SKY.mode&&skyM&&skyM.n){SKY.text=m==='dec'?skyM.cipher:(skyM.plain);$('skyText').value=SKY.text;store.set('sky.text',SKY.text);}
+  SKY.mode=m;store.set('sky.mode',m);$('skyEnc').setAttribute('aria-selected',m==='enc');$('skyDec').setAttribute('aria-selected',m==='dec');
+  $('skyTextLbl').textContent=m==='enc'?'Klartext':'Geheimtext (Lederstreifen)';$('skyText').classList.toggle('mono',m==='dec');skyPlayer.stop();skyRebuild();}
+$('skyEnc').onclick=()=>skySetMode('enc');$('skyDec').onclick=()=>skySetMode('dec');
+$('skyK').onchange=e=>{SKY.k=+e.target.value;store.set('sky.k',SKY.k);skyPlayer.stop();skyRebuild();};
+let skyT;$('skyText').addEventListener('input',()=>{clearTimeout(skyT);skyT=setTimeout(()=>{SKY.text=$('skyText').value;store.set('sky.text',SKY.text);skyPlayer.stop();skyRebuild();},150);});
+$('rodUp').onclick=()=>{SKY.face=(SKY.face-1+skyM.k)%skyM.k;skyDraw();};
+$('rodDown').onclick=()=>{SKY.face=(SKY.face+1)%skyM.k;skyDraw();};
+
+/* ---------- Gartenzaun ---------- */
+const RF={mode:store.get('rf.mode')||'enc',text:store.get('rf.text')??'Treffpunkt um zehn Uhr am Bahnhof Bülach',z:+(store.get('rf.z')||3)};
+{let o='';for(let z=2;z<=8;z++)o+='<option value="'+z+'">'+z+'</option>';$('rfZ').innerHTML=o;}
+$('rfText').value=RF.text;$('rfZ').value=RF.z;
+let rfM;
+function rfModel(){
+  const z=RF.z,raw=norm(RF.text).slice(0,MAXN),enc=RF.mode==='enc';
+  const plain=enc?raw:rfDec(raw,z),cipher=enc?rfEnc(raw,z):raw,n=plain.length;
+  const m=zig(n,z),ro=rfOrder(n,z),nat=Array.from({length:n},(_,i)=>i);
+  const counts=Array(z).fill(0);m.forEach(r=>counts[r]++);
+  return {z,n,plain,cipher,m,counts,ro,nat,order1:enc?nat:ro,order2:enc?ro:nat,enc};
+}
+const rfCtl={step:0,max:()=>2*(rfM?rfM.n:0),set(s){this.step=s;rfDraw();}};
+const rfPlayer=makePlayer($('rfPlayer'),rfCtl);
+function rfRebuild(){rfM=rfModel();rfCtl.step=2*rfM.n;rfDraw();poolDraw();}
+function rfDraw(){
+  const M=rfM,s=rfCtl.step,n=M.n,rowOf=p=>M.m[p];
+  const placedN=Math.min(s,n),outN=Math.max(0,s-n);
+  const placed=new Set(M.order1.slice(0,placedN)),read=new Set(M.order2.slice(0,outN));
+  let now=-1;if(s>0&&s<=n)now=M.order1[s-1];else if(s>n)now=M.order2[s-n-1];
+  $('rfInfo').innerHTML=n?(n+' Buchstaben auf '+M.z+' Zeilen<br>'+M.counts.map((c,i)=>'Zeile '+(i+1)+': '+c).join(' · ')):'Gib einen Text ein.';
+  // Zaun
+  const cw=24,rh=32,lx=44,W=lx+n*cw+10,H=M.z*rh+12;
+  let g='<svg class="fence" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Gartenzaun mit '+M.z+' Zeilen">';
+  for(let r=0;r<M.z;r++){g+='<rect class="rowband" x="'+(lx-4)+'" y="'+(6+r*rh)+'" width="'+(n*cw+8)+'" height="'+(rh-4)+'" rx="3" style="fill:var(--r'+(r%8)+')"/>';
+    g+='<text class="lbl" x="4" y="'+(6+r*rh+rh/2+2)+'">Zeile '+(r+1)+'</text>';}
+  const pt=i=>[lx+i*cw+cw/2,6+M.m[i]*rh+rh/2-2];
+  if(n>1)g+='<polyline class="path-all" points="'+M.nat.map(i=>pt(i).join(',')).join(' ')+'"/>';
+  // gelaufene Strecke im Zickzack: beim Verschlüsseln Phase 1, beim Entschlüsseln Phase 2
+  const walked=M.enc?placedN:outN;
+  if(walked>1)g+='<polyline class="path-done" points="'+M.nat.slice(0,walked).map(i=>pt(i).join(',')).join(' ')+'"/>';
+  for(let i=0;i<n;i++){if(!placed.has(i))continue;const [x,y]=pt(i);
+    g+='<text class="lt'+(read.has(i)&&i!==now?' read':'')+'" x="'+x+'" y="'+(y+5)+'" text-anchor="middle">'+M.plain[i]+'</text>';}
+  if(now>=0){const [x,y]=pt(now);g+='<circle class="nowring" cx="'+x+'" cy="'+y+'" r="11"/>';}
+  $('fence').innerHTML=g+'</svg>';
+  // Bänder
+  const rowGroups=M.counts.map((c,i)=>({size:c,label:'Z'+(i+1)})).filter(x=>x.size>0);
+  const plainGroups=[{size:n}];
+  $('rfIn').innerHTML=n?stripHTML(M.plain,M.order1,rowOf,placedN,s<=n?s-1:-1,M.enc?plainGroups:rowGroups,true,Infinity):'';
+  $('rfOut').innerHTML=n?stripHTML(M.plain,M.order2,rowOf,outN,s>n?s-n-1:-1,M.enc?rowGroups:plainGroups,false,Infinity):'';
+  $('rfInLbl').textContent=M.enc?'Klartext':'Geheimtext (Z = Zeile)';
+  $('rfOutLbl').textContent=M.enc?'Geheimtext (Z = Zeile)':'Klartext';
+  let t='';
+  if(n){if(s===0)t=M.enc?'Start: Der Zaun ist leer. Drücke ▶.':'Start: Zuerst wird der Geheimtext in Stücke geschnitten und auf die Zeilen gelegt. Drücke ▶.';
+    else if(s<=n)t=M.enc?'Zickzack schreiben: <b>'+M.plain[now]+'</b> auf Zeile '+(M.m[now]+1)+'.':'Auf Zeile '+(M.m[now]+1)+' legen: <b>'+M.plain[now]+'</b>';
+    else t=M.enc?'Zeile '+(M.m[now]+1)+' ablesen: <b>'+M.plain[now]+'</b>':'Im Zickzack lesen: <b>'+M.plain[now]+'</b> von Zeile '+(M.m[now]+1);
+    if(s===2*n)t='Fertig. '+(M.enc?'Geheimtext: <b>'+M.cipher+'</b>':'Klartext: <b>'+M.plain+'</b>');}
+  $('rfStep').innerHTML='<span class="muted">Schritt '+s+' / '+2*n+' · </span>'+t;
+  rfPlayer.sync();
+}
+function rfSetMode(m){if(m!==RF.mode&&rfM&&rfM.n){RF.text=m==='dec'?rfM.cipher:rfM.plain;$('rfText').value=RF.text;store.set('rf.text',RF.text);}
+  RF.mode=m;store.set('rf.mode',m);$('rfEnc').setAttribute('aria-selected',m==='enc');$('rfDec').setAttribute('aria-selected',m==='dec');
+  $('rfTextLbl').textContent=m==='enc'?'Klartext':'Geheimtext';$('rfText').classList.toggle('mono',m==='dec');rfPlayer.stop();rfRebuild();}
+$('rfEnc').onclick=()=>rfSetMode('enc');$('rfDec').onclick=()=>rfSetMode('dec');
+$('rfZ').onchange=e=>{RF.z=+e.target.value;store.set('rf.z',RF.z);rfPlayer.stop();rfRebuild();};
+let rfT;$('rfText').addEventListener('input',()=>{clearTimeout(rfT);rfT=setTimeout(()=>{RF.text=$('rfText').value;store.set('rf.text',RF.text);rfPlayer.stop();rfRebuild();},150);});
+
+/* ---------- Knacken ---------- */
+const BIG=['ER','EN','CH','DE','EI','TE','IN','ND','IE','GE','ST','NE','BE','ES','UN','RE','AN','HE','AU','NG','SE','IT','DI','IC','SC','LE','DA','NS','IS','RA','EL','EM','ET','UE','ZU'];
+function score(t){if(t.length<2)return 0;let c=0;for(let i=0;i<t.length-1;i++)if(BIG.includes(t.substr(i,2)))c++;return c/(t.length-1);}
+$('bfText').value=store.get('bf.text')||'WNETEINEESSNADTNHFKARSAEKHIRZCFECDETLANEAANRGKIZNGUET';
+function bfDraw(){
+  const c=norm($('bfText').value).slice(0,300),m=document.querySelector('input[name=bfm]:checked').value;
+  const rows=[];const max=Math.min(12,c.length-1);
+  for(let k=2;k<=max;k++){const d=m==='rf'?rfDec(c,k):skyDec(c,k);rows.push({k,d,s:score(d),ok:m==='sky'?c.length%k===0:true});}
+  const best=rows.reduce((a,b)=>b.ok&&(!a||b.s>a.s)?b:a,null);
+  $('bfTbl').tBodies[0].innerHTML=rows.length?rows.map(r=>'<tr'+(r===best?' class="best"':'')+'><td class="mono">'+(m==='rf'?'z':'k')+' = '+r.k+(r===best?'<span class="pill">✓ bester Treffer</span>':'')+'</td><td class="mono">'+esc(r.d.length>70?r.d.slice(0,70)+'…':r.d)+(r.ok?'':' <span class="muted small">(Länge nicht durch k teilbar)</span>')+'</td><td class="mono">'+Math.round(r.s*100)+'</td></tr>').join(''):'<tr><td colspan="3" class="muted">Gib einen Geheimtext mit mindestens 3 Buchstaben ein.</td></tr>';
+}
+$('bfText').addEventListener('input',()=>{store.set('bf.text',$('bfText').value);bfDraw();});
+document.querySelectorAll('input[name=bfm]').forEach(r=>r.addEventListener('change',bfDraw));
+
+/* ---------- Vergleich ---------- */
+function poolDraw(){const p=[...rfM.plain].sort().join(''),c=[...rfM.cipher].sort().join('');
+  $('poolP').textContent=p||'–';$('poolC').textContent=c||'–';
+  $('poolRes').innerHTML=p&&p===c?'<span class="ok-badge">✓ identisch: gleiche Buchstaben, nur andere Reihenfolge</span>':'';}
+
+/* ---------- Übungen ---------- */
+const SOL={a1:['ANGRIFFBEIMORGENGRAUEN','ANGRIFFBEIMORGENGRAUENXX'],a2:['KOCEATNSHLNSU'],a3:['TREFFENWIRUNSNACHDERSCHULEBEIMBRUNNEN']};
+document.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>{const id=b.dataset.check,v=norm($(id).value);
+  const ok=SOL[id].includes(v);$(id+'fb').innerHTML=v?'<span class="fb '+(ok?'ok':'no')+'">'+(ok?'✓ richtig':'✗ noch nicht')+'</span>':'';});
+$('a3load').onclick=()=>{$('bfText').value='TNSELBNREWNNDRUEMREEFIUAHSHBIUNFRCCEN';document.querySelector('input[name=bfm][value=rf]').checked=true;bfDraw();$('knacken').scrollIntoView({behavior:reduce?'auto':'smooth'});};
+
+/* ---------- Python-Code ---------- */
+const CODE={
+sky:`def skytale_verschluesseln(text, k):
+    # k = Buchstaben pro Windung (Umfang des Stabs)
+    while len(text) % k != 0:
+        text += "X"                      # auffüllen
+    windungen = len(text) // k
+    # Spalte j des Rasters wird zur Windung j des Streifens
+    return "".join(text[j::windungen] for j in range(windungen))
+
+def skytale_entschluesseln(geheim, k):
+    # jeder k-te Buchstabe liegt auf derselben Seite des Stabs
+    return "".join(geheim[r::k] for r in range(k))
+
+print(skytale_verschluesseln("DIESPARTANERGREIFEN", 4))`,
+rf:`def zickzack(n, z):
+    # Zeilennummer jeder Position: 0, 1, 2, 1, 0, 1, 2, ...
+    periode = 2 * (z - 1)
+    return [min(i % periode, periode - i % periode) for i in range(n)]
+
+def gartenzaun_verschluesseln(text, z):
+    muster = zickzack(len(text), z)
+    zeilen = [""] * z
+    for buchstabe, zeile in zip(text, muster):
+        zeilen[zeile] += buchstabe
+    return "".join(zeilen)
+
+def gartenzaun_entschluesseln(geheim, z):
+    muster = zickzack(len(geheim), z)
+    # Positionen nach Zeile sortieren: so wurde abgelesen
+    positionen = sorted(range(len(geheim)), key=lambda i: muster[i])
+    klartext = [""] * len(geheim)
+    for buchstabe, pos in zip(geheim, positionen):
+        klartext[pos] = buchstabe
+    return "".join(klartext)
+
+print(gartenzaun_verschluesseln("KANTONSSCHULE", 3))   # KOCEATNSHLNSU`};
+function hl(src){
+  return src.split('\n').map(line=>esc(line).replace(/(#.*$)|("[^"]*")|\b(def|return|for|in|if|while|lambda|and|or|not|else|elif)\b|\b(\d+)\b|\b([A-Za-z_]\w*)(?=\()/g,
+    (m,cm,st,kw,nu,fn)=>cm?'<span class="cm">'+cm+'</span>':st?'<span class="st">'+st+'</span>':kw?'<span class="kw">'+kw+'</span>':nu?'<span class="nu">'+nu+'</span>':'<span class="fn">'+fn+'</span>')).join('\n');}
+document.querySelectorAll('pre[data-code]').forEach(p=>{p.innerHTML=hl(CODE[p.dataset.code]);});
+document.querySelectorAll('.copy').forEach(b=>b.onclick=()=>{const pre=b.nextElementSibling;const t=CODE[pre.dataset.code];
+  const done=()=>{b.textContent='Kopiert ✓';setTimeout(()=>b.textContent='Kopieren',1500);};
+  const fb=()=>{const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Markiert';};
+  try{navigator.clipboard.writeText(t).then(done,fb);}catch(e){fb();}});
+
+/* ---------- Start ---------- */
+skySetMode(SKY.mode);rfSetMode(RF.mode);bfDraw();
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Kryptologie/Geschichte), Zielgruppe Schüler:innen Gymnasium, selbstständig durcharbeitbar
+  Gerät: gemischt (Desktop + Handy; Geheimtext-Band horizontal scrollbar)
+  Inhalte: Lebenslauf als Zeitleiste (filterbar nach Thema) · Turing und die Enigma (Crib-Schieber + Bombe-Menü) · Turing-Test & KI (Diagramm Imitationsspiel) · Quiz
+  Verfolgung: sachlich als Teil der Biografie (Verurteilung 1952, Tod 1954, Entschuldigung 2009, Begnadigung 2013)
+  Interaktivität: Filter in der Zeitleiste, Crib-Schieber mit echter Enigma-Verschlüsselung (Walzen III I II, Ring 04 12 21, Start HCS, 10 Stecker), Quiz mit sofortiger Rückmeldung
+  Datenhaltung: keine
+  Export: keiner
+  Variante: A „Funkraum“ gewählt; Variante B und Umschalter entfernt
+  Bilder: Porträt vom Nutzer (bilder/turing-portraet.jpg) im Kopfbereich
+  Film: keine Filmclips (Urheberrecht); stattdessen Kapitel „Film und Wirklichkeit“ mit Trailer-Link und Leitfragen
+  Ablage: gehaltvoll/informatik/kryptologie/Alan Turing.html, verlinkt im Index
+-->
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Alan Turing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: Lesespalte mit vier Kapiteln (Leben · Enigma · KI · Film) und Quiz; interaktive Teile als breitere Panels */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+
+  --bg:var(--nord6);--surface:var(--nord5);--surface-2:var(--nord4);
+  --text:var(--nord0);--text-muted:var(--nord3);
+  --accent:var(--nord10);--accent-soft:var(--nord9);
+  --ok:var(--nord14);--warn:var(--nord13);--err:var(--nord11);--merke:var(--nord15);--info:var(--nord8);
+  --code-bg:var(--nord5);
+
+  --panel:var(--nord5);--panel-2:var(--nord4);--panel-fg:var(--nord0);--panel-muted:var(--nord3);--panel-line:var(--nord4);--panel-accent:var(--nord10);
+
+  /* Themenfarben der Zeitleiste */
+  --t-leben:var(--nord12);--t-mathe:var(--nord15);--t-krieg:var(--nord11);--t-computer:var(--nord8);--t-ki:var(--nord14);
+
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --radius:10px;--radius-lg:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);
+  --text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);--code-bg:var(--nord1);
+  --panel:var(--nord1);--panel-2:var(--nord2);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord2);--panel-accent:var(--nord8);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);
+  --text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);--code-bg:var(--nord1);
+  --panel:var(--nord1);--panel-2:var(--nord2);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord2);--panel-accent:var(--nord8);
+  color-scheme:dark}
+
+/* Funkraum: Panels immer Polar Night */
+body{--panel:var(--nord0);--panel-2:var(--nord1);--panel-fg:var(--nord6);--panel-muted:var(--nord4);--panel-line:var(--nord2);--panel-accent:var(--nord8)}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:17px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:1000px;margin:0 auto}
+.read{max-width:70ch}
+h1,h2,h3{text-wrap:balance;line-height:1.2}
+h1{font-size:clamp(2.1rem,6.5vw,3.2rem);font-weight:700}
+h2{font-size:1.55rem;font-weight:700;margin-bottom:.6rem}
+h3{font-size:1.1rem;font-weight:600;margin-bottom:.35rem}
+p+p{margin-top:.75rem}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+code,.mono{font-family:var(--font-mono);font-size:.9em}
+code{background:var(--code-bg);padding:.08em .35em;border-radius:5px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.eyebrow{font-family:var(--font-mono);font-size:.78rem;letter-spacing:.06em;color:var(--text-muted)}
+
+/* Kopf */
+.hero{background:var(--panel);color:var(--panel-fg);border:1px solid var(--panel-line);border-radius:var(--radius-lg);padding:26px 22px;display:grid;gap:18px}
+.hero-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,240px);gap:22px;align-items:center}
+.hero-main>div{display:grid;gap:14px;min-width:0}
+.portrait{margin:0}
+.portrait img{display:block;width:100%;height:auto;max-width:100%;aspect-ratio:600/799;object-fit:cover;border-radius:10px;border:1px solid var(--panel-line)}
+.portrait figcaption{font-size:.78rem;color:var(--panel-muted);margin-top:6px}
+@media (max-width:600px){.hero-main{grid-template-columns:1fr}.portrait{max-width:220px}}
+.hero .lead{color:var(--panel-muted);max-width:62ch}
+.hero .dates{font-family:var(--font-mono);color:var(--panel-accent);font-size:.95rem;letter-spacing:.04em}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.fact{background:var(--panel-2);border:1px solid var(--panel-line);border-radius:var(--radius);padding:10px 12px}
+.fact .k{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--panel-muted)}
+.fact .v{font-weight:600;line-height:1.35;margin-top:2px}
+.tape-deco{font-family:var(--font-mono);font-size:.85rem;color:var(--panel-muted);display:flex;gap:4px;overflow:hidden;white-space:nowrap}
+.tape-deco span{border:1px solid var(--panel-line);padding:1px 7px;border-radius:4px}
+.tape-deco span.h{border-color:var(--panel-accent);color:var(--panel-fg)}
+
+section{margin-top:56px}
+.kicker{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem}
+
+/* Zeitleiste */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 18px}
+.chip{border:1px solid var(--surface-2);background:var(--surface);border-radius:999px;padding:.3rem .8rem;cursor:pointer;font-size:.88rem;display:inline-flex;align-items:center;gap:6px}
+.chip i{width:10px;height:10px;border-radius:50%;background:var(--c,var(--accent))}
+.chip[aria-pressed="true"]{border-color:var(--text);font-weight:600}
+.tl{list-style:none;display:grid;gap:0;position:relative}
+.tl li{display:grid;grid-template-columns:4.2rem 18px 1fr;gap:12px;align-items:start}
+.tl .yr{font-family:var(--font-mono);font-weight:600;text-align:right;padding-top:2px;font-variant-numeric:tabular-nums}
+.tl .rail{position:relative;align-self:stretch}
+.tl .rail::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--surface-2)}
+.tl .rail::after{content:"";position:absolute;left:3px;top:7px;width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 0 3px var(--bg)}
+.tl .body{padding-bottom:20px;min-width:0}
+.tl .tag{font-size:.75rem;color:var(--text-muted)}
+.tl .body p{font-size:.95rem}
+.tl li[hidden]{display:none}
+
+.box{border-radius:var(--radius);padding:14px 16px;margin-top:16px;border:1px solid var(--surface-2);background:var(--surface)}
+.box.merke{border-left:4px solid var(--merke)}
+.box.warn{border-left:4px solid var(--warn)}
+.box .bt{font-weight:700;margin-bottom:.25rem}
+
+/* Crib-Schieber */
+.panel{background:var(--panel);color:var(--panel-fg);border:1px solid var(--panel-line);border-radius:var(--radius-lg);padding:18px;margin-top:18px;display:grid;gap:14px}
+.label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--panel-muted)}
+.strip{overflow-x:auto;padding:6px 2px 10px;border-radius:var(--radius);background:var(--panel-2);border:1px solid var(--panel-line)}
+.rowl{display:flex;gap:3px;padding-left:8px;width:max-content}
+.cell{width:24px;height:30px;display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:.95rem;border-radius:5px;flex:none}
+.ctrow .cell{background:var(--panel);border:1px solid var(--panel-line);color:var(--panel-fg)}
+.ctrow .cell.under{border-color:var(--panel-accent)}
+.crrow{margin-top:5px}
+.crrow .cell.c{background:rgba(129,161,193,.25);border:1px solid var(--accent-soft);color:var(--panel-fg)}
+.crrow .cell.x{background:var(--nord11);border:1px solid var(--nord11);color:var(--nord0)}
+.idx{display:flex;gap:3px;padding-left:8px;width:max-content;margin-bottom:4px}
+.idx span{width:24px;text-align:center;font-family:var(--font-mono);font-size:.6rem;color:var(--panel-muted);flex:none}
+.ctrls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{border:1px solid var(--panel-line);background:var(--panel-2);color:var(--panel-fg);border-radius:8px;padding:.4rem .8rem;cursor:pointer;font-size:.88rem}
+.btn:hover{border-color:var(--accent-soft)}
+.btn.primary{background:var(--panel-accent);border-color:var(--panel-accent);color:var(--nord0);font-weight:600}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--panel-accent)}
+.verdict{font-weight:600;min-height:1.6em}
+.verdict.bad{color:var(--nord11)}
+.verdict.good{color:var(--nord14)}
+.scan{display:flex;flex-wrap:wrap;gap:4px}
+.scan span{font-family:var(--font-mono);font-size:.75rem;width:28px;text-align:center;padding:3px 0;border-radius:4px;border:1px solid var(--panel-line);color:var(--panel-muted)}
+.scan span.ok{background:rgba(163,190,140,.22);border-color:var(--nord14);color:var(--panel-fg)}
+.scan span.no{text-decoration:line-through;opacity:.55}
+.panel details summary{cursor:pointer;font-weight:600;color:var(--panel-accent)}
+.panel .sol{margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--panel-line);font-size:.95rem}
+
+/* Menü & Diagramme */
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:16px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius);padding:14px 16px;min-width:0}
+.card svg{display:block;width:100%;height:auto;max-width:100%}
+.pairs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pairs span{font-family:var(--font-mono);font-size:.82rem;padding:2px 7px;border-radius:5px;background:var(--bg);border:1px solid var(--surface-2)}
+.pairs span.loop{border-color:var(--merke);font-weight:600}
+.quote{border-left:4px solid var(--accent-soft);padding:6px 0 6px 14px;margin-top:14px;color:var(--text-muted)}
+.cmp{display:grid;gap:8px;margin-top:12px}
+.cmp div{display:grid;grid-template-columns:5.5rem 1fr;gap:10px;font-size:.95rem}
+.cmp b{font-family:var(--font-mono);font-weight:600}
+
+/* Film */
+.film{display:grid;gap:10px;margin-top:16px}
+.film .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:var(--surface);border:1px solid var(--surface-2);border-radius:6px;padding:12px 14px}
+.film .row>div{min-width:0}
+.film .k{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px}
+.film .row p{font-size:.93rem}
+.film .hd{background:none;border:0;padding:0 14px}
+.film .row:not(.hd) .k{display:none}
+@media (max-width:600px){.film .row{grid-template-columns:1fr}.film .hd{display:none}.film .row:not(.hd) .k{display:block}}
+.qs{padding-left:1.3rem;display:grid;gap:6px;margin-top:8px}
+
+/* Quiz */
+.quiz{display:grid;gap:14px;margin-top:16px}
+.q{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius);padding:14px 16px}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q button.opt{text-align:left;border:1px solid var(--surface-2);background:var(--bg);border-radius:8px;padding:.45rem .7rem;cursor:pointer}
+.q button.opt:hover:not(:disabled){border-color:var(--accent)}
+.q button.opt.right{border-color:var(--nord14);background:rgba(163,190,140,.2)}
+.q button.opt.wrong{border-color:var(--nord11);background:rgba(191,97,106,.15)}
+.q .fb{margin-top:8px;font-size:.92rem}
+.score{font-weight:600}
+footer{margin-top:56px;font-size:.85rem;color:var(--text-muted)}
+
+/* Funkraum */
+.hero,.panel{border-radius:8px}
+h2{font-weight:600}
+.card,.q{border-radius:6px}
+
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:520px){.tl li{grid-template-columns:3.3rem 18px 1fr;gap:8px}.hero{padding:20px 16px}.panel{padding:14px}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <span class="eyebrow">Informatik · Kryptologie · Personen</span>
+  </div>
+
+  <header class="hero">
+    <div class="tape-deco" aria-hidden="true"><span>0</span><span>1</span><span>1</span><span class="h">0</span><span>1</span><span>␣</span><span>␣</span><span>1</span><span>0</span><span>0</span><span>1</span><span>␣</span><span>1</span><span>1</span><span>0</span><span>1</span><span>0</span><span>␣</span><span>0</span><span>1</span></div>
+    <div class="hero-main">
+      <div>
+        <div>
+          <p class="dates">23. Juni 1912 – 7. Juni 1954</p>
+          <h1>Alan Turing</h1>
+        </div>
+        <p class="lead">Mathematiker, Codeknacker und einer der Begründer der Informatik. Er beschrieb, was ein Computer im Prinzip kann, half die Enigma zu brechen und fragte als einer der Ersten, ob Maschinen denken können.</p>
+      </div>
+      <figure class="portrait"><img src="bilder/turing-portraet.jpg" width="600" height="799" alt="Schwarz-Weiss-Porträt von Alan Turing in Tweedjackett, Hemd und Krawatte"><figcaption>Alan Turing</figcaption></figure>
+    </div>
+    <div class="facts">
+      <div class="fact"><div class="k">1936</div><div class="v">Turingmaschine: das Modell jedes Computers</div></div>
+      <div class="fact"><div class="k">1939–1945</div><div class="v">Bletchley Park: Turing-Bombe gegen die Enigma</div></div>
+      <div class="fact"><div class="k">1950</div><div class="v">Turing-Test: Können Maschinen denken?</div></div>
+    </div>
+  </header>
+
+  <!-- LEBEN -->
+  <section>
+    <div class="read">
+      <div class="kicker">Kapitel 1 · Leben</div>
+      <h2>Ein Leben in 18 Stationen</h2>
+      <p>Filtere die Zeitleiste nach Thema, um einzelne Linien seines Lebens zu verfolgen.</p>
+    </div>
+    <div class="chips" role="group" aria-label="Zeitleiste filtern" id="chips">
+      <button class="chip" type="button" data-f="alle" aria-pressed="true">Alle</button>
+      <button class="chip" type="button" data-f="leben" aria-pressed="false" style="--c:var(--t-leben)"><i></i>Leben</button>
+      <button class="chip" type="button" data-f="mathe" aria-pressed="false" style="--c:var(--t-mathe)"><i></i>Mathematik</button>
+      <button class="chip" type="button" data-f="krieg" aria-pressed="false" style="--c:var(--t-krieg)"><i></i>Bletchley Park</button>
+      <button class="chip" type="button" data-f="computer" aria-pressed="false" style="--c:var(--t-computer)"><i></i>Computer</button>
+      <button class="chip" type="button" data-f="ki" aria-pressed="false" style="--c:var(--t-ki)"><i></i>KI</button>
+    </div>
+    <ol class="tl read" id="tl"></ol>
+  </section>
+
+  <!-- ENIGMA -->
+  <section>
+    <div class="read">
+      <div class="kicker">Kapitel 2 · Bletchley Park</div>
+      <h2>Turing und die Enigma</h2>
+      <p>Ab dem 4. September 1939 arbeitete Turing in Bletchley Park, dem geheimen britischen Entschlüsselungszentrum. Wie die Enigma funktioniert, kannst du auf der Seite <a href="Die%20Enigma.html">Die Enigma</a> ausprobieren. Hier geht es darum, wie Turing sie geknackt hat.</p>
+      <p>Seine Idee: Man rät nicht den ganzen Schlüssel, sondern beginnt mit einem <b>Crib</b> – einem Wort, das sehr wahrscheinlich im Funkspruch vorkommt. Wetterstationen meldeten jeden Morgen zur gleichen Zeit, und ihre Sprüche enthielten fast immer das Wort WETTERVORHERSAGE.</p>
+    </div>
+
+    <div class="panel" aria-label="Crib-Schieber">
+      <div>
+        <h3 style="margin-bottom:2px">Schritt 1 · Wo steht das Crib?</h3>
+        <p style="color:var(--panel-muted);font-size:.95rem">Schiebe <b class="mono">WETTERVORHERSAGE</b> unter den abgefangenen Funkspruch. Weil die Enigma keinen Buchstaben auf sich selbst abbildet, ist jede Position unmöglich, an der ein Buchstabe über demselben Buchstaben steht.</p>
+      </div>
+      <div class="strip" id="strip">
+        <div class="idx" id="idx"></div>
+        <div class="rowl ctrow" id="ctrow" aria-label="Geheimtext"></div>
+        <div class="rowl crrow" id="crrow" aria-label="Crib"></div>
+      </div>
+      <div class="ctrls">
+        <button class="btn" type="button" id="left" aria-label="Crib eine Stelle nach links">◀</button>
+        <input type="range" id="off" min="0" max="54" value="0" aria-label="Position des Cribs">
+        <button class="btn" type="button" id="right" aria-label="Crib eine Stelle nach rechts">▶</button>
+        <span class="mono" id="offl">Position 0</span>
+      </div>
+      <p class="verdict" id="verdict" aria-live="polite"></p>
+      <div>
+        <div class="ctrls" style="margin-bottom:8px"><button class="btn primary" type="button" id="scanBtn">Alle 55 Positionen prüfen</button><span class="label" id="scanInfo"></span></div>
+        <div class="scan" id="scan" hidden></div>
+      </div>
+      <details>
+        <summary>Auflösung anzeigen</summary>
+        <div class="sol">Das Crib steht an <b class="mono">Position 26</b>. Der ganze Spruch lautet <span class="mono">KEINE BESONDEREN EREIGNISSE X WETTERVORHERSAGE BISKAYA X REGEN WIND STAERKE VIER</span>, ohne Leerzeichen gesendet. Mit dem Crib-Schieber allein hätte man noch 30 Kandidaten. Die Bombe prüfte dann jeden davon.</div>
+      </details>
+    </div>
+
+    <div class="read" style="margin-top:28px">
+      <h3>Schritt 2 · Das Menü für die Bombe</h3>
+      <p>Liegt das Crib richtig, kennt man 16 Paare aus Klartext und Geheimtext. Jedes Paar bedeutet: An dieser Stelle verbindet die Enigma diese zwei Buchstaben. Turing zeichnete die Paare als Netz auf, das sogenannte <b>Menü</b>. Besonders wertvoll sind <b>Schleifen</b>.</p>
+    </div>
+    <div class="duo">
+      <div class="card" style="--c:var(--nord15)">
+        <div class="label" style="color:var(--text-muted)">Menü mit Schleife (Position im Crib)</div>
+        <svg viewBox="0 0 320 230" role="img" aria-label="Schleife aus den Buchstaben E, V und P: E und V an Stelle 5, V und P an Stelle 7, P und E an Stelle 11">
+          <g stroke="var(--merke)" stroke-width="2.5" fill="none">
+            <line x1="160" y1="40" x2="70" y2="185"/><line x1="70" y1="185" x2="250" y2="185"/><line x1="250" y1="185" x2="160" y2="40"/>
+          </g>
+          <g stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 4" fill="none">
+            <line x1="160" y1="40" x2="160" y2="2"/><line x1="160" y1="40" x2="280" y2="60"/><line x1="160" y1="40" x2="40" y2="60"/>
+          </g>
+          <g font-family="Google Sans Code, monospace" font-size="13" fill="var(--text)">
+            <rect x="92" y="98" width="30" height="20" rx="4" fill="var(--bg)" stroke="var(--surface-2)"/><text x="107" y="113" text-anchor="middle">5</text>
+            <rect x="145" y="175" width="30" height="20" rx="4" fill="var(--bg)" stroke="var(--surface-2)"/><text x="160" y="190" text-anchor="middle">7</text>
+            <rect x="198" y="98" width="30" height="20" rx="4" fill="var(--bg)" stroke="var(--surface-2)"/><text x="213" y="113" text-anchor="middle">11</text>
+            <text x="22" y="64" fill="var(--text-muted)" font-size="11">T</text><text x="286" y="64" fill="var(--text-muted)" font-size="11">H</text><text x="168" y="12" fill="var(--text-muted)" font-size="11">Q</text>
+          </g>
+          <g font-family="Google Sans Code, monospace" font-size="20" font-weight="600" text-anchor="middle">
+            <circle cx="160" cy="40" r="20" fill="var(--surface)" stroke="var(--merke)" stroke-width="2.5"/><text x="160" y="47" fill="var(--text)">E</text>
+            <circle cx="70" cy="185" r="20" fill="var(--surface)" stroke="var(--merke)" stroke-width="2.5"/><text x="70" y="192" fill="var(--text)">V</text>
+            <circle cx="250" cy="185" r="20" fill="var(--surface)" stroke="var(--merke)" stroke-width="2.5"/><text x="250" y="192" fill="var(--text)">P</text>
+          </g>
+        </svg>
+        <div class="pairs" id="pairs"></div>
+      </div>
+      <div class="card" style="--c:var(--nord8)">
+        <h3>Warum Schleifen so viel verraten</h3>
+        <p style="font-size:.95rem">Das Steckbrett verändert Buchstaben vor und nach den Walzen. Angenommen, E ist mit einem unbekannten Buchstaben x gesteckt. Dann muss gelten: Die Walzen machen an Stelle 5 aus x den Partner von V, an Stelle 7 daraus den Partner von P und an Stelle 11 wieder x.</p>
+        <p style="font-size:.95rem">Für eine falsche Walzenstellung geht diese Rechnung fast nie auf. Die Bombe verband mehrere nachgebaute Enigma-Walzensätze genau wie im Menü und drehte sie durch alle 17’576 Stellungen. Nur wo der Stromkreis widerspruchsfrei war, hielt sie an.</p>
+      </div>
+    </div>
+    <div class="box merke read">
+      <div class="bt">Die Bombe in Zahlen</div>
+      <p>Die erste Turing-Bombe, «Victory», lief ab März 1940. Gordon Welchman ergänzte das «Diagonalbrett», das die Suche stark beschleunigte. Bis Kriegsende waren über 200 Bomben in Betrieb, bedient vor allem von Frauen des Women’s Royal Naval Service. Eine Bombe brauchte für alle Stellungen einer Walzenlage etwa 20 Minuten.</p>
+    </div>
+    <div class="box read">
+      <div class="bt">Hütte 8 und die Marine-Enigma</div>
+      <p>Turing leitete Hut 8, die Abteilung für die Enigma der deutschen Kriegsmarine. Ihre Verfahren waren besonders sicher, weil die U-Boote ihre Schlüssel strenger handhabten. Turing entwickelte dafür eine eigene statistische Methode, den «Banburismus». Die entschlüsselten U-Boot-Meldungen halfen, Geleitzüge im Atlantik umzuleiten.</p>
+    </div>
+  </section>
+
+  <!-- KI -->
+  <section>
+    <div class="read">
+      <div class="kicker">Kapitel 3 · Künstliche Intelligenz</div>
+      <h2>Können Maschinen denken?</h2>
+      <p>1950 veröffentlichte Turing den Aufsatz «Computing Machinery and Intelligence». Statt lange zu definieren, was «Denken» ist, schlug er ein Spiel vor: das <b>Imitationsspiel</b>, heute Turing-Test genannt.</p>
+    </div>
+    <div class="duo">
+      <div class="card" style="--c:var(--nord14)">
+        <div class="label" style="color:var(--text-muted)">Aufbau des Imitationsspiels</div>
+        <svg viewBox="0 0 320 220" role="img" aria-label="Eine fragende Person C ist durch eine Wand von A, einem Menschen, und B, einer Maschine, getrennt. Alle kommunizieren nur über Text.">
+          <rect x="150" y="14" width="10" height="192" rx="3" fill="var(--surface-2)"/>
+          <text x="155" y="215" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="10" fill="var(--text-muted)">Wand</text>
+          <g font-family="Open Sans, sans-serif" font-size="12" fill="var(--text)">
+            <circle cx="62" cy="88" r="16" fill="none" stroke="var(--accent)" stroke-width="2.5"/><path d="M34 140 q28 -34 56 0" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+            <text x="62" y="166" text-anchor="middle" font-weight="600">C · fragt</text>
+            <circle cx="242" cy="48" r="13" fill="none" stroke="var(--nord12)" stroke-width="2.5"/><path d="M220 90 q22 -28 44 0" fill="none" stroke="var(--nord12)" stroke-width="2.5"/>
+            <text x="242" y="110" text-anchor="middle" font-weight="600">A · Mensch</text>
+            <rect x="222" y="134" width="40" height="30" rx="5" fill="none" stroke="var(--nord14)" stroke-width="2.5"/><rect x="232" y="164" width="20" height="8" fill="var(--nord14)"/>
+            <text x="242" y="190" text-anchor="middle" font-weight="600">B · Maschine</text>
+          </g>
+          <g stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="5 4" fill="none">
+            <path d="M84 96 C130 80 180 60 222 54"/><path d="M84 104 C130 120 180 140 218 148"/>
+          </g>
+          <text x="118" y="70" font-family="Google Sans Code, monospace" font-size="10" fill="var(--text-muted)">Text</text>
+          <text x="118" y="140" font-family="Google Sans Code, monospace" font-size="10" fill="var(--text-muted)">Text</text>
+        </svg>
+      </div>
+      <div class="card">
+        <h3>Die Regeln</h3>
+        <p style="font-size:.95rem">C stellt schriftliche Fragen und weiss nicht, wer hinter A und B steckt. Der Mensch hilft C, die Maschine versucht, für einen Menschen gehalten zu werden. Wenn C die beiden nicht zuverlässig unterscheiden kann, hat die Maschine bestanden.</p>
+        <p style="font-size:.95rem">Turing sagte voraus, dass um das Jahr 2000 eine durchschnittliche Fragestellerin nach fünf Minuten nur noch in höchstens 70 Prozent der Fälle richtig liegen würde.</p>
+      </div>
+    </div>
+    <div class="read">
+      <h3 style="margin-top:24px">Vom Imitationsspiel zu heutigen Chatbots</h3>
+      <div class="cmp">
+        <div><b>1950</b><span>Turing formuliert den Test und beantwortet Einwände, etwa dass Maschinen nur tun, was man ihnen sagt.</span></div>
+        <div><b>1966</b><span>ELIZA von Joseph Weizenbaum spielt mit einfachen Regeln eine Psychotherapeutin. Manche Nutzer halten das Programm für verständnisvoll.</span></div>
+        <div><b>1980</b><span>John Searle kritisiert mit dem «Chinesischen Zimmer»: Wer Regeln befolgt, versteht deshalb noch nichts.</span></div>
+        <div><b>heute</b><span>Grosse Sprachmodelle führen Gespräche, die oft kaum von menschlichen zu unterscheiden sind. Ob sie damit «denken», ist so umstritten wie 1950.</span></div>
+      </div>
+      <div class="box warn">
+        <div class="bt">Zum Nachdenken</div>
+        <p>Der Turing-Test misst, ob eine Maschine menschlich <em>wirkt</em>, nicht, ob sie etwas versteht oder ob ihre Antworten stimmen. Was würdest du fragen, um einen Chatbot zu entlarven? Und wäre eine Maschine, die besteht, deshalb intelligent?</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILM -->
+  <section>
+    <div class="read">
+      <div class="kicker">Kapitel 4 · Film und Wirklichkeit</div>
+      <h2>The Imitation Game</h2>
+      <p>Der Spielfilm von 2014 mit Benedict Cumberbatch hat Turing einem grossen Publikum bekannt gemacht. Er erzählt die Geschichte aber stark zugespitzt. Vergleiche nach dem Anschauen der Szenen im Unterricht:</p>
+      <p><a href="https://www.youtube.com/results?search_query=The+Imitation+Game+Trailer+deutsch" target="_blank" rel="noopener">Offiziellen Trailer auf YouTube suchen ↗</a></p>
+    </div>
+    <div class="film">
+      <div class="row hd"><div class="k">Im Film</div><div class="k">In Wirklichkeit</div></div>
+      <div class="row"><div><div class="k">Im Film</div><p>Turing erfindet und baut die Maschine fast allein und nennt sie «Christopher».</p></div><div><div class="k">In Wirklichkeit</div><p>Die Bombe baute auf der polnischen «Bomba» auf, Gordon Welchmans Diagonalbrett war entscheidend, und gebaut wurde sie von der British Tabulating Machine Company. Die erste hiess «Victory».</p></div></div>
+      <div class="row"><div><div class="k">Im Film</div><p>Der Durchbruch kommt in einem einzigen Moment: Man müsse nach Wörtern suchen, die in jeder Nachricht vorkommen.</p></div><div><div class="k">In Wirklichkeit</div><p>Cribs gehörten von Anfang an zum Konzept der Bombe. Das Knacken war jahrelange Teamarbeit mit vielen Rückschlägen, etwa als die U-Boote 1942 eine Enigma mit vier Walzen erhielten.</p></div></div>
+      <div class="row"><div><div class="k">Im Film</div><p>Turing setzt sich mit einem Brief an Churchill allein gegen seine Vorgesetzten durch und übernimmt die Leitung.</p></div><div><div class="k">In Wirklichkeit</div><p>Den Brief von 1941 unterschrieben vier Codeknacker gemeinsam, weil Personal fehlte. Turing leitete Hut 8 zu diesem Zeitpunkt bereits.</p></div></div>
+      <div class="row"><div><div class="k">Im Film</div><p>Turing erfährt, dass ein Teamkollege für die Sowjetunion spioniert, und deckt ihn.</p></div><div><div class="k">In Wirklichkeit</div><p>John Cairncross war tatsächlich ein sowjetischer Spion und arbeitete eine Zeit lang in Bletchley Park, aber nicht in Turings Gruppe. Die Erpressung ist erfunden.</p></div></div>
+    </div>
+    <div class="box merke read">
+      <div class="bt">Leitfragen für die Diskussion</div>
+      <ol class="qs">
+        <li>Warum stellt ein Spielfilm die Arbeit vieler Menschen als Leistung eines einzelnen Genies dar? Was geht dabei verloren?</li>
+        <li>Was zeigen die Filmszenen über die Enigma richtig? Vergleiche mit dem Simulator auf der Seite <a href="Die%20Enigma.html">Die Enigma</a>.</li>
+        <li>Darf ein Film über eine reale Person Ereignisse erfinden? Wo liegt für dich die Grenze?</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="read">
+    <div class="kicker">Übung</div>
+    <h2>Teste dein Wissen</h2>
+    <p class="score" id="score" aria-live="polite">0 von 6 beantwortet</p>
+    <div class="quiz" id="quiz"></div>
+  </section>
+
+  <footer>Kantonsschule Zürcher Unterland · Informatik · Kryptologie</footer>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+
+/* Zeitleiste */
+const TL=[
+ ['1912','leben','Geburt in London','Alan Mathison Turing kommt am 23. Juni in London zur Welt. Seine Eltern leben meist in Indien, er wächst teils bei Pflegefamilien in England auf.'],
+ ['1926','leben','Internat Sherborne','Turing interessiert sich mehr für Naturwissenschaften als für Latein und Griechisch, was seine Lehrer nicht gerne sehen. Am ersten Schultag fährt er wegen eines Generalstreiks 100 km mit dem Velo zur Schule.'],
+ ['1930','leben','Tod von Christopher Morcom','Sein enger Freund und Mitschüler stirbt an Tuberkulose. Der Verlust beschäftigt Turing lange und weckt sein Interesse an der Frage, wie Geist und Körper zusammenhängen.'],
+ ['1931','mathe','Studium in Cambridge','Mathematikstudium am King’s College. 1935 wird er dort mit 22 Jahren Fellow, unter anderem für einen Beweis zum zentralen Grenzwertsatz der Statistik.'],
+ ['1936','mathe','Die Turingmaschine','In «On Computable Numbers» beschreibt er eine gedachte Maschine mit Band, Lesekopf und Zustandstabelle. Er zeigt: Es gibt Probleme, die kein Rechenverfahren lösen kann. Und eine einzige universelle Maschine kann jede andere nachahmen – die Idee des programmierbaren Computers.'],
+ ['1938','mathe','Doktorat in Princeton','Promotion bei Alonzo Church in den USA. Zurück in England arbeitet er bereits nebenher für die Government Code and Cypher School.'],
+ ['1939','krieg','Bletchley Park','Am 4. September, einen Tag nach Kriegsbeginn, beginnt er in Bletchley Park. Er entwirft die Turing-Bombe zum Knacken der Enigma.'],
+ ['1940','krieg','Die erste Bombe läuft','Im März wird «Victory» in Betrieb genommen. Zusammen mit Welchmans Diagonalbrett wird die Bombe zum wichtigsten Werkzeug gegen die Enigma.'],
+ ['1941','krieg','Brief an Churchill','Turing, Welchman und zwei Kollegen schreiben direkt an Premierminister Churchill, weil ihnen Personal fehlt. Churchill ordnet an: «Action this day» – sofort handeln.'],
+ ['1942','krieg','Reise in die USA','Turing berät die US-Marine beim Bau eigener Bomben und arbeitet an verschlüsselter Sprachübertragung.'],
+ ['1945','computer','Entwurf der ACE','Am National Physical Laboratory entwirft er die Automatic Computing Engine, einen der ersten vollständigen Pläne eines Computers mit gespeichertem Programm. 1946 erhält er für seine Kriegsarbeit den Orden OBE – ohne dass jemand erfahren darf, wofür.'],
+ ['1948','computer','Universität Manchester','Er arbeitet an der Programmierung des Manchester-Computers und schreibt mit «Turochamp» eines der ersten Schachprogramme – mangels Rechner spielt er es selbst auf Papier durch.'],
+ ['1950','ki','Der Turing-Test','Im Aufsatz «Computing Machinery and Intelligence» stellt er die Frage, ob Maschinen denken können, und schlägt das Imitationsspiel vor.'],
+ ['1952','mathe','Muster in der Natur','Er veröffentlicht eine Arbeit zur Morphogenese: Wie entstehen Flecken, Streifen und Spiralen bei Tieren und Pflanzen? Die Theorie wird heute noch in der Biologie verwendet.'],
+ ['1952','leben','Verurteilung','Homosexuelle Handlungen sind in Grossbritannien strafbar. Turing wird wegen seiner Beziehung zu einem Mann verurteilt. Um dem Gefängnis zu entgehen, muss er eine Hormonbehandlung akzeptieren. Er verliert seine Sicherheitsfreigabe und darf nicht mehr für den Geheimdienst arbeiten.'],
+ ['1954','leben','Tod','Turing stirbt am 7. Juni mit 41 Jahren an einer Zyankalivergiftung. Die Untersuchung stellt Suizid fest; einige Biografen halten auch einen Unfall für möglich.'],
+ ['1966','computer','Turing Award','Die Association for Computing Machinery vergibt erstmals den Turing Award. Er gilt bis heute als «Nobelpreis der Informatik».'],
+ ['2009','leben','Entschuldigung und Begnadigung','Premierminister Gordon Brown entschuldigt sich 2009 öffentlich für die Behandlung Turings. 2013 wird er begnadigt, 2017 folgt ein Gesetz für alle nach diesen Paragrafen Verurteilten. Seit 2021 ist er auf der britischen 50-Pfund-Note abgebildet.']];
+const tl=$('tl');
+const NAME={leben:'Leben',mathe:'Mathematik',krieg:'Bletchley Park',computer:'Computer',ki:'KI'};
+TL.forEach(([y,t,h,p])=>{const li=document.createElement('li');li.dataset.t=t;li.style.setProperty('--c',`var(--t-${t})`);
+  li.innerHTML=`<span class="yr">${y}</span><span class="rail" aria-hidden="true"></span><div class="body"><span class="tag">${NAME[t]}</span><h3>${h}</h3><p>${p}</p></div>`;tl.appendChild(li)});
+const chips=[...document.querySelectorAll('.chip')];
+chips.forEach(c=>c.onclick=()=>{const f=c.dataset.f;chips.forEach(x=>x.setAttribute('aria-pressed',String(x===c)));
+  tl.querySelectorAll('li').forEach(li=>li.hidden=!(f==='alle'||li.dataset.t===f))});
+
+/* Crib-Schieber */
+const CT='RMRDBWMXYPRCMLQKHHREZONOOYDQYEVWPMTBPUYUHHLKVMFWDQCVIYSMBZRZEZLOZULWYZ';
+const CRIB='WETTERVORHERSAGE';const MAX=CT.length-CRIB.length;
+const idx=$('idx'),ctr=$('ctrow'),crr=$('crrow');
+[...CT].forEach((ch,i)=>{const s=document.createElement('span');s.textContent=i%5===0?i:'';idx.appendChild(s);
+  const c=document.createElement('span');c.className='cell';c.textContent=ch;ctr.appendChild(c)});
+const ctCells=[...ctr.children];
+const collisions=o=>{const r=[];for(let i=0;i<CRIB.length;i++)if(CT[o+i]===CRIB[i])r.push(i);return r};
+function render(o){crr.innerHTML='';crr.style.paddingLeft=`calc(8px + ${o} * 27px)`;const col=collisions(o);
+  ctCells.forEach((c,i)=>c.classList.toggle('under',i>=o&&i<o+CRIB.length));
+  [...CRIB].forEach((ch,i)=>{const c=document.createElement('span');const x=col.includes(i);c.className='cell '+(x?'x':'c');c.textContent=ch;
+    if(x)c.title='Gleicher Buchstabe – unmöglich';crr.appendChild(c)});
+  $('off').value=o;$('offl').textContent='Position '+o;
+  const v=$('verdict');
+  if(col.length){v.className='verdict bad';v.textContent=`✗ Unmöglich: ${col.map(i=>CRIB[i]).join(', ')} stünde über sich selbst.`}
+  else{v.className='verdict good';v.textContent='✓ Möglich: kein Buchstabe trifft auf sich selbst. Diese Position müsste die Bombe prüfen.'}
+  const strip=$('strip'),target=o*27-strip.clientWidth/2+CRIB.length*13;if(strip.scrollWidth>strip.clientWidth)strip.scrollLeft=Math.max(0,target)}
+let off=0;
+$('off').addEventListener('input',e=>{off=+e.target.value;render(off)});
+$('left').onclick=()=>{off=Math.max(0,off-1);render(off)};
+$('right').onclick=()=>{off=Math.min(MAX,off+1);render(off)};
+$('scanBtn').onclick=()=>{const sc=$('scan');sc.innerHTML='';let n=0;
+  for(let o=0;o<=MAX;o++){const s=document.createElement('span');const ok=!collisions(o).length;if(ok)n++;s.className=ok?'ok':'no';s.textContent=o;s.title=ok?'möglich':'unmöglich';
+    s.style.cursor='pointer';s.onclick=()=>{off=o;render(o)};sc.appendChild(s)}
+  sc.hidden=false;$('scanInfo').textContent=`${n} von ${MAX+1} Positionen bleiben übrig`};
+render(0);
+
+/* Menü-Paare */
+const PAIRS=[['W','D',1],['E','Q',2],['T','Y',3],['T','E',4],['E','V',5],['R','W',6],['V','P',7],['O','M',8],['R','T',9],['H','B',10],['E','P',11],['R','U',12],['S','Y',13],['A','U',14],['G','H',15],['E','H',16]];
+const pr=$('pairs');PAIRS.forEach(([a,b,n])=>{const s=document.createElement('span');s.textContent=`${n}: ${a}–${b}`;if([5,7,11].includes(n))s.className='loop';pr.appendChild(s)});
+
+/* Quiz */
+const Q=[
+ ['Was beschrieb Turing 1936 mit der «Turingmaschine»?',['Einen mechanischen Rechner aus Zahnrädern','Ein gedachtes Modell dafür, was überhaupt berechenbar ist','Eine Maschine zum Verschlüsseln von Funksprüchen','Den ersten Chip'],1,'Die Turingmaschine ist ein Gedankenmodell aus Band, Lesekopf und Regeln. Sie zeigt, was ein Computer im Prinzip kann – und was nicht.'],
+ ['Welche Schwäche der Enigma nutzt der Crib-Schieber aus?',['Die Walzen drehen sich zu langsam','Das Steckbrett hat nur 10 Kabel','Kein Buchstabe wird zu sich selbst verschlüsselt','Die Funker sendeten im Klartext'],2,'Wegen der Umkehrwalze kann ein Buchstabe nie sich selbst ergeben. Steht im Crib ein Buchstabe über demselben Geheimtext-Buchstaben, ist die Position falsch.'],
+ ['Was ist ein «Crib»?',['Ein vermutetes Stück Klartext','Ein Ersatzteil der Bombe','Der Tagesschlüssel','Eine Abteilung in Bletchley Park'],0,'Cribs waren Wörter, die man im Funkspruch erwartete, etwa WETTERVORHERSAGE oder KEINE BESONDEREN EREIGNISSE.'],
+ ['Was prüft der Turing-Test?',['Ob eine Maschine schneller rechnet als ein Mensch','Ob eine Fragestellerin eine Maschine im Textgespräch von einem Menschen unterscheiden kann','Ob ein Programm fehlerfrei ist','Ob ein Computer die Enigma knacken kann'],1,'Im Imitationsspiel kommuniziert C nur schriftlich mit Mensch und Maschine. Kann C sie nicht zuverlässig auseinanderhalten, hat die Maschine bestanden.'],
+ ['Warum wurde Turing 1952 verurteilt?',['Wegen Spionage','Wegen Verrats von Geheimnissen aus Bletchley Park','Wegen seiner Beziehung zu einem Mann, damals in Grossbritannien strafbar','Wegen Steuerhinterziehung'],2,'Homosexualität war strafbar. Turing musste eine Hormonbehandlung akzeptieren und verlor seine Sicherheitsfreigabe. 2013 wurde er begnadigt.'],
+ ['Wofür steht der Turing Award?',['Einen Preis für Kryptografie-Wettbewerbe an Schulen','Die wichtigste Auszeichnung der Informatik','Den Orden, den Turing 1946 erhielt','Einen Schachpreis'],1,'Der Turing Award der ACM wird seit 1966 vergeben und gilt als «Nobelpreis der Informatik».']];
+const qz=$('quiz');let answered=0,right=0;
+Q.forEach(([q,opts,ok,why],qi)=>{const d=document.createElement('div');d.className='q';
+  d.innerHTML=`<h3>${qi+1}. ${q}</h3><div class="opts"></div><p class="fb" aria-live="polite"></p>`;
+  const box=d.querySelector('.opts'),fb=d.querySelector('.fb');
+  opts.forEach((o,oi)=>{const b=document.createElement('button');b.type='button';b.className='opt';b.textContent=o;
+    b.onclick=()=>{box.querySelectorAll('button').forEach((x,xi)=>{x.disabled=true;if(xi===ok)x.classList.add('right')});
+      answered++;if(oi===ok){right++;fb.innerHTML='<b>✓ Richtig.</b> '+why}else{b.classList.add('wrong');fb.innerHTML='<b>✗ Nicht ganz.</b> '+why}
+      $('score').textContent=answered<Q.length?`${answered} von ${Q.length} beantwortet · ${right} richtig`:`Fertig: ${right} von ${Q.length} richtig`};
+    box.appendChild(b)});qz.appendChild(d)});
+})();
+</script>
+
+</body>
+</html>

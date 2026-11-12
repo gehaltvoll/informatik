@@ -1,0 +1,416 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Fortsetzung zu «RSA Schritt für Schritt»)
+  Zielgruppe: Schüler:innen, RSA und Diffie-Hellman bekannt
+  Gerät: gemischt
+  Interaktivität: voll – Schlüssellänge (Regler + Schnellwahl), Angreifer (Laptop … alle Computer), Diagramm, Vergleich mit Alltags-Zeiten und Atomzahl, Tabelle der Standardlängen
+  Modell: GNFS-Formel L_n[1/3, 1.923], geeicht auf RSA-250 = 2700 Kernjahre; DH (endlicher Körper) = 3.1 × RSA, geeicht auf DLP-240 (3100 Kernjahre)
+  Übungen: 3 Aufgaben mit einblendbaren Lösungen
+  Datenhaltung: nur Design-Variante pro Browser (localStorage)
+  Varianten (umschaltbar): «Klar» · «Technisch»
+-->
+<title>Wie lange hält RSA?</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: Kopf mit Kernaussage → Steuerung + Diagramm (Zeitleiter rechts) → Ablesekarte → Tabelle → Quanten → Übungen */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;--nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;--nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --bg:var(--nord6);--surface:var(--nord5);--surface-2:var(--nord4);--text:var(--nord0);--text-muted:var(--nord3);
+  --accent:var(--nord10);--accent-soft:var(--nord9);--ok:var(--nord14);--warn:var(--nord13);--bad:var(--nord11);--special:var(--nord15);--info:var(--nord8);
+  --hero-bg:var(--nord5);--hero-fg:var(--nord0);--hero-muted:var(--nord3);--hero-mark:var(--nord10);
+  --line-rsa:var(--nord10);--line-dh:var(--nord12);--grid:rgba(76,86,106,.18);
+  --card-bg:var(--nord5);--card-border:transparent;--radius:14px;--radius-sm:10px;
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --label-font:var(--font);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);
+  --hero-bg:var(--nord1);--hero-fg:var(--nord6);--hero-muted:var(--nord4);--hero-mark:var(--nord8);
+  --line-rsa:var(--nord8);--grid:rgba(216,222,233,.14);--card-bg:var(--nord1);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);
+  --hero-bg:var(--nord1);--hero-fg:var(--nord6);--hero-muted:var(--nord4);--hero-mark:var(--nord8);
+  --line-rsa:var(--nord8);--grid:rgba(216,222,233,.14);--card-bg:var(--nord1);color-scheme:dark}
+:root[data-variant="tech"]{
+  --hero-bg:var(--nord0);--hero-fg:var(--nord6);--hero-muted:var(--nord4);--hero-mark:var(--nord8);
+  --card-bg:transparent;--card-border:var(--surface-2);--radius:6px;--radius-sm:4px;--label-font:var(--font-mono)}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.6;margin:0}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+:focus-visible{outline:3px solid var(--accent-soft);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;line-height:1.25;margin:0}
+h1{font-size:clamp(2rem,6vw,3rem);font-weight:700}
+h2{font-size:clamp(1.45rem,3.6vw,1.9rem);font-weight:700}
+h3{font-size:1.1rem;font-weight:600}
+p{margin:0}
+code,.mono{font-family:var(--font-mono)}
+:not(pre)>code{font-size:.9em;background:var(--surface);padding:.1em .35em;border-radius:4px}
+.wrap{max-width:1000px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.prose{max-width:70ch}.prose>*+*{margin-top:.9em}
+
+.topbar,.hero{background:var(--hero-bg);color:var(--hero-fg)}
+.topbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-block:12px;flex-wrap:wrap}
+.crumb{font-family:var(--label-font);font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;color:var(--hero-muted)}
+.switch{display:inline-flex;border:1px solid var(--hero-muted);border-radius:999px;padding:2px;gap:2px}
+.switch button{border:0;background:transparent;color:var(--hero-fg);padding:4px 12px;border-radius:999px;font-size:.85rem;cursor:pointer}
+.switch button[aria-pressed="true"]{background:var(--hero-mark);color:var(--nord0);font-weight:600}
+.hero{border-bottom:1px solid var(--surface-2)}
+.hero .wrap{padding-block:24px 36px;display:grid;gap:16px}
+.hero .lead{font-size:1.15rem;max-width:64ch}
+.hero-eyebrow{font-family:var(--label-font);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:var(--hero-muted)}
+
+main section{padding-block:40px;border-bottom:1px solid var(--surface-2)}
+main section:last-of-type{border-bottom:0}
+.sec-head{display:grid;gap:6px;margin-bottom:18px}
+.eyebrow{font-family:var(--label-font);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.eyebrow::before{content:"";width:10px;height:10px;background:var(--accent-soft);border-radius:2px}
+.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:18px 20px;min-width:0}
+.merke,.hinweis{background:var(--surface);border-radius:var(--radius-sm);padding:14px 18px;max-width:72ch;border-left:5px solid var(--special)}
+.hinweis{border-left-color:var(--warn)}
+.merke .tag,.hinweis .tag{font-family:var(--label-font);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px}
+.pill{display:inline-block;font-size:.78rem;font-weight:700;padding:2px 9px;border-radius:999px;color:var(--nord0);white-space:nowrap}
+.pill.ok{background:var(--ok)}.pill.bad{background:var(--bad)}.pill.warn{background:var(--warn)}.pill.info{background:var(--info)}
+
+/* Steuerung */
+.controls{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px 24px;margin-bottom:18px}
+@media (max-width:760px){.controls{grid-template-columns:1fr}}
+.field{display:grid;gap:6px;min-width:0}
+.field>label,.field .lab{font-size:.85rem;font-weight:600;color:var(--text-muted)}
+.bitsrow{display:flex;align-items:center;gap:12px}
+.bitsrow input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
+.bitsval{font-family:var(--font-mono);font-weight:600;font-size:1.25rem;min-width:6.5ch;text-align:right;font-variant-numeric:tabular-nums}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button,.att button{border:1px solid var(--surface-2);background:var(--bg);border-radius:999px;padding:4px 12px;cursor:pointer;font-size:.9rem;font-family:var(--font-mono)}
+.att{display:flex;flex-wrap:wrap;gap:6px}
+.att button{font-family:var(--font)}
+.quick button[aria-pressed="true"],.att button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+:root[data-variant="tech"] .quick button,:root[data-variant="tech"] .att button{border-radius:6px}
+
+/* Diagramm */
+.chartcard{padding:14px 10px 10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;padding:0 10px 8px;font-size:.92rem}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{display:inline-block;width:26px;height:0;border-top:3px solid}
+.legend i.dash{border-top-style:dashed}
+.legend .zone{width:18px;height:12px;border:0;background:rgba(191,97,106,.22)}
+.chartscroll{overflow-x:auto}
+svg.chart{display:block;width:100%;min-width:620px;height:auto}
+svg.chart text{font-family:var(--font);font-size:12px;fill:var(--text-muted)}
+svg.chart .axis{font-family:var(--font-mono);font-size:11px}
+svg.chart .ref{font-size:12px;fill:var(--text)}
+svg.chart .refline{stroke:var(--text-muted);stroke-opacity:.45;stroke-dasharray:2 4}
+svg.chart .grid{stroke:var(--grid)}
+svg.chart .rec{fill:var(--bad)}
+svg.chart .rectext{font-size:11px;fill:var(--text)}
+
+/* Ablesen */
+.readout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+@media (max-width:700px){.readout{grid-template-columns:1fr}}
+.readout .card{display:grid;gap:6px;border-top:5px solid var(--line-rsa)}
+.readout .card.dh{border-top-color:var(--line-dh)}
+.readout .what{font-family:var(--label-font);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--text-muted)}
+.readout .big{font-family:var(--font-mono);font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;line-height:1.3}
+.readout .ana{font-size:1rem}
+.atoms{margin-top:14px}
+.atoms .bar{display:grid;gap:8px;margin-top:10px}
+.atoms .row{display:grid;grid-template-columns:minmax(0,12rem) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.92rem}
+.atoms .track{height:12px;background:var(--surface-2);border-radius:999px;overflow:hidden}
+.atoms .fill{height:100%;background:var(--accent-soft);border-radius:999px}
+.atoms .row:last-child .fill{background:var(--bad)}
+.atoms .num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:560px){.atoms .row{grid-template-columns:1fr auto}.atoms .track{grid-column:1/-1;grid-row:2}}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--surface-2);border-radius:var(--radius-sm)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--surface-2);vertical-align:top}
+th{font-size:.85rem;font-weight:600;color:var(--text-muted);background:var(--surface)}
+tr:last-child td{border-bottom:0}
+td.m{font-family:var(--font-mono);white-space:nowrap}
+tr.sel td{background:rgba(129,161,193,.16)}
+
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+.tasks{display:grid;gap:14px;counter-reset:task}
+.task{display:grid;gap:10px}
+.task h3::before{counter-increment:task;content:"Aufgabe " counter(task) " · ";font-family:var(--label-font);color:var(--text-muted);font-weight:600}
+details{border-top:1px dashed var(--surface-2);padding-top:8px}
+summary{cursor:pointer;font-weight:600;color:var(--accent)}
+details[open] summary{margin-bottom:8px}
+details .sol{display:grid;gap:8px}
+footer{padding-block:28px 40px;color:var(--text-muted);font-size:.9rem}
+footer ul{margin:8px 0 0;padding-left:1.2em}
+</style>
+
+<header>
+  <div class="topbar"><div class="wrap">
+    <span class="crumb">Informatik · Kryptologie</span>
+    <div class="switch" role="group" aria-label="Design-Variante">
+      <button type="button" id="v-klar" data-v="klar" aria-pressed="true">Klar</button>
+      <button type="button" id="v-tech" data-v="tech" aria-pressed="false">Technisch</button>
+    </div>
+  </div></div>
+  <div class="hero"><div class="wrap">
+    <span class="hero-eyebrow">RSA und Diffie-Hellman unter Beschuss</span>
+    <h1>Wie lange hält RSA?</h1>
+    <p class="lead">Ein paar Bit mehr im Schlüssel, und aus einer Nachmittagsaufgabe wird eine Rechnung, die länger dauert als das Universum alt ist. Wähle eine Schlüssellänge und einen Angreifer und sieh selbst.</p>
+  </div></div>
+</header>
+
+<main>
+  <section id="rechner">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Interaktiv</span><h2>Knackzeit nach Schlüssellänge</h2></div>
+      <div class="controls">
+        <div class="field">
+          <label for="bits">Schlüssellänge (Grösse von n bzw. p)</label>
+          <div class="bitsrow"><input type="range" id="bits" min="512" max="4096" step="8" value="2048" aria-describedby="bitsval"><output id="bitsval" class="bitsval" for="bits">2048 Bit</output></div>
+          <div class="quick" id="quick" role="group" aria-label="Schnellwahl"></div>
+        </div>
+        <div class="field">
+          <span class="lab" id="att-lab">Wer greift an?</span>
+          <div class="att" id="att" role="group" aria-labelledby="att-lab"></div>
+          <p id="att-desc" style="font-size:.92rem;color:var(--text-muted)"></p>
+        </div>
+      </div>
+
+      <div class="card chartcard">
+        <div class="legend">
+          <span><i style="border-color:var(--line-rsa)"></i>RSA (Faktorisieren)</span>
+          <span><i class="dash" style="border-color:var(--line-dh)"></i>Diffie-Hellman (diskreter Logarithmus)</span>
+          <span><i class="zone"></i>Bereits öffentlich geknackt</span>
+        </div>
+        <div class="chartscroll"><svg class="chart" id="chart" viewBox="0 0 880 520" role="img" aria-label="Knackzeit in Jahren auf logarithmischer Skala gegen Schlüssellänge in Bit, mit Vergleichszeiten wie Menschenleben und Alter des Universums"></svg></div>
+      </div>
+
+      <div class="readout">
+        <div class="card"><span class="what" id="r-rsa-what">RSA-2048</span><span class="big" id="r-rsa"></span><span class="ana" id="r-rsa-ana"></span></div>
+        <div class="card dh"><span class="what" id="r-dh-what">Diffie-Hellman 2048</span><span class="big" id="r-dh"></span><span class="ana" id="r-dh-ana"></span></div>
+      </div>
+
+      <div class="card atoms">
+        <h3>Einfach alles durchprobieren?</h3>
+        <p style="margin-top:6px">Wer <code>n</code> ganz naiv knacken will, teilt durch jede Zahl bis √n. Das wären bei <span id="a-bits">2048</span> Bit rund <strong class="mono" id="a-tries"></strong> Versuche. Zum Vergleich:</p>
+        <div class="bar" id="a-bars"></div>
+        <p id="a-text" style="margin-top:10px;color:var(--text-muted);font-size:.95rem"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="warum">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Was steckt dahinter</span><h2>Warum die Kurve so steil ist</h2></div>
+      <div class="prose">
+        <p>Niemand probiert wirklich alle Teiler durch. Die besten Angreifer verwenden das <strong>Zahlkörpersieb</strong> (englisch GNFS). Es ist unvorstellbar viel schneller als Probieren, aber der Aufwand wächst trotzdem fast exponentiell mit der Länge des Schlüssels. Für Diffie-Hellman gibt es eine Variante desselben Siebs; sie braucht bei gleicher Länge rund dreimal so viel Rechenzeit.</p>
+        <p>Die Rekorde zeigen das gut: RSA-250 (829 Bit) kostete 2020 rund 2700 Kernjahre. Für RSA-260 (862 Bit, nur zehn Dezimalstellen mehr) rechnet man mit etwa dem 2,6-Fachen. Genau diesen Sprung zeigt auch das Modell auf dieser Seite.</p>
+        <p>Ein schnellerer Angreifer verschiebt die Kurve nach unten, aber er macht sie nicht flacher. Deshalb reichen schon wenige hundert Bit mehr, um einen tausendmal stärkeren Gegner auszugleichen.</p>
+      </div>
+      <div class="hinweis" style="margin-top:18px"><span class="tag">⚠ Besonderheit bei Diffie-Hellman</span>Der teuerste Teil des Angriffs hängt nur von der öffentlichen Primzahl <code>p</code> ab. Verwenden viele Server dasselbe <code>p</code>, lohnt sich das Vorausrechnen: Beim «Logjam»-Angriff 2015 dauerte das für ein 512-Bit-<code>p</code> rund eine Woche, danach war jedes einzelne Gespräch in etwa einer Minute geknackt.</div>
+    </div>
+  </section>
+
+  <section id="tabelle">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Übersicht</span><h2>Gängige Schlüssellängen</h2></div>
+      <p style="margin-bottom:14px;color:var(--text-muted)" id="tab-cap"></p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">Länge</th><th scope="col">RSA knacken</th><th scope="col">DH knacken</th><th scope="col">Entspricht AES/ECC</th><th scope="col">Einschätzung</th></tr></thead>
+          <tbody id="tab-body"></tbody>
+        </table>
+      </div>
+      <div class="merke" style="margin-top:18px"><span class="tag">Merke · Warum nicht einfach 128 Bit wie bei AES?</span>Bei AES gibt es keine Abkürzung, man muss wirklich alle 2<sup>128</sup> Schlüssel durchprobieren. Bei RSA und Diffie-Hellman gibt es mit dem Zahlkörpersieb eine Abkürzung. Deshalb braucht RSA rund 3072 Bit, um gleich stark wie AES-128 zu sein. Diffie-Hellman auf elliptischen Kurven (ECDH) hat keine solche Abkürzung und kommt darum mit 256 Bit aus.</div>
+    </div>
+  </section>
+
+  <section id="quanten">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Ausblick</span><h2>Der Quantencomputer ändert die Spielregeln</h2></div>
+      <div class="prose">
+        <p>Alle Zeiten oben gelten für normale Computer. Ein grosser Quantencomputer könnte mit dem <strong>Shor-Algorithmus</strong> sowohl faktorisieren als auch diskrete Logarithmen berechnen, und zwar in einer Zeit, die nur noch langsam mit der Schlüssellänge wächst. Längere Schlüssel helfen dann kaum mehr.</p>
+      </div>
+      <div class="two">
+        <div class="card"><h3>Was es dafür bräuchte</h3><p style="margin-top:6px">Eine Schätzung von Google (Mai 2025): RSA-2048 in weniger als einer Woche mit weniger als einer Million fehleranfälliger Qubits. Eine Studie von 2026 hält sogar unter 100'000 Qubits für möglich, für elliptische Kurven nennt Google unter 500'000 Qubits. Heutige Quantencomputer sind davon noch weit entfernt.</p></div>
+        <div class="card"><h3>«Jetzt speichern, später entschlüsseln»</h3><p style="margin-top:6px">Ein Geheimdienst kann verschlüsselten Verkehr heute mitschneiden und in 15 Jahren entschlüsseln. Deshalb stellen Browser und Server bereits auf quantensichere Verfahren um, meist in Kombination mit klassischem ECDH. Die US-Normbehörde NIST plant, RSA und klassisches Diffie-Hellman bis 2035 ganz abzulösen.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="uebungen">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Selbst denken</span><h2>Übungen</h2></div>
+      <div class="tasks">
+        <article class="card task">
+          <h3>Doppelt so lang, doppelt so sicher?</h3>
+          <p>Stelle den Regler auf 1024 und dann auf 2048 Bit. Um welchen Faktor wächst die Knackzeit? Warum ist das viel mehr als das Doppelte?</p>
+          <details><summary>Lösung anzeigen</summary><div class="sol"><p>Die Zeit wächst um rund den Faktor 10<sup>9</sup>, also eine Milliarde. Jedes zusätzliche Bit verdoppelt die Grösse der Zahl <code>n</code>. Der Aufwand des Zahlkörpersiebs hängt von der Grösse von <code>n</code> ab, nicht von der Anzahl Stellen, und wächst darum fast exponentiell mit der Bitlänge.</p></div></details>
+        </article>
+        <article class="card task">
+          <h3>Der stärkste Angreifer</h3>
+          <p>Wähle «Alle Computer der Welt». Ab welcher Schlüssellänge dauert der Angriff auf RSA länger als ein Menschenleben (80 Jahre)? Und was bedeutet das für die Wahl von 2048 Bit?</p>
+          <details><summary>Lösung anzeigen</summary><div class="sol"><p>Nach dem Modell etwa ab 1700 Bit. RSA-2048 bräuchte selbst mit allen Computern der Welt noch zehntausende Jahre. 2048 Bit ist also für normale Angreifer sicher; 3072 Bit gibt zusätzlich Reserve für bessere Algorithmen und schnellere Hardware.</p></div></details>
+        </article>
+        <article class="card task">
+          <h3>Forward Secrecy und Quantencomputer</h3>
+          <p>Ein Angreifer schneidet 2026 HTTPS-Verkehr mit und besitzt 2040 einen grossen Quantencomputer. Schützt es, wenn der Server für jede Verbindung neue Diffie-Hellman-Zahlen verwendet hat?</p>
+          <details><summary>Lösung anzeigen</summary><div class="sol"><p>Nein. Forward Secrecy schützt davor, dass ein später gestohlener Langzeitschlüssel alte Gespräche öffnet. Der Quantencomputer kann aber jeden einzelnen mitgeschnittenen Schlüsselaustausch direkt knacken. Gegen «jetzt speichern, später entschlüsseln» helfen nur quantensichere Verfahren, die schon heute eingesetzt werden.</p></div></details>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  <strong>So wurde gerechnet:</strong> Aufwand des Zahlkörpersiebs <span class="mono">exp(1.923 · (ln n)<sup>1/3</sup> · (ln ln n)<sup>2/3</sup>)</span>, geeicht auf RSA-250 = 2700 Kernjahre; Diffie-Hellman 3,1-mal teurer (DLP-240: 3100 Kernjahre). Ein «Kernjahr» ist ein Prozessorkern, der ein Jahr lang rechnet. Grafikkarten rechnen schneller (RSA-896 wurde im September 2026 mit bis zu 2048 GPUs in rund zehn Tagen faktorisiert), verschieben die Kurve aber nur. Alle Werte sind Grössenordnungen, keine genauen Vorhersagen.
+  <ul>
+    <li><a href="https://en.wikipedia.org/wiki/Integer_factorization_records" target="_blank" rel="noopener">Integer factorization records (Wikipedia)</a></li>
+    <li><a href="https://postquantum.com/security-pqc/sa-260-factored-gpu-devin/" target="_blank" rel="noopener">RSA-260 faktorisiert (PostQuantum, 2026)</a></li>
+    <li><a href="https://postquantum.com/security-pqc/rsa-896-factored-claude-gpus/" target="_blank" rel="noopener">RSA-896 faktorisiert (PostQuantum, 2026)</a></li>
+    <li><a href="https://arxiv.org/abs/2505.15917v1" target="_blank" rel="noopener">Gidney 2025: RSA-2048 mit weniger als einer Million Qubits (arXiv)</a></li>
+    <li><a href="https://thequantuminsider.com/2026/03/31/q-day-just-got-closer-three-papers-in-three-months-are-rewriting-the-quantum-threat-timeline/" target="_blank" rel="noopener">Neue Quanten-Schätzungen 2026 (The Quantum Insider)</a></li>
+  </ul>
+</div></footer>
+
+<script>
+(function(){
+  const root=document.documentElement,$=id=>document.getElementById(id);
+  function setVariant(v){
+    if(v==="tech")root.setAttribute("data-variant","tech");else root.removeAttribute("data-variant");
+    document.querySelectorAll(".switch button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===(v==="tech"?"tech":"klar"))));
+    try{localStorage.setItem("knack-variant",v)}catch(e){}
+  }
+  let sv="klar";try{sv=localStorage.getItem("knack-variant")||"klar"}catch(e){}
+  setVariant(sv);
+  document.querySelectorAll(".switch button").forEach(b=>b.addEventListener("click",()=>setVariant(b.dataset.v)));
+
+  // Modell (Kernjahre)
+  const C=Math.cbrt(64/9);
+  const Lraw=b=>{const ln=b*Math.LN2;return C*Math.cbrt(ln)*Math.pow(Math.log(ln),2/3)}; // natürlicher Log des Aufwands
+  const K=Math.log(2700)-Lraw(829);
+  const log10RSA=b=>(Lraw(b)+K)/Math.LN10;               // log10(Kernjahre)
+  const log10DH=b=>log10RSA(b)+Math.log10(3.1);
+
+  const ATT=[
+    {id:"laptop",name:"Ein Laptop",cores:8,desc:"8 Prozessorkerne, wie in einem normalen Schul-Laptop."},
+    {id:"zimmer",name:"Informatikzimmer",cores:24*8,desc:"24 Computer mit je 8 Kernen, die Tag und Nacht rechnen."},
+    {id:"rz",name:"Grosses Rechenzentrum",cores:1e6,desc:"Eine Million Kerne, etwa so viel wie ein grosser Cloud-Anbieter in einer Halle."},
+    {id:"welt",name:"Alle Computer der Welt",cores:1e10,desc:"Grobe Annahme: zehn Milliarden Kerne, alle Computer und Handys der Erde gleichzeitig."}
+  ];
+  const REFS=[
+    {y:1/(365.25*86400),l:"1 Sekunde"},
+    {y:1/(365.25*24),l:"1 Stunde"},
+    {y:1/365.25,l:"1 Tag"},
+    {y:1,l:"1 Jahr"},
+    {y:80,l:"Menschenleben (80 J.)"},
+    {y:4500,l:"Seit den Pyramiden"},
+    {y:6.6e7,l:"Seit den Dinosauriern"},
+    {y:1.38e10,l:"Alter des Universums"},
+    {y:1.38e22,l:"Universum × 1 Billion"}
+  ];
+  const RECORDS=[{b:512,n:"RSA-155",yr:1999},{b:768,n:"RSA-768",yr:2009},{b:829,n:"RSA-250",yr:2020},{b:896,n:"RSA-896",yr:2026}];
+  const st={bits:2048,att:"rz"};
+
+  const SUP={"-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
+  const sup=n=>String(n).split("").map(c=>SUP[c]||c).join("");
+  const nf=(x,d=0)=>x.toLocaleString("de-CH",{maximumFractionDigits:d});
+
+  function fmtTime(l10){ // l10 = log10(Jahre)
+    const y=Math.pow(10,l10),s=y*365.25*86400;
+    if(s<1)return "unter 1 Sekunde";
+    if(s<120)return nf(s)+" Sekunden";
+    if(s<7200)return nf(s/60)+" Minuten";
+    if(s<2*86400)return nf(s/3600)+" Stunden";
+    if(y<1)return nf(s/86400)+" Tage";
+    if(y<1e6)return nf(y)+" Jahre";
+    const e=Math.floor(l10),m=Math.pow(10,l10-e);
+    return (m>=9.95?"10"+sup(e+1):nf(m,1)+" × 10"+sup(e))+" Jahre";
+  }
+  function analog(l10){
+    const y=Math.pow(10,l10);
+    if(y<1/365.25)return "Schneller als ein Tag. <span class=\"pill bad\">✗ unsicher</span>";
+    if(y<80)return "Weniger als ein Menschenleben. <span class=\"pill bad\">✗ unsicher</span>";
+    if(y<4500)return "Länger als ein Menschenleben, kürzer als seit dem Bau der Pyramiden. <span class=\"pill warn\">⚠ knapp</span>";
+    const u=1.38e10;
+    if(y<u){const f=y/6.6e7;return (f<1?"Länger als seit den Pyramiden.":"Rund "+nf(f,f<10?1:0)+"-mal so lang wie seit dem Aussterben der Dinosaurier.")+" <span class=\"pill ok\">✓ sicher</span>"}
+    const r=Math.log10(y/u);
+    const fac=r<6?nf(Math.pow(10,r)):"10"+sup(Math.round(r));
+    return "Etwa "+fac+"-mal das Alter des Universums. <span class=\"pill ok\">✓ sicher</span>";
+  }
+
+  // Diagramm
+  const W=880,H=520,X0=64,X1=640,Y0=20,Y1=470,BMIN=512,BMAX=4096,LMIN=-10,LMAX=28;
+  const sx=b=>X0+(b-BMIN)/(BMAX-BMIN)*(X1-X0);
+  const sy=l=>Y1-(l-LMIN)/(LMAX-LMIN)*(Y1-Y0);
+  const NS="http://www.w3.org/2000/svg";
+  function el(tag,attrs,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e}
+  function clampL(l){return Math.max(LMIN,Math.min(LMAX,l))}
+
+  function drawChart(){
+    const svg=$("chart");svg.innerHTML="";
+    const shift=Math.log10(ATTcur().cores);
+    // geknackte Zone
+    svg.appendChild(el("rect",{x:X0,y:Y0,width:sx(896)-X0,height:Y1-Y0,fill:"rgba(191,97,106,.16)"}));
+    // Gitter + Achsen
+    for(let l=LMIN;l<=LMAX;l+=4){svg.appendChild(el("line",{x1:X0,x2:X1,y1:sy(l),y2:sy(l),class:"grid"}));svg.appendChild(el("text",{x:X0-8,y:sy(l)+4,"text-anchor":"end",class:"axis"},"10"+sup(l)))}
+    for(let b=512;b<=4096;b+=512){svg.appendChild(el("line",{x1:sx(b),x2:sx(b),y1:Y0,y2:Y1,class:"grid"}));svg.appendChild(el("text",{x:sx(b),y:Y1+18,"text-anchor":"middle",class:"axis"},b))}
+    svg.appendChild(el("text",{x:(X0+X1)/2,y:H-8,"text-anchor":"middle"},"Schlüssellänge in Bit"));
+    const yl=el("text",{x:16,y:(Y0+Y1)/2,"text-anchor":"middle",transform:`rotate(-90 16 ${(Y0+Y1)/2})`},"Knackzeit in Jahren");svg.appendChild(yl);
+    // Referenzlinien
+    REFS.forEach(r=>{const l=Math.log10(r.y);if(l<LMIN||l>LMAX)return;const y=sy(l);
+      svg.appendChild(el("line",{x1:X0,x2:X1+6,y1:y,y2:y,class:"refline"}));
+      svg.appendChild(el("text",{x:X1+10,y:y+4,class:"ref"},r.l))});
+    // Kurven
+    function path(fn){let d="";for(let b=BMIN;b<=BMAX;b+=16){const l=clampL(fn(b)-shift);d+=(d?"L":"M")+sx(b).toFixed(1)+","+sy(l).toFixed(1)}return d}
+    svg.appendChild(el("path",{d:path(log10DH),fill:"none",stroke:"var(--line-dh)","stroke-width":3,"stroke-dasharray":"8 6"}));
+    svg.appendChild(el("path",{d:path(log10RSA),fill:"none",stroke:"var(--line-rsa)","stroke-width":3}));
+    // Rekorde
+    RECORDS.forEach((r,i)=>{const x=sx(r.b);svg.appendChild(el("circle",{cx:x,cy:Y1-6,r:4.5,class:"rec"}));
+      svg.appendChild(el("text",{x:x+2,y:Y1-16-(i%2)*14,class:"rectext","text-anchor":"start"},r.n+" ("+r.yr+")"))});
+    svg.appendChild(el("text",{x:X0+6,y:Y0+16,class:"rectext"},"geknackt"));
+    // Markierung
+    const x=sx(st.bits);
+    svg.appendChild(el("line",{x1:x,x2:x,y1:Y0,y2:Y1,stroke:"var(--text)","stroke-width":1.5}));
+    [[log10RSA,"var(--line-rsa)"],[log10DH,"var(--line-dh)"]].forEach(([fn,c])=>{const l=fn(st.bits)-shift;if(l>=LMIN&&l<=LMAX)svg.appendChild(el("circle",{cx:x,cy:sy(l),r:6,fill:c,stroke:"var(--bg)","stroke-width":2}))});
+  }
+  const ATTcur=()=>ATT.find(a=>a.id===st.att);
+
+  function render(){
+    const a=ATTcur(),shift=Math.log10(a.cores),b=st.bits;
+    $("bits").value=b;$("bitsval").textContent=b+" Bit";
+    document.querySelectorAll("#quick button").forEach(x=>x.setAttribute("aria-pressed",String(+x.dataset.b===b)));
+    document.querySelectorAll("#att button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.a===st.att)));
+    $("att-desc").textContent=a.desc;
+    const lr=log10RSA(b)-shift,ld=log10DH(b)-shift;
+    $("r-rsa-what").textContent=`RSA-${b} · ${a.name}`;$("r-dh-what").textContent=`Diffie-Hellman ${b} · ${a.name}`;
+    $("r-rsa").textContent=fmtTime(lr);$("r-dh").textContent=fmtTime(ld);
+    $("r-rsa-ana").innerHTML=analog(lr);$("r-dh-ana").innerHTML=analog(ld);
+    if(b<=896){$("r-rsa-ana").innerHTML+=" Zahlen dieser Grösse wurden bereits öffentlich faktorisiert."}
+    // Probieren vs. Atome
+    const tries=b/2*Math.log10(2);
+    $("a-bits").textContent=b;$("a-tries").textContent="10"+sup(Math.round(tries));
+    const items=[{l:"Sandkörner auf der Erde",v:18.9},{l:"Sterne im beobachtbaren Universum",v:24},{l:"Atome im beobachtbaren Universum",v:80},{l:"Versuche bis √n",v:tries}];
+    const maxv=Math.max(...items.map(i=>i.v));
+    $("a-bars").innerHTML=items.map(i=>`<div class="row"><span>${i.l}</span><div class="track"><div class="fill" style="width:${Math.max(1.5,i.v/maxv*100)}%"></div></div><span class="num">10${sup(Math.round(i.v))}</span></div>`).join("");
+    const over=Math.round(tries-80);
+    $("a-text").innerHTML=over>0?`Die Balken zeigen die Anzahl Stellen. Selbst wenn jedes Atom im Universum ein eigener Computer wäre, müsste jedes noch 10${sup(over)} Zahlen prüfen.`:`Die Balken zeigen die Anzahl Stellen. Bei dieser Länge wären es weniger Versuche als Atome im Universum, aber immer noch unvorstellbar viele.`;
+    // Tabelle
+    const ROWS=[[512,"–","✗ geknackt","bad"],[1024,"80 Bit","✗ nicht mehr verwenden","bad"],[2048,"112 Bit","⚠ Minimum, bis etwa 2030","warn"],[3072,"128 Bit (ECC 256)","✓ empfohlen","ok"],[4096,"≈ 150 Bit","✓ viel Reserve","ok"]];
+    $("tab-cap").textContent=`Zeiten für: ${a.name}. Wechsle oben den Angreifer, um die Spalten neu zu berechnen.`;
+    $("tab-body").innerHTML=ROWS.map(([bb,eq,txt,cls])=>`<tr class="${bb===b?"sel":""}"><td class="m">${bb} Bit</td><td class="m">${fmtTime(log10RSA(bb)-shift)}</td><td class="m">${fmtTime(log10DH(bb)-shift)}</td><td>${eq}</td><td><span class="pill ${cls}">${txt}</span></td></tr>`).join("");
+    drawChart();
+  }
+
+  $("quick").innerHTML=[512,1024,2048,3072,4096].map(b=>`<button type="button" data-b="${b}" aria-pressed="false">${b}</button>`).join("");
+  $("att").innerHTML=ATT.map(a=>`<button type="button" data-a="${a.id}" aria-pressed="false">${a.name}</button>`).join("");
+  $("quick").addEventListener("click",e=>{const x=e.target.closest("button");if(x){st.bits=+x.dataset.b;render()}});
+  $("att").addEventListener("click",e=>{const x=e.target.closest("button");if(x){st.att=x.dataset.a;render()}});
+  $("bits").addEventListener("input",()=>{st.bits=+$("bits").value;render()});
+  render();
+})();
+</script>
+
+</body></html>

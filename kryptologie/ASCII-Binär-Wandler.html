@@ -1,0 +1,479 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Zahlendarstellung/Codierung), Unterricht + Selbststudium, mit Beamer-Modus-Schalter
+  Funktion: Umwandler in beide Richtungen, live (Text → Binär und Binär → Text), Kopierknöpfe, Option Leerzeichen zwischen Bytes
+  Zeichensatz: ASCII (0–127) als 8-Bit-Bytes; Zeichen ausserhalb von ASCII (ä, é, €) als UTF-8-Bytes gezeigt und als «kein ASCII» markiert
+  Detailtiefe: Aufschlüsselung pro Byte (Zeichen, Dezimal, Hex, Binär), Byte anklickbar → Stellenwerte 128…1 mit Summe, Hex-Nibbles, UTF-8-Kennbits
+  Kein Übungsmodus
+  Binär-Eingabe: Gruppen durch Leerzeichen getrennt (kurze Gruppen links mit 0 aufgefüllt) oder ohne Trennung in Vielfachen von 8
+  Datenhaltung: nur localStorage für Variante, Beamer-Modus und Trennoption (Komfort)
+  Design: Nord-Farbschema, Open Sans + Google Sans Code; Hell/Dunkel folgt System
+  Variante A «Klar»: hell, viel Weissraum, feine Rahmen, Frost nur als Akzent
+  Variante B «Technisch»: Polar-Night-Kopf und Binärfeld wie ein Terminal, gefüllte Kacheln, Labels in Google Sans Code
+  Startbeispiel: «Hallo, Bülach!» (zeigt ein Nicht-ASCII-Zeichen)
+-->
+<title>ASCII-Binär-Wandler</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: Kopf · zwei Eingabefelder nebeneinander · Byte-Kacheln · Detail mit Stellenwerten */
+:root {
+  --nord0:#2E3440; --nord1:#3B4252; --nord2:#434C5E; --nord3:#4C566A;
+  --nord4:#D8DEE9; --nord5:#E5E9F0; --nord6:#ECEFF4;
+  --nord7:#8FBCBB; --nord8:#88C0D0; --nord9:#81A1C1; --nord10:#5E81AC;
+  --nord11:#BF616A; --nord12:#D08770; --nord13:#EBCB8B; --nord14:#A3BE8C; --nord15:#B48EAD;
+
+  --bg: var(--nord6); --surface: var(--nord5); --surface-2: var(--nord4);
+  --text: var(--nord0); --text-muted: var(--nord3);
+  --accent: var(--nord10); --accent-soft: var(--nord9);
+  --dark: var(--nord0); --dark-2: var(--nord1); --dark-fg: var(--nord6); --dark-muted: var(--nord4);
+  --ok: var(--nord14); --warn: var(--nord13); --err: var(--nord11); --special: var(--nord15);
+
+  --font: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Google Sans Code", ui-monospace, "Cascadia Code", Consolas, "SF Mono", monospace;
+  --base: 17px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--nord0); --surface: var(--nord1); --surface-2: var(--nord2);
+    --text: var(--nord6); --text-muted: var(--nord4);
+    --accent: var(--nord8); --accent-soft: var(--nord9);
+    --dark: var(--nord1); --dark-2: var(--nord0); --dark-fg: var(--nord6); --dark-muted: var(--nord4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: var(--nord0); --surface: var(--nord1); --surface-2: var(--nord2);
+  --text: var(--nord6); --text-muted: var(--nord4);
+  --accent: var(--nord8); --accent-soft: var(--nord9);
+  --dark: var(--nord1); --dark-2: var(--nord0); --dark-fg: var(--nord6); --dark-muted: var(--nord4);
+  color-scheme: dark;
+}
+
+/* Variante A – Klar */
+[data-variant="a"] {
+  --head-bg: transparent; --head-fg: var(--text); --head-muted: var(--text-muted); --head-border: var(--surface-2);
+  --panel-bg: var(--bg); --panel-border: var(--surface-2); --radius: 4px;
+  --bin-bg: var(--bg); --bin-fg: var(--text); --bin-border: var(--surface-2);
+  --tile-bg: var(--bg); --tile-border: var(--surface-2); --tile-active-bg: var(--surface); --tile-active-border: var(--accent);
+  --bit1-bg: transparent; --bit1-fg: var(--text); --bit1-border: var(--accent);
+  --bit0-bg: transparent; --bit0-fg: var(--text-muted); --bit0-border: var(--surface-2);
+  --label-font: var(--font); --label-transform: none; --label-spacing: 0;
+  --gap: 28px; --h-weight: 600;
+}
+/* Variante B – Technisch */
+[data-variant="b"] {
+  --head-bg: var(--dark); --head-fg: var(--dark-fg); --head-muted: var(--dark-muted); --head-border: var(--dark);
+  --panel-bg: var(--surface); --panel-border: var(--surface); --radius: 2px;
+  --bin-bg: var(--dark); --bin-fg: var(--nord8); --bin-border: var(--dark);
+  --tile-bg: var(--surface); --tile-border: var(--surface); --tile-active-bg: var(--dark); --tile-active-border: var(--nord8);
+  --bit1-bg: var(--accent-soft); --bit1-fg: var(--nord0); --bit1-border: var(--accent-soft);
+  --bit0-bg: var(--surface-2); --bit0-fg: var(--text-muted); --bit0-border: var(--surface-2);
+  --label-font: var(--font-mono); --label-transform: uppercase; --label-spacing: .06em;
+  --gap: 18px; --h-weight: 700;
+}
+[data-beamer="1"] { --base: 22px; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: var(--base); }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 1rem; line-height: 1.6; }
+[data-beamer="1"] body { font-weight: 600; }
+button, input, textarea { font: inherit; color: inherit; }
+code, .mono { font-family: var(--font-mono); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap {
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Kopf */
+.head { background: var(--head-bg); color: var(--head-fg); border-bottom: 1px solid var(--head-border); }
+.head .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+h1 { margin: 0; font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
+.sub { margin: 2px 0 0; color: var(--head-muted); font-size: .9rem; }
+.toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--head-muted); border-radius: var(--radius); overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 4px 12px; cursor: pointer; font-size: .85rem; color: var(--head-fg); }
+.seg button[aria-pressed="true"] { background: var(--head-fg); color: var(--head-bg); }
+[data-variant="a"] .seg button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+.chip-btn { border: 1px solid var(--head-muted); background: transparent; border-radius: var(--radius); padding: 4px 12px; cursor: pointer; font-size: .85rem; color: var(--head-fg); }
+.chip-btn[aria-pressed="true"] { border-color: var(--head-fg); font-weight: 600; }
+
+main .wrap { padding-block: 24px 48px; display: grid; gap: var(--gap); }
+
+/* Eingabefelder */
+.io { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 14px; align-items: stretch; }
+@media (max-width: 780px) { .io { grid-template-columns: minmax(0, 1fr); } .io .arrow { transform: rotate(90deg); justify-self: center; } }
+.arrow { align-self: center; font-size: 1.4rem; color: var(--text-muted); font-family: var(--font-mono); }
+.pane { display: grid; gap: 8px; grid-template-rows: auto 1fr auto; min-width: 0; }
+.pane-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.pane label { font-weight: 600; font-family: var(--label-font); text-transform: var(--label-transform); letter-spacing: var(--label-spacing); font-size: .9rem; }
+.tools { display: flex; gap: 6px; flex-wrap: wrap; }
+.small-btn {
+  border: 1px solid var(--surface-2); background: transparent; border-radius: var(--radius);
+  padding: 2px 10px; font-size: .8rem; cursor: pointer;
+}
+.small-btn:hover { border-color: var(--text-muted); }
+textarea {
+  width: 100%; min-height: 9rem; resize: vertical; padding: 12px 14px;
+  border-radius: var(--radius); line-height: 1.5;
+}
+#txt { background: var(--panel-bg); border: 1px solid var(--panel-border); font-size: 1.1rem; }
+[data-variant="b"] #txt { border-color: var(--surface-2); background: var(--bg); }
+#bin { background: var(--bin-bg); color: var(--bin-fg); border: 1px solid var(--bin-border); font-family: var(--font-mono); font-size: .95rem; letter-spacing: .04em; }
+textarea[aria-invalid="true"] { border: 2px solid var(--err) !important; }
+.msg { font-size: .85rem; min-height: 1.4em; color: var(--text-muted); }
+.msg.err::before { content: "✗ "; color: var(--err); font-weight: 700; }
+.msg.info::before { content: "ℹ "; color: var(--accent); font-weight: 700; }
+.opt { display: inline-flex; gap: 6px; align-items: center; font-size: .82rem; color: var(--text-muted); cursor: pointer; }
+.opt input { accent-color: var(--accent); }
+
+.stats { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: .9rem; color: var(--text-muted); }
+.stats b { color: var(--text); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.stats .w b { color: var(--text); }
+.stats .w::before { content: "⚠ "; color: var(--warn); }
+
+/* Byte-Kacheln */
+h2 { margin: 0 0 4px; font-size: 1.2rem; font-weight: var(--h-weight); }
+.lead { margin: 0 0 14px; color: var(--text-muted); font-size: .92rem; max-width: 70ch; }
+.tiles { display: flex; flex-wrap: wrap; gap: 8px; }
+.group { display: flex; gap: 4px; padding: 4px; border-radius: var(--radius); }
+.group.multi { border: 2px dashed var(--warn); }
+.group.bad { border: 2px dashed var(--err); }
+.tile {
+  display: grid; gap: 2px; justify-items: center; min-width: 6.6em;
+  padding: 8px 10px; border-radius: var(--radius); cursor: pointer; text-align: center;
+  background: var(--tile-bg); border: 1px solid var(--tile-border); line-height: 1.3;
+}
+.tile:hover { border-color: var(--text-muted); }
+.tile[aria-pressed="true"] { background: var(--tile-active-bg); border: 2px solid var(--tile-active-border); }
+[data-variant="b"] .tile[aria-pressed="true"] { color: var(--dark-fg); }
+[data-variant="b"] .tile[aria-pressed="true"] .meta { color: var(--dark-muted); }
+.tile .ch { font-size: 1.5rem; font-weight: 600; min-height: 1.3em; }
+.tile .ch.ctl { font-family: var(--font-mono); font-size: .85rem; padding-top: .45em; }
+.tile .bits { font-family: var(--font-mono); font-size: .85rem; letter-spacing: .05em; }
+.tile .meta { font-family: var(--font-mono); font-size: .72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.group-tag { font-size: .7rem; color: var(--text-muted); writing-mode: vertical-rl; transform: rotate(180deg); align-self: center; font-family: var(--label-font); letter-spacing: .04em; }
+.empty { color: var(--text-muted); font-size: .92rem; margin: 0; }
+
+/* Detail */
+.detail { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: var(--radius); padding: 22px 24px; display: grid; gap: 18px; min-width: 0; }
+@media (max-width: 520px) { .detail { padding: 16px; } }
+.detail-top { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+.big { font-size: 3rem; font-weight: 700; line-height: 1; min-width: 1.2em; text-align: center; }
+.big.ctl { font-family: var(--font-mono); font-size: 1.4rem; }
+.facts { display: grid; grid-template-columns: repeat(4, auto); gap: 4px 24px; margin: 0; }
+@media (max-width: 520px) { .facts { grid-template-columns: repeat(2, auto); } }
+.facts div { display: grid; }
+.facts dt { font-size: .75rem; color: var(--text-muted); font-family: var(--label-font); text-transform: uppercase; letter-spacing: .06em; }
+.facts dd { margin: 0; font-family: var(--font-mono); font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.place { overflow-x: auto; }
+table.pv { border-collapse: separate; border-spacing: 5px 4px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; margin: 0 auto; }
+table.pv th { font-weight: 400; font-size: .75rem; color: var(--text-muted); text-align: center; }
+table.pv th.rl, table.pv td.rl { text-align: right; padding-right: 8px; font-family: var(--font); font-size: .78rem; color: var(--text-muted); white-space: nowrap; }
+table.pv td { text-align: center; }
+.bit { width: 2.6em; height: 2.4em; display: grid; place-items: center; border-radius: var(--radius); font-size: 1.05rem; margin: 0 auto; }
+.bit.b1 { background: var(--bit1-bg); color: var(--bit1-fg); border: 2px solid var(--bit1-border); font-weight: 600; }
+.bit.b0 { background: var(--bit0-bg); color: var(--bit0-fg); border: 1.5px solid var(--bit0-border); }
+.bit.mark { box-shadow: 0 0 0 3px var(--special); }
+.val { font-size: .9rem; }
+.val.on { font-weight: 600; color: var(--text); }
+.val.off { color: var(--text-muted); opacity: .45; }
+.nib td.nb { border-top: 2px solid var(--text-muted); font-size: .85rem; padding-top: 4px; }
+.sum { font-family: var(--font-mono); font-size: 1rem; text-align: center; line-height: 1.6; overflow-wrap: anywhere; }
+.sum b { font-weight: 600; }
+.note { border-left: 4px solid var(--warn); background: var(--surface); padding: 10px 14px; font-size: .92rem; border-radius: 0 var(--radius) var(--radius) 0; max-width: 72ch; }
+.note.err { border-left-color: var(--err); }
+.note.special { border-left-color: var(--special); }
+[data-variant="b"] .note { background: var(--bg); }
+.note p { margin: 0; }
+.note p + p { margin-top: 6px; }
+.legend-mark { display: inline-block; width: .9em; height: .9em; border-radius: 2px; box-shadow: inset 0 0 0 3px var(--special); vertical-align: -1px; margin-right: 4px; }
+</style>
+
+<div id="app" data-variant="a">
+  <header class="head">
+    <div class="wrap">
+      <div>
+        <h1>ASCII-Binär-Wandler</h1>
+        <p class="sub">Text in Bits umwandeln und zurück, Byte für Byte erklärt</p>
+      </div>
+      <div class="toggles">
+        <div class="seg" role="group" aria-label="Design-Variante">
+          <button type="button" id="varA" aria-pressed="true">Variante A</button>
+          <button type="button" id="varB" aria-pressed="false">Variante B</button>
+        </div>
+        <button type="button" class="chip-btn" id="beamer" aria-pressed="false">Beamer-Modus</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <section class="io" aria-label="Umwandlung">
+        <div class="pane">
+          <div class="pane-head">
+            <label for="txt">Text</label>
+            <div class="tools">
+              <button type="button" class="small-btn" id="copyTxt">Kopieren</button>
+              <button type="button" class="small-btn" id="clear">Leeren</button>
+            </div>
+          </div>
+          <textarea id="txt" spellcheck="false" aria-describedby="txtMsg"></textarea>
+          <div class="msg" id="txtMsg" aria-live="polite"></div>
+        </div>
+        <div class="arrow" aria-hidden="true">⇄</div>
+        <div class="pane">
+          <div class="pane-head">
+            <label for="bin">Binär</label>
+            <div class="tools">
+              <label class="opt"><input type="checkbox" id="spaced" checked> Leerzeichen zwischen Bytes</label>
+              <button type="button" class="small-btn" id="copyBin">Kopieren</button>
+            </div>
+          </div>
+          <textarea id="bin" spellcheck="false" aria-describedby="binMsg"></textarea>
+          <div class="msg" id="binMsg" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <div class="stats" id="stats" aria-live="polite"></div>
+
+      <section aria-labelledby="bytesH">
+        <h2 id="bytesH">Bytes</h2>
+        <p class="lead">Jede Kachel ist ein Byte (8 Bit). Klicke eine Kachel an, um zu sehen, wie sich die Zahl aus den Stellenwerten zusammensetzt. Gestrichelt umrandet: mehrere Bytes für ein Zeichen, das nicht zu ASCII gehört.</p>
+        <div class="tiles" id="tiles"></div>
+      </section>
+
+      <section class="detail" id="detail" aria-live="polite"></section>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement, app = $("app");
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const b8 = n => n.toString(2).padStart(8, "0");
+  const hx = n => n.toString(16).toUpperCase().padStart(2, "0");
+
+  const CTL = { 0: "NUL", 7: "BEL", 8: "BS", 9: "TAB", 10: "LF", 13: "CR", 27: "ESC", 32: "SP", 127: "DEL" };
+  const CTL_LONG = { 0: "Nullzeichen", 7: "Klingel", 8: "Rückschritt", 9: "Tabulator", 10: "Zeilenumbruch (Line Feed)", 13: "Wagenrücklauf (Carriage Return)", 27: "Escape", 32: "Leerzeichen", 127: "Löschen" };
+  function shown(cp) {
+    if (cp < 32 || cp === 127) return { t: CTL[cp] || "CTRL", ctl: true };
+    if (cp === 32) return { t: "␣", ctl: false };
+    return { t: String.fromCodePoint(cp), ctl: false };
+  }
+
+  // groups: [{cp, bytes:[...], ascii:bool, bad:bool}]
+  function fromText(s) {
+    const enc = new TextEncoder(), g = [];
+    for (const ch of s) {
+      const cp = ch.codePointAt(0);
+      g.push({ cp, bytes: Array.from(enc.encode(ch)), ascii: cp < 128, bad: false });
+    }
+    return g;
+  }
+  function decodeBytes(bytes) {
+    const g = []; let i = 0;
+    while (i < bytes.length) {
+      const b = bytes[i]; let n = 0, cp = 0;
+      if (b < 0x80) { g.push({ cp: b, bytes: [b], ascii: true, bad: false }); i++; continue; }
+      if ((b & 0xE0) === 0xC0) { n = 2; cp = b & 0x1F; }
+      else if ((b & 0xF0) === 0xE0) { n = 3; cp = b & 0x0F; }
+      else if ((b & 0xF8) === 0xF0) { n = 4; cp = b & 0x07; }
+      let ok = n > 0 && i + n <= bytes.length;
+      for (let k = 1; ok && k < n; k++) { const c = bytes[i + k]; if ((c & 0xC0) !== 0x80) ok = false; else cp = (cp << 6) | (c & 0x3F); }
+      if (ok) { g.push({ cp, bytes: bytes.slice(i, i + n), ascii: false, bad: false }); i += n; }
+      else { g.push({ cp: null, bytes: [b], ascii: false, bad: true }); i++; }
+    }
+    return g;
+  }
+  function parseBin(s) {
+    const t = s.trim();
+    if (t === "") return { bytes: [] };
+    if (/[^01\s]/.test(t)) {
+      const c = t.match(/[^01\s]/)[0];
+      return { error: `Nur 0, 1 und Leerzeichen erlaubt (gefunden: «${c}»).` };
+    }
+    const toks = t.split(/\s+/);
+    if (toks.length === 1 && t.length > 8) {
+      if (t.length % 8 !== 0) return { error: `Ohne Leerzeichen muss die Bitanzahl ein Vielfaches von 8 sein (jetzt ${t.length}).` };
+      return { bytes: t.match(/.{8}/g).map(x => parseInt(x, 2)) };
+    }
+    const long = toks.find(x => x.length > 8);
+    if (long) return { error: `Die Gruppe «${long}» hat ${long.length} Bit. Ein Byte hat höchstens 8.` };
+    const padded = toks.some(x => x.length < 8);
+    return { bytes: toks.map(x => parseInt(x, 2)), info: padded ? "Kürzere Gruppen wurden links mit 0 auf 8 Bit aufgefüllt." : "" };
+  }
+  const groupsToText = g => g.map(x => x.bad ? "\uFFFD" : String.fromCodePoint(x.cp)).join("");
+  const groupsToBin = (g, sp) => g.flatMap(x => x.bytes).map(b8).join(sp ? " " : "");
+
+  let groups = [], sel = 0;
+
+  function setMsg(id, cls, text) { const m = $(id); m.className = "msg" + (cls && text ? " " + cls : ""); m.textContent = text || ""; }
+
+  function fromTxtInput() {
+    groups = fromText($("txt").value);
+    $("bin").value = groupsToBin(groups, $("spaced").checked);
+    $("bin").setAttribute("aria-invalid", "false"); setMsg("binMsg", "", "");
+    setMsg("txtMsg", "", "");
+    sel = Math.min(sel, Math.max(0, totalBytes() - 1));
+    renderAll();
+  }
+  function fromBinInput() {
+    const r = parseBin($("bin").value);
+    if (r.error) { $("bin").setAttribute("aria-invalid", "true"); setMsg("binMsg", "err", r.error); return; }
+    $("bin").setAttribute("aria-invalid", "false");
+    setMsg("binMsg", r.info ? "info" : "", r.info);
+    groups = decodeBytes(r.bytes);
+    $("txt").value = groupsToText(groups);
+    const bad = groups.filter(x => x.bad).length;
+    setMsg("txtMsg", bad ? "err" : "", bad ? `${bad} Byte${bad > 1 ? "s" : ""} ergeben kein gültiges Zeichen (als \uFFFD angezeigt).` : "");
+    sel = Math.min(sel, Math.max(0, totalBytes() - 1));
+    renderAll();
+  }
+  const totalBytes = () => groups.reduce((a, x) => a + x.bytes.length, 0);
+
+  function renderAll() { renderStats(); renderTiles(); renderDetail(); }
+
+  function renderStats() {
+    const nb = totalBytes(), non = groups.filter(x => !x.ascii && !x.bad).length;
+    let h = `<span><b>${groups.length}</b> Zeichen</span><span><b>${nb}</b> Bytes</span><span><b>${nb * 8}</b> Bit</span>`;
+    if (non) h += `<span class="w"><b>${non}</b> Zeichen ausserhalb von ASCII</span>`;
+    $("stats").innerHTML = h;
+  }
+
+  function renderTiles() {
+    if (!groups.length) { $("tiles").innerHTML = `<p class="empty">Noch nichts eingegeben. Schreibe links Text oder rechts Bits.</p>`; return; }
+    let h = "", idx = 0;
+    groups.forEach(g => {
+      const multi = g.bytes.length > 1;
+      h += `<div class="group${multi ? " multi" : ""}${g.bad ? " bad" : ""}">`;
+      g.bytes.forEach((b, k) => {
+        let chHtml;
+        if (g.bad) chHtml = `<span class="ch">\uFFFD</span>`;
+        else if (multi) chHtml = k === 0 ? `<span class="ch">${esc(String.fromCodePoint(g.cp))}</span>` : `<span class="ch" aria-hidden="true">·</span>`;
+        else { const s = shown(g.cp); chHtml = `<span class="ch${s.ctl ? " ctl" : ""}">${esc(s.t)}</span>`; }
+        h += `<button type="button" class="tile" data-i="${idx}" aria-pressed="${idx === sel}" aria-label="Byte ${idx + 1}: ${b8(b)}, dezimal ${b}">` +
+          chHtml + `<span class="bits">${b8(b)}</span><span class="meta">${b} · 0x${hx(b)}</span></button>`;
+        idx++;
+      });
+      if (multi) h += `<span class="group-tag">UTF-8</span>`;
+      h += `</div>`;
+    });
+    $("tiles").innerHTML = h;
+  }
+
+  function locate(i) {
+    let n = 0;
+    for (const g of groups) { if (i < n + g.bytes.length) return { g, k: i - n }; n += g.bytes.length; }
+    return null;
+  }
+
+  function renderDetail() {
+    const loc = locate(sel), d = $("detail");
+    if (!loc) { d.hidden = true; return; }
+    d.hidden = false;
+    const { g, k } = loc, b = g.bytes[k], bits = b8(b).split("").map(Number);
+    const multi = g.bytes.length > 1;
+
+    // UTF-8-Kennbits
+    let mark = 0;
+    if (multi || g.bad) {
+      if (k > 0) mark = 2;
+      else { while (mark < 8 && bits[mark] === 1) mark++; mark = Math.min(mark + 1, 8); }
+      if (g.bad) mark = 0;
+    }
+
+    let big, bigCtl = false;
+    if (g.bad) big = "\uFFFD";
+    else if (multi) big = String.fromCodePoint(g.cp);
+    else { const s = shown(g.cp); big = s.t; bigCtl = s.ctl; }
+
+    const vals = [128, 64, 32, 16, 8, 4, 2, 1];
+    let t = `<div class="place"><table class="pv" aria-label="Stellenwerttabelle">`;
+    t += `<tr><th class="rl">Potenz</th>${vals.map((v, i) => `<th>2<sup>${7 - i}</sup></th>`).join("")}</tr>`;
+    t += `<tr><td class="rl">Stellenwert</td>${vals.map((v, i) => `<td class="val ${bits[i] ? "on" : "off"}">${v}</td>`).join("")}</tr>`;
+    t += `<tr><td class="rl">Bit</td>${bits.map((x, i) => `<td><span class="bit b${x}${i < mark ? " mark" : ""}">${x}</span></td>`).join("")}</tr>`;
+    t += `<tr class="nib"><td class="rl">Hex</td><td class="nb" colspan="4">${bits.slice(0, 4).join("")} = ${hx(b)[0]}</td><td class="nb" colspan="4">${bits.slice(4).join("")} = ${hx(b)[1]}</td></tr>`;
+    t += `</table></div>`;
+
+    const parts = vals.filter((v, i) => bits[i]);
+    const sum = parts.length ? `${parts.map(v => `<b>${v}</b>`).join(" + ")} = <b>${b}</b>` : `alle Bits 0 = <b>0</b>`;
+
+    let note = "";
+    if (g.bad) {
+      note = `<div class="note err"><p>Dieses Byte passt nicht in eine gültige UTF-8-Folge. Es ergibt deshalb kein Zeichen.</p></div>`;
+    } else if (multi) {
+      const cpHex = g.cp.toString(16).toUpperCase().padStart(4, "0");
+      const pattern = g.bytes.length === 2 ? "110xxxxx 10xxxxxx" : g.bytes.length === 3 ? "1110xxxx 10xxxxxx 10xxxxxx" : "11110xxx 10xxxxxx 10xxxxxx 10xxxxxx";
+      note = `<div class="note"><p><b>«${esc(big)}» ist kein ASCII-Zeichen.</b> ASCII reicht nur von 0 bis 127. Das Zeichen hat in Unicode die Nummer U+${cpHex} (dezimal ${g.cp}) und wird in UTF-8 mit ${g.bytes.length} Bytes gespeichert: <code>${pattern}</code>.</p>` +
+        `<p><span class="legend-mark"></span>Markierte Bits sind UTF-8-Kennbits. Dies ist Byte ${k + 1} von ${g.bytes.length}. Allein betrachtet ist der Wert ${b} keine Zeichennummer.</p></div>`;
+    } else if (b < 32 || b === 127) {
+      note = `<div class="note special"><p><b>Steuerzeichen ${CTL[b] || ""}</b>${CTL_LONG[b] ? ": " + CTL_LONG[b] : ""}. Die Werte 0–31 und 127 sind in ASCII keine sichtbaren Zeichen, sondern Steuerbefehle.</p></div>`;
+    } else if (b === 32) {
+      note = `<div class="note special"><p><b>Leerzeichen</b> (SP): Auch der Abstand zwischen Wörtern ist ein Zeichen mit eigenem Code.</p></div>`;
+    }
+
+    const label = g.bad ? "ungültig" : multi ? `UTF-8 · Byte ${k + 1}/${g.bytes.length}` : "ASCII";
+    d.innerHTML = `<div class="detail-top"><div class="big${bigCtl ? " ctl" : ""}">${esc(big)}</div>` +
+      `<dl class="facts"><div><dt>Binär</dt><dd>${b8(b)}</dd></div><div><dt>Dezimal</dt><dd>${b}</dd></div><div><dt>Hex</dt><dd>0x${hx(b)}</dd></div><div><dt>Art</dt><dd style="font-size:.9rem">${label}</dd></div></dl></div>` +
+      t + `<div class="sum">${sum}</div>` + note;
+  }
+
+  // Events
+  $("txt").addEventListener("input", fromTxtInput);
+  $("bin").addEventListener("input", fromBinInput);
+  $("spaced").addEventListener("change", () => {
+    store.set("ab-spaced", $("spaced").checked ? "1" : "0");
+    if ($("bin").getAttribute("aria-invalid") !== "true") $("bin").value = groupsToBin(groups, $("spaced").checked);
+  });
+  $("clear").addEventListener("click", () => { $("txt").value = ""; fromTxtInput(); $("txt").focus(); });
+  $("tiles").addEventListener("click", e => {
+    const t = e.target.closest(".tile"); if (!t) return;
+    sel = +t.dataset.i;
+    document.querySelectorAll(".tile").forEach(x => x.setAttribute("aria-pressed", +x.dataset.i === sel));
+    renderDetail();
+  });
+  function copy(id, btn) {
+    const el = $(id), old = btn.textContent;
+    const done = ok => { btn.textContent = ok ? "Kopiert" : "Markiert, mit Strg+C kopieren"; setTimeout(() => { btn.textContent = old; }, 1600); };
+    try {
+      navigator.clipboard.writeText(el.value).then(() => done(true), () => { el.select(); done(false); });
+    } catch (e) { el.select(); done(false); }
+  }
+  $("copyTxt").addEventListener("click", e => copy("txt", e.currentTarget));
+  $("copyBin").addEventListener("click", e => copy("bin", e.currentTarget));
+
+  function setVariant(v) {
+    app.dataset.variant = v; root.dataset.variant = v;
+    $("varA").setAttribute("aria-pressed", v === "a"); $("varB").setAttribute("aria-pressed", v === "b");
+    store.set("ab-variant", v);
+  }
+  function setBeamer(on) {
+    if (on) root.dataset.beamer = "1"; else delete root.dataset.beamer;
+    $("beamer").setAttribute("aria-pressed", on);
+    store.set("ab-beamer", on ? "1" : "0");
+  }
+  $("varA").addEventListener("click", () => setVariant("a"));
+  $("varB").addEventListener("click", () => setVariant("b"));
+  $("beamer").addEventListener("click", () => setBeamer(root.dataset.beamer !== "1"));
+
+  setVariant(store.get("ab-variant") === "b" ? "b" : "a");
+  setBeamer(store.get("ab-beamer") === "1");
+  if (store.get("ab-spaced") === "0") $("spaced").checked = false;
+  $("txt").value = "Hallo, Bülach!";
+  fromTxtInput();
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,570 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik
+  Zielgruppe: Schüler:innen, Modulo-Rechnen und Diffie-Hellman bekannt
+  Gerät: gemischt (Desktop/Handy)
+  Interaktivität: voll – Primzahlen/e wählbar, Schlüsselerzeugung als Schritt-Simulation (Vor/Zurück), Ver-/Entschlüsselungs-Rechner (ASCII, BigInt)
+  Übungen: 5 Aufgaben mit einblendbaren Lösungen
+  Datenhaltung: nur gewählte Design-Variante pro Browser (localStorage, Komfort)
+  Export: keiner (Kopierknopf beim Python-Code)
+  Design: Nord-Farbschema, Open Sans + Google Sans Code
+  Varianten (umschaltbar oben rechts): «Klar» (hell, ruhige Flächen, runde Karten) · «Technisch» (Polar-Night-Kopf und Codeblöcke auch im hellen Modus, Festbreite für Labels und Schrittnummern)
+-->
+<title>RSA Schritt für Schritt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: eine Lesespalte (~70 Zeichen), interaktive Teile etwas breiter; Abschnitte folgen dem Ablauf Idee → Schlüssel → Rechnen → Sicherheit → Code → Übungen → Vergleich */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+
+  --bg:var(--nord6);--surface:var(--nord5);--surface-2:var(--nord4);
+  --text:var(--nord0);--text-muted:var(--nord3);
+  --accent:var(--nord10);--accent-soft:var(--nord9);
+  --ok:var(--nord14);--warn:var(--nord13);--bad:var(--nord11);--special:var(--nord15);--info:var(--nord8);
+
+  --hero-bg:var(--nord5);--hero-fg:var(--nord0);--hero-muted:var(--nord3);--hero-mark:var(--nord10);
+  --code-bg:var(--nord5);--code-fg:var(--nord0);
+  --syn-kw:var(--nord10);--syn-fn:var(--nord10);--syn-num:var(--nord0);--syn-str:var(--nord3);--syn-com:var(--nord3);
+  --card-bg:var(--nord5);--card-border:transparent;
+  --radius:14px;--radius-sm:10px;
+
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --label-font:var(--font);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);
+    --text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);
+    --hero-bg:var(--nord1);--hero-fg:var(--nord6);--hero-muted:var(--nord4);--hero-mark:var(--nord8);
+    --code-bg:var(--nord1);--code-fg:var(--nord6);
+    --syn-kw:var(--nord9);--syn-fn:var(--nord8);--syn-num:var(--nord15);--syn-str:var(--nord14);--syn-com:rgba(216,222,233,.65);
+    --card-bg:var(--nord1);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);
+  --text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);
+  --hero-bg:var(--nord1);--hero-fg:var(--nord6);--hero-muted:var(--nord4);--hero-mark:var(--nord8);
+  --code-bg:var(--nord1);--code-fg:var(--nord6);
+  --syn-kw:var(--nord9);--syn-fn:var(--nord8);--syn-num:var(--nord15);--syn-str:var(--nord14);--syn-com:rgba(216,222,233,.65);
+  --card-bg:var(--nord1);
+  color-scheme:dark;
+}
+/* Variante «Technisch»: dunkler Kopf und dunkler Code in beiden Themen, Festbreite für Labels */
+:root[data-variant="tech"]{
+  --hero-bg:var(--nord0);--hero-fg:var(--nord6);--hero-muted:var(--nord4);--hero-mark:var(--nord8);
+  --code-bg:var(--nord0);--code-fg:var(--nord6);
+  --syn-kw:var(--nord9);--syn-fn:var(--nord8);--syn-num:var(--nord15);--syn-str:var(--nord14);--syn-com:rgba(216,222,233,.6);
+  --card-bg:transparent;--card-border:var(--surface-2);
+  --radius:6px;--radius-sm:4px;
+  --label-font:var(--font-mono);
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.6;margin:0;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+:focus-visible{outline:3px solid var(--accent-soft);outline-offset:2px;border-radius:4px}
+h1,h2,h3{text-wrap:balance;line-height:1.25;margin:0}
+h1{font-size:clamp(2rem,6vw,3rem);font-weight:700}
+h2{font-size:clamp(1.45rem,3.6vw,1.9rem);font-weight:700}
+h3{font-size:1.1rem;font-weight:600}
+p{margin:0}
+code,kbd,samp,.mono{font-family:var(--font-mono)}
+:not(pre)>code{font-size:.9em;background:var(--surface);padding:.1em .35em;border-radius:4px}
+sup{font-size:.7em}
+
+.wrap{max-width:960px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.prose{max-width:70ch}
+.prose>*+*{margin-top:.9em}
+
+/* Kopfleiste */
+.topbar{background:var(--hero-bg);color:var(--hero-fg)}
+.topbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-block:12px;flex-wrap:wrap}
+.crumb{font-family:var(--label-font);font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;color:var(--hero-muted)}
+.switch{display:inline-flex;border:1px solid var(--hero-muted);border-radius:999px;padding:2px;gap:2px}
+.switch button{border:0;background:transparent;color:var(--hero-fg);padding:4px 12px;border-radius:999px;font-size:.85rem;cursor:pointer}
+.switch button[aria-pressed="true"]{background:var(--hero-mark);color:var(--nord0);font-weight:600}
+
+/* Hero */
+.hero{background:var(--hero-bg);color:var(--hero-fg);border-bottom:1px solid var(--surface-2)}
+.hero .wrap{padding-block:28px 40px;display:grid;gap:22px}
+.hero .lead{font-size:1.15rem;max-width:62ch;color:var(--hero-fg)}
+.hero .lead strong{font-weight:700}
+.hero-eyebrow{font-family:var(--label-font);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:var(--hero-muted)}
+.lockflow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:6px}
+.lockflow li{list-style:none;border:1px solid var(--hero-muted);border-radius:var(--radius);padding:14px 16px;display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:start;min-width:0}
+.lockflow svg{width:44px;height:44px;color:var(--hero-mark)}
+.lockflow b{display:block;font-weight:600}
+.lockflow span{font-size:.95rem;color:var(--hero-muted)}
+.lockflow ol,.lockflow{padding:0;margin:0}
+@media (max-width:720px){.lockflow{grid-template-columns:1fr}}
+
+main section{padding-block:44px;border-bottom:1px solid var(--surface-2)}
+main section:last-of-type{border-bottom:0}
+.sec-head{display:grid;gap:6px;margin-bottom:18px}
+.eyebrow{font-family:var(--label-font);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.eyebrow::before{content:"";width:10px;height:10px;background:var(--accent-soft);border-radius:2px}
+
+.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:18px 20px}
+.merke{border-left:5px solid var(--special);background:var(--surface);border-radius:var(--radius-sm);padding:14px 18px;max-width:70ch}
+.merke .tag,.hinweis .tag{font-family:var(--label-font);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px}
+.hinweis{border-left:5px solid var(--warn);background:var(--surface);border-radius:var(--radius-sm);padding:14px 18px;max-width:70ch}
+
+.formula{font-family:var(--font-mono);font-size:1.05rem;background:var(--code-bg);color:var(--code-fg);border-radius:var(--radius-sm);padding:12px 16px;overflow-x:auto;white-space:nowrap}
+.formula .k{color:var(--syn-kw)}
+
+/* Einwegfunktion */
+.oneway{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}
+.oneway .card{display:grid;gap:8px;min-width:0}
+.oneway .dir{font-family:var(--label-font);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);font-weight:600}
+.oneway .big{font-family:var(--font-mono);font-size:1.35rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pill{display:inline-block;font-size:.78rem;font-weight:700;padding:2px 9px;border-radius:999px;color:var(--nord0);white-space:nowrap}
+.pill.ok{background:var(--ok)}.pill.bad{background:var(--bad)}.pill.pub{background:var(--info)}.pill.sec{background:var(--warn)}
+@media (max-width:640px){.oneway{grid-template-columns:1fr}}
+
+/* Simulation */
+.controls{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:end;margin-bottom:18px}
+.field{display:grid;gap:4px}
+.field label{font-size:.85rem;font-weight:600;color:var(--text-muted)}
+.field select,.field input{background:var(--bg);border:1px solid var(--surface-2);border-radius:8px;padding:7px 10px;min-width:90px}
+.field input{min-width:0;width:min(320px,100%)}
+.sim{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px}
+@media (max-width:800px){.sim{grid-template-columns:1fr}}
+.stepcard{display:grid;gap:14px;align-content:start;min-width:0}
+.stepnav{display:flex;gap:6px;flex-wrap:wrap}
+.stepnav button{width:34px;height:34px;border-radius:999px;border:1px solid var(--surface-2);background:var(--bg);cursor:pointer;font-family:var(--label-font);font-weight:600}
+.stepnav button[aria-current="step"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.stepnav button.done{border-color:var(--accent-soft)}
+.stepcard h3{font-size:1.25rem}
+.stepcard .num{font-family:var(--label-font);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-weight:600}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--bg);padding:8px 16px;border-radius:999px;cursor:pointer;font-weight:600}
+.btn.ghost{background:transparent;color:var(--text);border-color:var(--surface-2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:root[data-variant="tech"] .btn,:root[data-variant="tech"] .stepnav button{border-radius:6px}
+
+.board{display:grid;gap:10px;align-content:start;min-width:0}
+.board h3{font-size:1rem}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-variant-numeric:tabular-nums}
+.kv .name{font-family:var(--font-mono);font-weight:600}
+.kv .val{font-family:var(--font-mono);overflow-wrap:anywhere}
+.kv .row-hidden{opacity:.28}
+.keys{display:grid;gap:10px;margin-top:6px}
+.keybox{border-radius:var(--radius-sm);padding:10px 14px;border:2px solid var(--info)}
+.keybox.priv{border-color:var(--warn)}
+.keybox b{display:block;font-size:.9rem}
+.keybox .mono{font-size:1.1rem}
+
+/* Tabelle */
+.tablewrap{overflow-x:auto;border:1px solid var(--surface-2);border-radius:var(--radius-sm);margin-top:14px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--surface-2);vertical-align:top}
+th{font-size:.85rem;font-weight:600;color:var(--text-muted);background:var(--surface)}
+tr:last-child td{border-bottom:0}
+td.m{font-family:var(--font-mono)}
+.cipher{font-family:var(--font-mono);background:var(--code-bg);color:var(--code-fg);padding:12px 16px;border-radius:var(--radius-sm);overflow-x:auto;margin-top:14px}
+.cipher small{display:block;font-family:var(--font);opacity:.75;margin-bottom:2px}
+.parties{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:18px}
+@media (max-width:640px){.parties{grid-template-columns:1fr}}
+
+/* Code */
+.codeblock{position:relative;background:var(--code-bg);color:var(--code-fg);border-radius:var(--radius-sm);margin-top:16px}
+.codeblock pre{margin:0;padding:16px 18px;overflow-x:auto;font-size:.9em;line-height:1.5}
+.codeblock .copy{position:absolute;top:8px;right:8px;border:1px solid currentColor;background:transparent;color:inherit;border-radius:6px;padding:3px 10px;font-size:.8rem;cursor:pointer;opacity:.8}
+.kw{color:var(--syn-kw);font-weight:600}.fn{color:var(--syn-fn)}.nu{color:var(--syn-num)}.st{color:var(--syn-str)}.co{color:var(--syn-com);font-style:italic}
+
+/* Übungen */
+.tasks{display:grid;gap:14px;counter-reset:task}
+.task{display:grid;gap:10px}
+.task h3::before{counter-increment:task;content:"Aufgabe " counter(task) " · ";font-family:var(--label-font);color:var(--text-muted);font-weight:600}
+details{border-top:1px dashed var(--surface-2);padding-top:8px}
+summary{cursor:pointer;font-weight:600;color:var(--accent)}
+details[open] summary{margin-bottom:8px}
+details .sol{display:grid;gap:8px}
+
+/* Vergleich */
+.vs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-block:18px}
+@media (max-width:700px){.vs{grid-template-columns:1fr}}
+.vs .card{display:grid;gap:10px;min-width:0}
+.vs ol{margin:0;padding-left:1.3em;display:grid;gap:4px}
+.vs .label{font-family:var(--label-font);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.vs .dh{border-top:5px solid var(--ok)}
+.vs .rsa{border-top:5px solid var(--accent-soft)}
+.cmp th:first-child,.cmp td:first-child{font-weight:600;min-width:150px}
+.cmp td{min-width:200px}
+.same{color:var(--text-muted);font-style:italic}
+
+footer{padding-block:28px 40px;color:var(--text-muted);font-size:.9rem}
+
+@media (prefers-reduced-motion:no-preference){
+  .stepcard .body{animation:fade .25s ease}
+  @keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+}
+</style>
+
+<header>
+  <div class="topbar">
+    <div class="wrap">
+      <span class="crumb">Informatik · Kryptologie</span>
+      <div class="switch" role="group" aria-label="Design-Variante">
+        <button type="button" id="v-klar" data-v="klar" aria-pressed="true">Klar</button>
+        <button type="button" id="v-tech" data-v="tech" aria-pressed="false">Technisch</button>
+      </div>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="wrap">
+      <span class="hero-eyebrow">Asymmetrische Verschlüsselung</span>
+      <h1>RSA Schritt für Schritt</h1>
+      <p class="lead">Bei Diffie-Hellman einigen sich Alice und Bob auf ein gemeinsames Geheimnis. RSA geht einen Schritt weiter: <strong>Bob hat zwei Schlüssel</strong>. Den einen darf die ganze Welt kennen, den anderen kennt nur er.</p>
+      <ol class="lockflow" aria-label="Die Idee mit dem Vorhängeschloss">
+        <li>
+          <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M14 20v-6a8 8 0 0 1 16 0" /><rect x="9" y="20" width="26" height="18" rx="3" /></svg>
+          <div><b>1. Bob verteilt offene Schlösser</b><span>Das offene Schloss ist der öffentliche Schlüssel. Jede:r darf eines haben.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M14 20v-6a8 8 0 0 1 16 0v6" /><rect x="9" y="20" width="26" height="18" rx="3" /><path d="M22 27v5" /></svg>
+          <div><b>2. Alice lässt es zuschnappen</b><span>Sie legt ihre Nachricht in eine Kiste und schliesst ab. Zuschnappen braucht keinen Schlüssel.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="14" cy="22" r="7" /><path d="M21 22h17M32 22v6M37 22v4" /></svg>
+          <div><b>3. Nur Bob kann öffnen</b><span>Den passenden Schlüssel, den privaten Schlüssel, hat nur Bob. Auch Alice kann die Kiste nicht mehr öffnen.</span></div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- 1 Idee -->
+  <section id="idee">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Die Grundidee</span><h2>Eine Einbahnstrasse mit Hintertür</h2></div>
+      <div class="prose">
+        <p>RSA braucht eine Rechnung, die in die eine Richtung leicht und in die andere Richtung extrem schwer ist. Bei Diffie-Hellman war das der diskrete Logarithmus. Bei RSA ist es das <strong>Multiplizieren von Primzahlen</strong>.</p>
+      </div>
+      <div class="oneway">
+        <div class="card">
+          <span class="dir">Vorwärts · leicht</span>
+          <span class="big" id="ow-forward">61 × 53 = 3233</span>
+          <p>Eine einzige Multiplikation. <span class="pill ok">✓ sofort</span></p>
+        </div>
+        <div class="card">
+          <span class="dir">Rückwärts · schwer</span>
+          <span class="big" id="ow-back">3233 = ? × ?</span>
+          <p id="ow-tries">Man muss Teiler durchprobieren: 2, 3, 5, 7, …</p>
+        </div>
+      </div>
+      <div class="prose" style="margin-top:20px">
+        <p>Mit kleinen Zahlen ist das Probieren noch harmlos. Echte RSA-Schlüssel verwenden aber ein <code>n</code> mit 2048 Bit, also eine Zahl mit rund 617 Dezimalstellen. Der Rekord liegt bei einer 829-Bit-Zahl (RSA-250, 2020), und dafür brauchte ein Forschungsteam rechnerisch etwa 2700 Jahre Rechenzeit eines einzelnen Prozessorkerns.</p>
+        <p>Die <em>Hintertür</em>: Wer die beiden Primzahlen <code>p</code> und <code>q</code> kennt, kann den privaten Schlüssel leicht berechnen. Bob wählt sie selbst und verrät sie niemandem.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 Schlüsselerzeugung -->
+  <section id="schluessel">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Simulation · Bob erzeugt seine Schlüssel</span><h2>In sechs Schritten zum Schlüsselpaar</h2></div>
+      <div class="controls">
+        <div class="field"><label for="sel-p">Primzahl p</label><select id="sel-p"></select></div>
+        <div class="field"><label for="sel-q">Primzahl q</label><select id="sel-q"></select></div>
+        <div class="field"><label for="sel-e">Exponent e</label><select id="sel-e"></select></div>
+      </div>
+      <div class="sim">
+        <div class="card stepcard">
+          <nav class="stepnav" aria-label="Schritte" id="stepnav"></nav>
+          <div class="body" id="stepbody" aria-live="polite"></div>
+          <div class="btnrow">
+            <button class="btn ghost" type="button" id="prev">← Zurück</button>
+            <button class="btn" type="button" id="next">Weiter →</button>
+          </div>
+        </div>
+        <aside class="card board" aria-label="Bobs Notizzettel">
+          <h3>Bobs Notizzettel</h3>
+          <div class="kv" id="kv"></div>
+          <div class="keys" id="keys" hidden>
+            <div class="keybox"><b>Öffentlicher Schlüssel <span class="pill pub">für alle</span></b><span class="mono" id="pubkey"></span></div>
+            <div class="keybox priv"><b>Privater Schlüssel <span class="pill sec">nur Bob</span></b><span class="mono" id="privkey"></span></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 Verschlüsseln -->
+  <section id="rechnen">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Rechner · mit den Schlüsseln von oben</span><h2>Verschlüsseln und entschlüsseln</h2></div>
+      <div class="parties">
+        <div class="card">
+          <h3>Alice verschlüsselt</h3>
+          <p>Sie verwandelt jedes Zeichen in eine Zahl <code>m</code> (ASCII) und rechnet mit Bobs öffentlichem Schlüssel:</p>
+          <p class="formula" style="margin-top:10px">c = m<sup>e</sup> mod n</p>
+        </div>
+        <div class="card">
+          <h3>Bob entschlüsselt</h3>
+          <p>Er rechnet mit seinem privaten Schlüssel <code>d</code> und erhält wieder <code>m</code>:</p>
+          <p class="formula" style="margin-top:10px">m = c<sup>d</sup> mod n</p>
+        </div>
+      </div>
+      <div class="field"><label for="msg">Nachricht (bis 16 Zeichen)</label><input id="msg" type="text" maxlength="16" value="HALLO BOB" autocomplete="off" spellcheck="false"></div>
+      <p id="keyline" style="margin-top:10px;color:var(--text-muted)"></p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">Zeichen</th><th scope="col">m (ASCII)</th><th scope="col">c = m<sup>e</sup> mod n</th><th scope="col">c<sup>d</sup> mod n</th><th scope="col">Zurück</th></tr></thead>
+          <tbody id="enc-body"></tbody>
+        </table>
+      </div>
+      <div class="cipher"><small>Das sieht Eve auf der Leitung:</small><span id="cipher-out"></span></div>
+      <div class="hinweis" style="margin-top:18px"><span class="tag">⚠ Achtung</span>Buchstabe für Buchstabe zu verschlüsseln ist nur zum Verstehen gedacht. Schau dir in der Tabelle an, was mit gleichen Buchstaben passiert. Mehr dazu in Aufgabe 5.</div>
+    </div>
+  </section>
+
+  <!-- 4 Warum -->
+  <section id="warum">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Hintergrund</span><h2>Warum klappt das, und warum ist es sicher?</h2></div>
+      <div class="prose">
+        <p><strong>Warum Bob wieder <code>m</code> erhält:</strong> <code>e</code> und <code>d</code> sind so gewählt, dass <code>e · d = k · φ(n) + 1</code>. Wer erst mit <code>e</code> und dann mit <code>d</code> potenziert, rechnet insgesamt <code>m<sup>k·φ(n)+1</sup></code>. Der Satz von Euler sagt: <code>m<sup>φ(n)</sup> mod n = 1</code>. Also bleibt am Ende nur <code>m<sup>1</sup> = m</code> übrig. Die beiden Exponenten heben sich gegenseitig auf.</p>
+        <p><strong>Warum Eve <code>d</code> nicht findet:</strong> Eve kennt <code>n</code> und <code>e</code>. Um <code>d</code> zu berechnen, bräuchte sie <code>φ(n) = (p−1)(q−1)</code>, und dafür <code>p</code> und <code>q</code>. Sie müsste also <code>n</code> in seine Primfaktoren zerlegen. Genau das ist bei grossen Zahlen praktisch unmöglich.</p>
+      </div>
+      <div class="merke" style="margin-top:18px"><span class="tag">Merke</span>Die Sicherheit von RSA beruht darauf, dass niemand grosse Zahlen schnell in Primfaktoren zerlegen kann. Wer <code>n</code> faktorisiert, kennt <code>φ(n)</code> und damit den privaten Schlüssel <code>d</code>.</div>
+    </div>
+  </section>
+
+  <!-- 5 Code -->
+  <section id="code">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Python</span><h2>RSA in neun Zeilen</h2></div>
+      <div class="prose"><p>Python kann modulare Potenzen direkt: <code>pow(m, e, n)</code> rechnet <code>m<sup>e</sup> mod n</code>, und <code>pow(e, -1, phi)</code> findet das modulare Inverse (ab Python 3.8).</p></div>
+      <div class="codeblock">
+        <button class="copy" type="button" id="copy">Kopieren</button>
+<pre id="pycode">p, q =<span class="nu">61</span>, <span class="nu">53</span>
+n = p * q                  <span class="co"># 3233 (öffentlich)</span>
+phi = (p - <span class="nu">1</span>) * (q - <span class="nu">1</span>)    <span class="co"># 3120 (geheim)</span>
+e = <span class="nu">17</span>                     <span class="co"># öffentlicher Exponent</span>
+d = <span class="fn">pow</span>(e, -<span class="nu">1</span>, phi)        <span class="co"># 2753 (privat)</span>
+
+m = <span class="fn">ord</span>(<span class="st">"A"</span>)               <span class="co"># 65</span>
+c = <span class="fn">pow</span>(m, e, n)           <span class="co"># verschlüsseln: 2790</span>
+<span class="fn">print</span>(<span class="fn">pow</span>(c, d, n))         <span class="co"># entschlüsseln: 65</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 Übungen -->
+  <section id="uebungen">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Selbst rechnen</span><h2>Übungen</h2></div>
+      <div class="tasks">
+        <article class="card task">
+          <h3>Schlüsselpaar von Hand</h3>
+          <p>Bob wählt <code>p = 5</code> und <code>q = 11</code> sowie <code>e = 3</code>. Berechne <code>n</code>, <code>φ(n)</code> und <code>d</code>. Verschlüssle dann <code>m = 2</code>.</p>
+          <details><summary>Lösung anzeigen</summary><div class="sol">
+            <p><code>n = 5 · 11 = 55</code>, <code>φ(n) = 4 · 10 = 40</code>.</p>
+            <p>Gesucht ist <code>d</code> mit <code>3 · d mod 40 = 1</code>: <code>3 · 27 = 81 = 2 · 40 + 1</code>, also <code>d = 27</code>.</p>
+            <p><code>c = 2<sup>3</sup> mod 55 = 8</code>. Kontrolle: <code>8<sup>27</sup> mod 55 = 2</code> ✓</p>
+          </div></details>
+        </article>
+        <article class="card task">
+          <h3>Ein verbotenes e</h3>
+          <p>Mit <code>p = 5</code>, <code>q = 11</code> möchte Bob <code>e = 4</code> verwenden. Warum geht das nicht?</p>
+          <details><summary>Lösung anzeigen</summary><div class="sol">
+            <p><code>φ(n) = 40</code> und <code>ggT(4, 40) = 4</code>. Weil <code>e</code> und <code>φ(n)</code> nicht teilerfremd sind, gibt es kein <code>d</code> mit <code>4 · d mod 40 = 1</code>: <code>4 · d</code> ist immer gerade, <code>k · 40 + 1</code> immer ungerade.</p>
+          </div></details>
+        </article>
+        <article class="card task">
+          <h3>Eve knackt einen Mini-Schlüssel</h3>
+          <p>Eve fängt Bobs öffentlichen Schlüssel <code>(n, e) = (33, 7)</code> und die Geheimzahl <code>c = 16</code> ab. Finde <code>d</code> und die Nachricht <code>m</code>.</p>
+          <details><summary>Lösung anzeigen</summary><div class="sol">
+            <p>Faktorisieren: <code>33 = 3 · 11</code>, also <code>φ(n) = 2 · 10 = 20</code>.</p>
+            <p><code>7 · d mod 20 = 1</code>: <code>7 · 3 = 21</code>, also <code>d = 3</code>.</p>
+            <p><code>m = 16<sup>3</sup> mod 33 = 4096 mod 33 = 4</code>. Der Angriff klappt nur, weil <code>n</code> winzig ist.</p>
+          </div></details>
+        </article>
+        <article class="card task">
+          <h3>Welcher Schlüssel wofür?</h3>
+          <p>(a) Alice will Bob eine geheime Nachricht schicken. Wessen Schlüssel benutzt sie, den öffentlichen oder den privaten? (b) Bob will beweisen, dass eine Nachricht wirklich von ihm stammt (digitale Signatur). Mit welchem Schlüssel rechnet er?</p>
+          <details><summary>Lösung anzeigen</summary><div class="sol">
+            <p>(a) Bobs <strong>öffentlichen</strong> Schlüssel. Nur Bob kann mit seinem privaten Schlüssel entschlüsseln.</p>
+            <p>(b) Seinen eigenen <strong>privaten</strong> Schlüssel. Alle können die Signatur dann mit Bobs öffentlichem Schlüssel prüfen, aber nur Bob konnte sie erzeugen.</p>
+          </div></details>
+        </article>
+        <article class="card task">
+          <h3>Gleiche Buchstaben</h3>
+          <p>Verschlüssle oben im Rechner das Wort <code>HALLO</code>. Was fällt bei den beiden <code>L</code> auf? Warum ist das ein Problem?</p>
+          <details><summary>Lösung anzeigen</summary><div class="sol">
+            <p>Beide <code>L</code> ergeben dieselbe Geheimzahl. RSA ohne Zufall ist deterministisch: gleiche Eingabe, gleiche Ausgabe. Eve kann dann wie bei der Caesar-Verschlüsselung Häufigkeiten zählen, oder einfach alle 95 Zeichen mit dem öffentlichen Schlüssel selbst verschlüsseln und vergleichen.</p>
+            <p>In der Praxis wird deshalb nie zeichenweise verschlüsselt, und vor dem Verschlüsseln kommen zufällige Füllbits dazu (Padding, z. B. OAEP).</p>
+          </div></details>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 Vergleich -->
+  <section id="vergleich">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow">Vergleich</span><h2>Diffie-Hellman und RSA</h2></div>
+      <div class="prose"><p>Beide Verfahren lösen dasselbe Grundproblem: Alice und Bob haben sich nie getroffen und kommunizieren über eine Leitung, die Eve abhört. Sie gehen aber verschieden vor.</p></div>
+      <div class="vs">
+        <div class="card dh">
+          <span class="label">Diffie-Hellman · 1976</span>
+          <h3>Gemeinsam ein Geheimnis bauen</h3>
+          <ol>
+            <li>Öffentlich: Primzahl <code>p</code>, Basis <code>g</code></li>
+            <li>Alice: geheim <code>a</code>, sendet <code>A = g<sup>a</sup> mod p</code></li>
+            <li>Bob: geheim <code>b</code>, sendet <code>B = g<sup>b</sup> mod p</code></li>
+            <li>Beide: <code>K = B<sup>a</sup> = A<sup>b</sup> mod p</code></li>
+          </ol>
+          <p>Beide müssen mitmachen. Am Ende haben beide denselben Schlüssel <code>K</code>.</p>
+        </div>
+        <div class="card rsa">
+          <span class="label">RSA · 1977</span>
+          <h3>Ein Schloss für alle, ein Schlüssel für einen</h3>
+          <ol>
+            <li>Bob erzeugt <code>(n, e)</code> und <code>d</code></li>
+            <li>Bob veröffentlicht <code>(n, e)</code></li>
+            <li>Alice sendet <code>c = m<sup>e</sup> mod n</code></li>
+            <li>Bob: <code>m = c<sup>d</sup> mod n</code></li>
+          </ol>
+          <p>Alice braucht nur Bobs öffentlichen Schlüssel. Bob muss dafür nicht einmal online sein.</p>
+        </div>
+      </div>
+      <div class="tablewrap">
+        <table class="cmp">
+          <thead><tr><th scope="col">Merkmal</th><th scope="col">Diffie-Hellman</th><th scope="col">RSA</th></tr></thead>
+          <tbody>
+            <tr><td>Wozu?</td><td>Gemeinsamen geheimen Schlüssel vereinbaren</td><td>Verschlüsseln und digital signieren</td></tr>
+            <tr><td>Schwieriges Problem</td><td>Diskreter Logarithmus: aus <code>g<sup>a</sup> mod p</code> das <code>a</code> finden</td><td>Faktorisierung: aus <code>n</code> die Primzahlen <code>p</code> und <code>q</code> finden</td></tr>
+            <tr><td>Rechenoperation</td><td colspan="2" class="same">Bei beiden die modulare Potenz <code>x<sup>y</sup> mod z</code></td></tr>
+            <tr><td>Öffentlich</td><td><code>p</code>, <code>g</code>, <code>A</code>, <code>B</code></td><td><code>n</code>, <code>e</code></td></tr>
+            <tr><td>Geheim</td><td><code>a</code>, <code>b</code> und das Ergebnis <code>K</code></td><td><code>d</code>, sowie <code>p</code>, <code>q</code>, <code>φ(n)</code></td></tr>
+            <tr><td>Ablauf</td><td>Interaktiv: beide schicken sich gegenseitig etwas</td><td>Einseitig: Absender braucht nur den öffentlichen Schlüssel (z. B. E-Mail)</td></tr>
+            <tr><td>Schlüsselart</td><td>Ergebnis ist ein symmetrischer Schlüssel für z. B. AES</td><td>Schlüsselpaar: öffentlich und privat (asymmetrisch)</td></tr>
+            <tr><td>Echtheit (Man-in-the-Middle)</td><td>Allein kein Schutz: Eve kann sich dazwischenschalten</td><td>Signaturen beweisen, wer etwas geschickt hat (Zertifikate)</td></tr>
+            <tr><td>Wenn der Langzeitschlüssel später gestohlen wird</td><td>Mit jedes Mal neuen <code>a</code>, <code>b</code> bleiben alte Gespräche geheim (Forward Secrecy)</td><td>Wer <code>d</code> stiehlt, kann alle alten mitgeschnittenen Nachrichten lesen</td></tr>
+            <tr><td>Übliche Schlüssellänge</td><td colspan="2" class="same">Beide etwa 2048 bis 3072 Bit; die Varianten mit elliptischen Kurven kommen mit rund 256 Bit aus</td></tr>
+            <tr><td>Quantencomputer</td><td colspan="2" class="same">Beide wären mit dem Shor-Algorithmus angreifbar; deshalb werden neue, quantensichere Verfahren eingeführt</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="merke" style="margin-top:20px"><span class="tag">Merke · Im Alltag arbeiten beide zusammen</span>Wenn dein Browser eine HTTPS-Seite öffnet (TLS 1.3), vereinbaren Browser und Server mit Diffie-Hellman (auf elliptischen Kurven) einen frischen Sitzungsschlüssel. Mit einer RSA-Signatur im Zertifikat beweist der Server, dass er wirklich der richtige Server ist. Die eigentlichen Daten verschlüsselt danach das schnelle, symmetrische AES.</div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">Lernmaterial Informatik · Die Rechnungen auf dieser Seite verwenden kleine Primzahlen zum Verstehen. Echte Schlüssel sind hunderte Stellen lang.</div></footer>
+
+<script>
+(function(){
+  const root=document.documentElement;
+  // Variante
+  function setVariant(v){
+    if(v==="tech") root.setAttribute("data-variant","tech"); else root.removeAttribute("data-variant");
+    document.querySelectorAll(".switch button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===(v==="tech"?"tech":"klar"))));
+    try{localStorage.setItem("rsa-variant",v)}catch(e){}
+  }
+  let saved="klar"; try{saved=localStorage.getItem("rsa-variant")||"klar"}catch(e){}
+  setVariant(saved);
+  document.querySelectorAll(".switch button").forEach(b=>b.addEventListener("click",()=>setVariant(b.dataset.v)));
+
+  // Mathe
+  const PRIMES=[11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97];
+  const gcd=(a,b)=>{while(b){[a,b]=[b,a%b]}return a};
+  function modinv(e,m){let [r0,r1]=[m,e],[t0,t1]=[0,1];while(r1){const q=Math.floor(r0/r1);[r0,r1]=[r1,r0-q*r1];[t0,t1]=[t1,t0-q*t1]}return ((t0%m)+m)%m}
+  function modpow(b,e,m){let B=BigInt(b),E=BigInt(e),M=BigInt(m),r=1n;B%=M;while(E>0n){if(E&1n)r=r*B%M;B=B*B%M;E>>=1n}return Number(r)}
+
+  const st={p:61,q:53,e:17,step:0};
+  const $=id=>document.getElementById(id);
+  const selP=$("sel-p"),selQ=$("sel-q"),selE=$("sel-e");
+
+  function fillPrimes(){
+    selP.innerHTML=PRIMES.map(x=>`<option value="${x}" ${x===st.p?"selected":""} ${x===st.q?"disabled":""}>${x}</option>`).join("");
+    selQ.innerHTML=PRIMES.map(x=>`<option value="${x}" ${x===st.q?"selected":""} ${x===st.p?"disabled":""}>${x}</option>`).join("");
+  }
+  function calc(){
+    const n=st.p*st.q, phi=(st.p-1)*(st.q-1);
+    const cands=[3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73].filter(x=>x<phi&&gcd(x,phi)===1);
+    if(!cands.includes(st.e)) st.e=cands.includes(17)?17:cands[0];
+    const d=modinv(st.e,phi);
+    return {n,phi,cands,d};
+  }
+
+  const STEPS=[
+    {t:"Zwei Primzahlen wählen",show:["p","q"],
+     b:(v)=>`<p>Bob wählt zwei verschiedene Primzahlen. Sie bleiben sein Geheimnis. In der Praxis haben sie je über 300 Stellen.</p><p class="formula">p = ${st.p}, q = ${st.q}</p>`},
+    {t:"Das Produkt n berechnen",show:["p","q","n"],
+     b:(v)=>`<p>Bob multipliziert die beiden Primzahlen. <code>n</code> wird Teil des öffentlichen Schlüssels. Die Faktoren verrät es nicht.</p><p class="formula">n = p · q = ${st.p} · ${st.q} = ${v.n}</p>`},
+    {t:"φ(n) berechnen",show:["p","q","n","phi"],
+     b:(v)=>`<p>Die Euler'sche φ-Funktion zählt, wie viele Zahlen von 1 bis n keinen gemeinsamen Teiler mit n haben. Für n = p · q gilt eine einfache Formel. Sie funktioniert aber nur, wenn man p und q kennt.</p><p class="formula">φ(n) = (p − 1)(q − 1) = ${st.p-1} · ${st.q-1} = ${v.phi}</p>`},
+    {t:"Den Exponenten e wählen",show:["p","q","n","phi","e"],
+     b:(v)=>`<p>Bob wählt eine Zahl <code>e</code> zwischen 1 und φ(n), die mit φ(n) keinen gemeinsamen Teiler hat. Probiere oben eine andere Wahl aus; ungeeignete Werte stehen gar nicht zur Auswahl.</p><p class="formula">ggT(e, φ(n)) = ggT(${st.e}, ${v.phi}) = ${gcd(st.e,v.phi)} <span class="k">✓</span></p><p style="color:var(--text-muted);font-size:.95rem">In echten Schlüsseln ist fast immer e = 65537.</p>`},
+    {t:"Den privaten Schlüssel d berechnen",show:["p","q","n","phi","e","d"],
+     b:(v)=>{const k=(st.e*v.d-1)/v.phi;return `<p>Gesucht ist die Zahl <code>d</code>, für die <code>e · d</code> geteilt durch φ(n) den Rest 1 lässt. Man findet sie mit dem erweiterten euklidischen Algorithmus.</p><p class="formula">e · d mod φ(n) = 1 → d = ${v.d}</p><p class="formula">Probe: ${st.e} · ${v.d} = ${st.e*v.d} = ${k} · ${v.phi} + 1</p>`}},
+    {t:"Fertig: das Schlüsselpaar",show:["p","q","n","phi","e","d"],keys:true,
+     b:(v)=>`<p>Bob veröffentlicht <code>(n, e)</code>. Den Wert <code>d</code> behält er für sich. <code>p</code>, <code>q</code> und <code>φ(n)</code> braucht er nicht mehr und hält sie ebenfalls geheim, denn wer sie kennt, kann <code>d</code> ausrechnen.</p><p class="formula">öffentlich (${v.n}, ${st.e}) · privat ${v.d}</p>`}
+  ];
+  const ROWS=[["p","p",true],["q","q",true],["n","n",false],["phi","φ(n)",true],["e","e",false],["d","d",true]];
+
+  function render(){
+    const v=calc();
+    fillPrimes();
+    selE.innerHTML=v.cands.map(x=>`<option value="${x}" ${x===st.e?"selected":""}>${x}</option>`).join("");
+    const S=STEPS[st.step];
+    $("stepnav").innerHTML=STEPS.map((s,i)=>`<button type="button" data-i="${i}" aria-label="Schritt ${i+1}: ${s.t}" ${i===st.step?'aria-current="step"':""} class="${i<st.step?"done":""}">${i+1}</button>`).join("");
+    $("stepbody").innerHTML=`<span class="num">Schritt ${st.step+1} von ${STEPS.length}</span><h3>${S.t}</h3><div style="display:grid;gap:10px;margin-top:10px">${S.b(v)}</div>`;
+    $("stepbody").style.animation="none";void $("stepbody").offsetWidth;$("stepbody").style.animation="";
+    $("prev").disabled=st.step===0;$("next").disabled=st.step===STEPS.length-1;
+    const vals={p:st.p,q:st.q,n:v.n,phi:v.phi,e:st.e,d:v.d};
+    $("kv").innerHTML=ROWS.map(([k,lab,sec])=>{const on=S.show.includes(k);return `<span class="name ${on?"":"row-hidden"}">${lab}</span><span class="val ${on?"":"row-hidden"}">${on?vals[k]:"?"}</span><span class="${on?"":"row-hidden"}"><span class="pill ${sec?"sec":"pub"}">${sec?"geheim":"öffentlich"}</span></span>`}).join("");
+    $("keys").hidden=!S.keys;
+    $("pubkey").textContent=`(n, e) = (${v.n}, ${st.e})`;
+    $("privkey").textContent=`d = ${v.d}`;
+    // Einwegfunktion
+    $("ow-forward").textContent=`${st.p} × ${st.q} = ${v.n}`;
+    $("ow-back").textContent=`${v.n} = ? × ?`;
+    const small=Math.min(st.p,st.q);let tries=0;for(let x=2;x<=small;x++){let pr=true;for(let y=2;y*y<=x;y++)if(x%y===0){pr=false;break}if(pr)tries++}
+    $("ow-tries").innerHTML=`Man muss Teiler durchprobieren: 2, 3, 5, 7, … Erst beim ${tries}. Versuch klappt es mit ${small}. <span class="pill bad">✗ wird mit jeder Stelle viel langsamer</span>`;
+    encrypt(v);
+  }
+
+  function encrypt(v){
+    const raw=$("msg").value;
+    const txt=[...raw].filter(ch=>{const c=ch.charCodeAt(0);return c>=32&&c<=126});
+    $("keyline").innerHTML=`Öffentlicher Schlüssel (n, e) = <code>(${v.n}, ${st.e})</code> · privater Schlüssel d = <code>${v.d}</code>`;
+    if(!txt.length){$("enc-body").innerHTML=`<tr><td colspan="5">Gib oben eine Nachricht ein, z. B. HALLO.</td></tr>`;$("cipher-out").textContent="–";return}
+    const rows=txt.map(ch=>{const m=ch.charCodeAt(0),c=modpow(m,st.e,v.n),back=modpow(c,v.d,v.n);return {ch,m,c,back}});
+    const esc=s=>s===" "?"␣":s.replace(/[&<>"]/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[x]));
+    $("enc-body").innerHTML=rows.map(r=>`<tr><td class="m">${esc(r.ch)}</td><td class="m">${r.m}</td><td class="m">${r.c}</td><td class="m">${r.back}</td><td class="m">${esc(String.fromCharCode(r.back))}</td></tr>`).join("");
+    $("cipher-out").textContent=rows.map(r=>r.c).join("  ");
+  }
+
+  selP.addEventListener("change",()=>{st.p=+selP.value;render()});
+  selQ.addEventListener("change",()=>{st.q=+selQ.value;render()});
+  selE.addEventListener("change",()=>{st.e=+selE.value;render()});
+  $("prev").addEventListener("click",()=>{if(st.step>0){st.step--;render()}});
+  $("next").addEventListener("click",()=>{if(st.step<STEPS.length-1){st.step++;render()}});
+  $("stepnav").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.step=+b.dataset.i;render()}});
+  $("msg").addEventListener("input",()=>encrypt(calc()));
+
+  $("copy").addEventListener("click",()=>{
+    const text=$("pycode").innerText;const btn=$("copy");
+    const done=()=>{btn.textContent="Kopiert";setTimeout(()=>btn.textContent="Kopieren",1500)};
+    const fallback=()=>{const r=document.createRange();r.selectNodeContents($("pycode"));const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent="Markiert – Ctrl+C"};
+    try{navigator.clipboard.writeText(text).then(done,fallback)}catch(e){fallback()}
+  });
+
+  render();
+})();
+</script>
+
+</body></html>
