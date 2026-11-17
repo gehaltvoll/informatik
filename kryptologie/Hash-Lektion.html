@@ -228,8 +228,8 @@ html[data-variant="b"] .chip{border-radius:2px}
     </div>
     <div class="card">
       <h3 style="margin-top:0">H2: Mischen und Falten</h3>
-      <p>Start mit h = 0. Für jeden Buchstaben der Reihe nach: h mal 3 nehmen, Buchstabenwert addieren, nur die letzten zwei Ziffern behalten.</p>
-      <p class="mono" style="font-size:.85rem">h = (h · 3 + Wert) mod 100</p>
+      <p>Ein <strong>Zwischenwert z</strong> sammelt das Ergebnis. Er startet bei z = 0. Für jeden Buchstaben der Reihe nach: z mal 3 nehmen, Buchstabenwert addieren, nur die letzten zwei Ziffern behalten. Der letzte Zwischenwert ist der Hashwert.</p>
+      <p class="mono" style="font-size:.85rem">z = (z · 3 + Wert) mod 100</p>
     </div>
   </div>
   <div class="card">
@@ -552,7 +552,7 @@ window.addEventListener('hashchange',()=>{route();window.scrollTo(0,0)}); route(
 function handUpdate(){
   const raw=$('handIn').value.toUpperCase().replace(/Ä/g,'AE').replace(/Ö/g,'OE').replace(/Ü/g,'UE');
   const w=raw.replace(/[^A-Z]/g,'');
-  let s=0,h=0,rows='<thead><tr><th>Buchstabe</th><th>Wert</th><th>h · 3 + Wert</th><th>neues h (mod 100)</th></tr></thead><tbody><tr><td>Start</td><td></td><td></td><td class="mono">0</td></tr>';
+  let s=0,h=0,rows='<thead><tr><th>Buchstabe</th><th>Wert</th><th>z · 3 + Wert</th><th>neuer Zwischenwert z (mod 100)</th></tr></thead><tbody><tr><td>Start</td><td></td><td></td><td class="mono">0</td></tr>';
   for(const c of w){const v=c.charCodeAt(0)-64; s+=v; const t=h*3+v; rows+=`<tr><td class="mono">${c}</td><td class="mono">${v}</td><td class="mono">${h} · 3 + ${v} = ${t}</td><td class="mono"><strong>${t%100}</strong></td></tr>`; h=t%100;}
   rows+='</tbody>';
   $('h1v').textContent=w?s%100:'–'; $('h2v').textContent=w?h:'–';
