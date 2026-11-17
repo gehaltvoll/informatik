@@ -3,13 +3,13 @@
 Einsatztyp: Lernmaterial Informatik, Zielgruppe Schüler:innen (Gymnasium), Gerät gemischt (Laptop bevorzugt)
 Fokus: kryptografische Hashfunktionen, 1 Lektion (45 Min), Partnerarbeit an Stationen
 Funktionen: volle Interaktivität (SHA-256 live, Avalanche-Raster, Integritätsprüfung, Wörterbuch-Angriff mit/ohne Salt, Kollisionsjagd, Quiz mit sofortiger Rückmeldung)
-Datenhaltung: nur gewählte Variante und Registerkarte pro Browser (localStorage/Hash), sonst keine
+Datenhaltung: keine (Registerkarte nur über die Adresse #station)
 Export: keiner (Ergebnisse kommen aufs Arbeitsblatt)
 Rückmeldung: sofort im Quiz und in Station 2, sonst Erkenntnisse einblendbar
-Varianten: A «Ruhig» (hell, abgerundet) und B «Technisch» (Polar-Night-Kopf und Hash-Ausgaben, eckig, Mono-Labels), umschaltbar
+Variante: B «Technisch» gewählt (Polar-Night-Kopf und Hash-Ausgaben, eckig, Mono-Labels); Variante A und Umschalter entfernt
 SHA-256 als eigene JS-Implementierung (synchron, funktioniert auch offline / file://)
 -->
-<html lang="de-CH" data-variant="a">
+<html lang="de-CH" data-variant="b">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,9 +48,6 @@ html[data-variant="b"] header.top{border-bottom:3px solid var(--nord8)}
 .top-inner{max-width:1080px;margin:0 auto;padding:22px 16px 14px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
 .kicker{font-family:var(--label-font);text-transform:var(--label-transform);letter-spacing:var(--label-spacing);font-size:.8rem;opacity:.85;margin:0}
 h1{margin:2px 0 0;font-size:clamp(1.6rem,4vw,2.3rem);line-height:1.2;font-weight:700}
-.switch{display:flex;gap:0;border:1px solid var(--nord9);border-radius:var(--r-sm);overflow:hidden}
-.switch button{border:0;background:transparent;padding:6px 12px;cursor:pointer;font-size:.85rem;font-family:var(--label-font);text-transform:var(--label-transform);letter-spacing:var(--label-spacing);color:inherit}
-.switch button[aria-pressed="true"]{background:var(--nord8);color:var(--nord0);font-weight:600}
 
 nav.tabs{background:var(--surface);border-bottom:1px solid var(--surface-2);position:sticky;top:0;z-index:5}
 html[data-variant="b"] nav.tabs{background:var(--nord1);border-bottom-color:var(--nord2)}
@@ -165,10 +162,6 @@ html[data-variant="b"] .chip{border-radius:2px}
     <div>
       <p class="kicker">Informatik · Kryptologie</p>
       <h1>Hashfunktionen: Der digitale Fingerabdruck</h1>
-    </div>
-    <div class="switch" role="group" aria-label="Design-Variante">
-      <button type="button" data-v="a" aria-pressed="true">Variante A · Ruhig</button>
-      <button type="button" data-v="b" aria-pressed="false">Variante B · Technisch</button>
     </div>
   </div>
 </header>
@@ -514,14 +507,7 @@ function sha256(str){
 const $=id=>document.getElementById(id);
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-/* ---------- Variante & Navigation ---------- */
-function setVariant(v){
-  document.documentElement.dataset.variant=v;
-  document.querySelectorAll('.switch button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v?'true':'false'));
-  try{localStorage.setItem('hash-variant',v)}catch(e){}
-}
-document.querySelectorAll('.switch button').forEach(b=>b.addEventListener('click',()=>setVariant(b.dataset.v)));
-try{const v=localStorage.getItem('hash-variant'); if(v==='a'||v==='b')setVariant(v)}catch(e){}
+/* ---------- Navigation ---------- */
 const views=['start','von-hand','labor','integritaet','passwoerter','kollision','quiz'];
 function route(){
   let h=(location.hash||'#start').slice(1); if(!views.includes(h))h='start';
