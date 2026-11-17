@@ -2,7 +2,7 @@
 <!-- Entscheidungen:
 Einsatztyp: Lernmaterial Informatik, Zielgruppe Schüler:innen (Gymnasium), Gerät gemischt (Laptop bevorzugt)
 Fokus: kryptografische Hashfunktionen, 1 Lektion (45 Min), Partnerarbeit an Stationen
-Funktionen: volle Interaktivität (SHA-256 live, Avalanche-Raster, Integritätsprüfung, Wörterbuch-Angriff mit/ohne Salt, Kollisionsjagd, Quiz mit sofortiger Rückmeldung)
+Funktionen: volle Interaktivität (SHA-256 live, Abstecher Binär/Hex mit 8 umschaltbaren Bits in Station 02, Avalanche-Raster, Integritätsprüfung, Wörterbuch-Angriff mit/ohne Salt, Kollisionsjagd, Quiz mit sofortiger Rückmeldung)
 Datenhaltung: keine (Registerkarte nur über die Adresse #station)
 Export: keiner (Ergebnisse kommen aufs Arbeitsblatt)
 Rückmeldung: sofort im Quiz und in Station 2, sonst Erkenntnisse einblendbar
@@ -153,6 +153,14 @@ html[data-variant="b"] .chip{border-radius:2px}
 .fp{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}
 .fp .box{padding:8px 12px;border:1px solid var(--nord9);border-radius:var(--r-sm);background:var(--nord6)}
 .fp .arrow{font-size:1.4rem;color:var(--nord3)}
+.nibbles{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.nibbles .gapx{width:14px}
+.nibbles button{width:44px;height:52px;border:1px solid var(--nord3);background:var(--nord6);border-radius:var(--r-sm);cursor:pointer;font-family:var(--font-mono);font-size:1.3rem;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.nibbles button small{font-size:.62rem;font-weight:400;color:var(--text-muted)}
+.nibbles button[aria-pressed="true"]{background:var(--nord0);color:var(--nord8);border-color:var(--nord0)}
+.nibbles button[aria-pressed="true"] small{color:var(--nord4)}
+.hextab td,.hextab th{text-align:center;font-family:var(--font-mono);font-size:.82rem;padding:4px 6px}
+.hextab td.on{background:var(--nord8);color:var(--nord0);font-weight:600}
 @media (max-width:560px){.bits{grid-template-columns:repeat(16,1fr)}}
 </style>
 </head>
@@ -265,6 +273,30 @@ html[data-variant="b"] .chip{border-radius:2px}
     <div class="eyebrow" style="margin-top:12px">SHA-256</div>
     <div class="hashout" id="labOut" aria-live="polite"></div>
     <div class="meta">Eingabe: <b id="labLenIn">5</b> Zeichen · Hashwert: <b id="labLenOut">64</b> Hexzeichen = 256 Bit</div>
+  </div>
+
+  <div class="card" id="hexbox">
+    <p class="eyebrow">Abstecher</p>
+    <h3 style="margin-top:0">Binär und Hexadezimal: Warum 64 Zeichen = 256 Bit?</h3>
+    <p>Computer rechnen mit Bits (0 und 1). Ein Hashwert aus 256 Bit wäre als Binärzahl unlesbar lang. Deshalb fasst man immer <strong>4 Bit</strong> zu einem <strong>Hexadezimalzeichen</strong> zusammen: Mit 4 Bit gibt es 2<sup>4</sup> = 16 Möglichkeiten, also braucht man 16 Ziffern: 0 bis 9 und A bis F.</p>
+    <div class="eyebrow" style="margin-top:12px">Klicken Sie auf die Bits</div>
+    <div class="nibbles" id="nibbles" role="group" aria-label="8 Bit zum Umschalten"></div>
+    <p class="meta" style="margin-top:8px">Binär <b id="nbBin">0000 0000</b> · Dezimal <b id="nbDec">0</b> · Hexadezimal <b id="nbHex">00</b></p>
+    <div class="tablewrap" style="margin-top:12px"><table class="hextab" id="hexTab"></table></div>
+    <div class="eyebrow" style="margin-top:16px">Die ersten 4 Zeichen Ihres Hashwerts oben</div>
+    <div class="hashout" id="hexFromHash"></div>
+    <div class="auftrag" style="margin-bottom:0">
+      <span class="tag">Kurzauftrag</span>
+      <ol>
+        <li>Stellen Sie mit den Bits die Hexzeichen <code>A</code>, <code>F</code> und <code>3C</code> ein.</li>
+        <li>Wie viele Bit stecken in einem Hexzeichen? Erklären Sie damit, warum 64 Hexzeichen genau 256 Bit sind.</li>
+      </ol>
+    </div>
+    <details class="sol" style="margin-bottom:0">
+      <summary>Lösung einblenden</summary>
+      <p><code>A</code> = 1010, <code>F</code> = 1111, <code>3C</code> = 0011 1100 (dezimal 60).</p>
+      <p style="margin:0">Ein Hexzeichen steht für genau 4 Bit. 64 · 4 Bit = 256 Bit. Zwei Hexzeichen sind ein Byte (8 Bit), SHA-256 liefert also 32 Byte.</p>
+    </details>
   </div>
 
   <h3>Lawineneffekt</h3>
@@ -529,7 +561,31 @@ function handUpdate(){
 $('handIn').addEventListener('input',handUpdate); handUpdate();
 
 /* ---------- 02 Labor ---------- */
-function labUpdate(){const t=$('labIn').value; $('labOut').textContent=sha256(t); $('labLenIn').textContent=[...t].length;}
+function labUpdate(){const t=$('labIn').value; const h=sha256(t); $('labOut').textContent=h; $('labLenIn').textContent=[...t].length;
+  $('hexFromHash').innerHTML=[...h.slice(0,4)].map(c=>`${c.toUpperCase()} = ${parseInt(c,16).toString(2).padStart(4,'0')}`).join(' &nbsp;·&nbsp; ');}
+/* Abstecher Binär/Hex */
+const nbBits=[0,0,0,0,0,0,0,0];
+(function(){
+  const box=$('nibbles');
+  nbBits.forEach((_,i)=>{ if(i===4){const g=document.createElement('span');g.className='gapx';box.appendChild(g);}
+    const b=document.createElement('button'); b.type='button'; b.setAttribute('aria-pressed','false');
+    b.setAttribute('aria-label','Bit mit Wert '+(2**(7-i)));
+    b.innerHTML=`<span>0</span><small>${2**((7-i)%4)}</small>`;
+    b.addEventListener('click',()=>{nbBits[i]^=1;nbUpdate();}); box.appendChild(b);});
+  let t='<tr><th>Hex</th>'+[...'0123456789ABCDEF'].map(c=>`<td id="hx${c}">${c}</td>`).join('')+'</tr>';
+  t+='<tr><th>Binär</th>'+[...Array(16).keys()].map(n=>`<td>${n.toString(2).padStart(4,'0')}</td>`).join('')+'</tr>';
+  $('hexTab').innerHTML=t;
+})();
+function nbUpdate(){
+  const btns=$('nibbles').querySelectorAll('button');
+  btns.forEach((b,i)=>{b.setAttribute('aria-pressed',nbBits[i]?'true':'false'); b.querySelector('span').textContent=nbBits[i];});
+  const hi=nbBits.slice(0,4).join(''), lo=nbBits.slice(4).join(''), v=parseInt(hi+lo,2);
+  const hx=v.toString(16).toUpperCase().padStart(2,'0');
+  $('nbBin').textContent=hi+' '+lo; $('nbDec').textContent=v; $('nbHex').textContent=hx;
+  document.querySelectorAll('#hexTab td.on').forEach(td=>td.classList.remove('on'));
+  new Set(hx).forEach(c=>$('hx'+c).classList.add('on'));
+}
+nbUpdate();
 $('labIn').addEventListener('input',labUpdate); labUpdate();
 const bitsEl=$('bits'); for(let i=0;i<256;i++)bitsEl.appendChild(document.createElement('span'));
 function hexBits(hx){let b='';for(const c of hx)b+=parseInt(c,16).toString(2).padStart(4,'0');return b;}
