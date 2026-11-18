@@ -180,7 +180,7 @@ html[data-variant="b"] .chip{border-radius:2px}
     <a href="#labor"><span class="n">02</span>Hash-Labor</a>
     <a href="#integritaet"><span class="n">03</span>Integrität</a>
     <a href="#passwoerter"><span class="n">04</span>Passwörter</a>
-    <a href="#kollision"><span class="n">05</span>Kollisionsjagd</a>
+    <a href="#doppelgaenger"><span class="n">05</span>Doppelgänger</a>
     <a href="#quiz"><span class="n">06</span>Quiz</a>
   </div>
 </nav>
@@ -203,7 +203,7 @@ html[data-variant="b"] .chip{border-radius:2px}
   <div class="flow">
     <div><span class="t">5 Min</span><b>Einstieg</b>Leitfrage oben, kurz zu zweit diskutieren.</div>
     <div><span class="t">10 Min · Gruppen</span><b>01 Von Hand</b>Hashwerte mit Papier und Stift berechnen.</div>
-    <div><span class="t">20 Min · zu zweit</span><b>02 bis 05 Stationen</b>Labor, Integrität, Passwörter, Kollisionsjagd.</div>
+    <div><span class="t">20 Min · zu zweit</span><b>02 bis 05 Stationen</b>Labor, Integrität, Passwörter, Doppelgänger.</div>
     <div><span class="t">10 Min</span><b>06 Quiz und Sicherung</b>Quiz, Merksätze auf dem Arbeitsblatt.</div>
   </div>
   <div class="auftrag">
@@ -413,8 +413,8 @@ html[data-variant="b"] .chip{border-radius:2px}
 </section>
 
 <!-- KOLLISION -->
-<section class="view" id="v-kollision">
-  <p class="eyebrow">Station 05</p>
+<section class="view" id="v-doppelgaenger">
+  <p class="eyebrow">Station 05 · Doppelgänger</p>
   <h2>Kollisionsjagd</h2>
   <p class="lead">Eine Kollision bedeutet: zwei verschiedene Eingaben, gleicher Hashwert. Bei SHA-256 hat noch nie jemand eine gefunden. Hier jagen Sie mit einem gekürzten «Mini-SHA», der nur die ersten Bit des Hashwerts verwendet.</p>
   <div class="auftrag">
@@ -540,7 +540,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ---------- Navigation ---------- */
-const views=['start','von-hand','labor','integritaet','passwoerter','kollision','quiz'];
+const views=['start','von-hand','labor','integritaet','passwoerter','doppelgaenger','quiz'];
 function route(){
   let h=(location.hash||'#start').slice(1); if(!views.includes(h))h='start';
   views.forEach(v=>$('v-'+v).classList.toggle('active',v===h));
