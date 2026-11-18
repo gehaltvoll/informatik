@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Entscheidungen:
-Einsatztyp: Lernmaterial Informatik, Zielgruppe Schüler:innen (Gymnasium), Gerät gemischt (Laptop bevorzugt)
+Einsatztyp: Lernmaterial Informatik (am Anfang eingebettet: «Prüfziffern im Alltag» als Vorspann, Startansicht), Zielgruppe Schüler:innen (Gymnasium), Gerät gemischt (Laptop bevorzugt)
 Fokus: kryptografische Hashfunktionen, 1 Lektion (45 Min), Partnerarbeit an Stationen
 Funktionen: volle Interaktivität (SHA-256 live, Abstecher Binär/Hex mit 8 umschaltbaren Bits in Station 02, Avalanche-Raster, Integritätsprüfung, Wörterbuch-Angriff mit/ohne Salt, Kollisionsjagd, Quiz mit sofortiger Rückmeldung)
 Datenhaltung: keine (Registerkarte nur über die Adresse #station)
@@ -161,6 +161,80 @@ html[data-variant="b"] .chip{border-radius:2px}
 .nibbles button[aria-pressed="true"] small{color:var(--nord4)}
 .hextab td,.hextab th{text-align:center;font-family:var(--font-mono);font-size:.82rem;padding:4px 6px}
 .hextab td.on{background:var(--nord8);color:var(--nord0);font-weight:600}
+
+/* ---------- Prüfziffern (eingebettet aus «Prüfziffern im Alltag») ---------- */
+#v-pruefziffern{--bg:var(--nord6);--surface:#fff;--surface-2:var(--nord5);--line:var(--nord4);--text:var(--nord0);--muted:var(--nord3);
+  --accent:var(--nord10);--ok:var(--nord14);--warn:var(--nord13);--bad:var(--nord11);--special:var(--nord15);--info:var(--nord8);color:var(--text)}
+#v-pruefziffern p{max-width:none}
+#v-pruefziffern .btn{font-family:var(--font);text-transform:none;letter-spacing:normal;color:var(--text)}
+#v-pruefziffern table{width:auto}
+#v-pruefziffern th{text-transform:none;letter-spacing:normal;color:var(--text);font-size:.85rem}
+#v-pruefziffern input{width:auto}
+#v-pruefziffern h1{margin:0;font-size:1.75rem;font-weight:700;text-wrap:balance}
+#v-pruefziffern h2{margin:0;font-size:1.2rem;font-weight:600;text-wrap:balance}
+#v-pruefziffern p{margin:0}
+#v-pruefziffern .lead{max-width:70ch;color:var(--text)}
+#v-pruefziffern code{font-family:var(--font-mono);font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+#v-pruefziffern code.wrap{display:block;word-break:break-all;padding:4px 8px;margin-top:4px;line-height:1.5}
+#v-pruefziffern .merke{border-left:4px solid var(--special);background:color-mix(in srgb,var(--special) 12%,var(--surface));border-radius:8px;padding:12px 14px;max-width:70ch}
+#v-pruefziffern .merke strong{display:block;margin-bottom:2px}
+#v-pruefziffern .tag{font-size:.75rem;font-weight:600;padding:2px 10px;border-radius:99px;background:var(--c,var(--accent));color:var(--nord0)}
+#v-pruefziffern .facts{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:.92rem}
+#v-pruefziffern .facts dt{color:var(--muted);font-weight:600}
+#v-pruefziffern .facts dd{margin:0}
+#v-pruefziffern .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#v-pruefziffern .ctl label{font-weight:600;font-size:.9rem;width:100%}
+#v-pruefziffern .ctl input{flex:1 1 260px;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--bg);font-family:var(--font-mono);font-size:1rem;letter-spacing:.02em}
+#v-pruefziffern .btn{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:.86rem;font-weight:600}
+#v-pruefziffern .btn:hover{border-color:var(--accent)}
+#v-pruefziffern .res{font-weight:600;padding:8px 12px;border-radius:8px;background:var(--surface-2)}
+#v-pruefziffern .res.ok{background:color-mix(in srgb,var(--ok) 30%,var(--surface))}
+#v-pruefziffern .res.bad{background:color-mix(in srgb,var(--bad) 25%,var(--surface))}
+#v-pruefziffern .res.ok::before{content:"✓ "}
+#v-pruefziffern .res.bad::before{content:"✗ "}
+#v-pruefziffern .res .pd{font-family:var(--font-mono);font-size:1.05em;padding:0 4px;border-radius:4px;background:var(--surface)}
+#v-pruefziffern .tbl{overflow-x:auto}
+#v-pruefziffern table{border-collapse:collapse;font-family:var(--font-mono);font-size:.85rem;font-variant-numeric:tabular-nums}
+#v-pruefziffern th,#v-pruefziffern td{border:1px solid var(--line);padding:3px 7px;text-align:center;white-space:nowrap}
+#v-pruefziffern th{font-family:var(--font);font-weight:600;text-align:left;background:var(--surface-2)}
+#v-pruefziffern tr.w td{color:var(--muted)}
+#v-pruefziffern tr.p td{font-weight:600}
+#v-pruefziffern .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+#v-pruefziffern .deck{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:16px}
+#v-pruefziffern .slide{display:flex;flex-direction:column;gap:18px}
+#v-pruefziffern .slide[hidden]{display:none}
+#v-pruefziffern .slide.plain{min-height:320px;justify-content:center;padding:12px 8px}
+#v-pruefziffern .slide.plain h1{font-size:2rem}
+#v-pruefziffern .merke.big{font-size:1.2rem;line-height:1.6;padding:20px 22px;max-width:none}
+#v-pruefziffern .merke.big strong{font-size:1.35rem;margin-bottom:8px}
+#v-pruefziffern .btn:disabled{opacity:.45;cursor:default}
+#v-pruefziffern .intro{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:center}
+#v-pruefziffern .intro figure{margin:0;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+#v-pruefziffern .intro figure svg{display:block;width:100%;height:auto}
+#v-pruefziffern .txt{display:flex;flex-direction:column;gap:10px}
+#v-pruefziffern .count{font-family:var(--font-mono);font-size:.8rem;color:var(--muted)}
+#v-pruefziffern .txt h2{font-size:1.45rem;font-weight:700}
+#v-pruefziffern .num{font-family:var(--font-mono);font-size:1.05rem;background:var(--surface-2);border-radius:8px;padding:8px 12px;word-break:break-all}
+#v-pruefziffern .num mark{background:var(--bad);color:var(--nord0);font-weight:600;border-radius:3px;padding:0 2px}
+#v-pruefziffern .hint{font-size:.88rem;color:var(--muted)}
+#v-pruefziffern .calc{border-top:4px solid var(--c);background:var(--bg);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+#v-pruefziffern .calc-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px}
+#v-pruefziffern .calc h3{margin:0;font-size:1.1rem;font-weight:600}
+#v-pruefziffern .calc .ctl input{background:var(--surface)}
+#v-pruefziffern .res{background:var(--surface)}
+#v-pruefziffern .steps-host{display:flex;flex-direction:column;gap:8px;font-size:.92rem}
+#v-pruefziffern .deck-nav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#v-pruefziffern .deck-nav.bottom{border-top:1px solid var(--line);padding-top:12px}
+#v-pruefziffern .deck-nav .btn{white-space:nowrap}
+#v-pruefziffern .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+#v-pruefziffern .dots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+#v-pruefziffern .dots button{width:12px;height:12px;border-radius:50%;border:1px solid var(--muted);background:transparent;padding:0;cursor:pointer}
+#v-pruefziffern .dots button[aria-current="true"]{background:var(--accent);border-color:var(--accent)}
+@media (max-width:700px){#v-pruefziffern .intro{grid-template-columns:1fr}#v-pruefziffern .deck{padding:12px}#v-pruefziffern .deck-nav{flex-wrap:wrap}#v-pruefziffern .dots{order:-1;width:100%}#v-pruefziffern .deck-nav .btn{flex:1}}
+@media (max-width:480px){#v-pruefziffern .facts{grid-template-columns:1fr}#v-pruefziffern .facts dt{margin-top:4px}}
+@media (prefers-reduced-motion:reduce){#v-pruefziffern *{scroll-behavior:auto!important}}
+#v-pruefziffern .btn.primary{color:var(--nord6)}
+
 @media (max-width:560px){.bits{grid-template-columns:repeat(16,1fr)}}
 </style>
 </head>
@@ -175,6 +249,7 @@ html[data-variant="b"] .chip{border-radius:2px}
 </header>
 <nav class="tabs" aria-label="Stationen">
   <div class="tabs-inner">
+    <a href="#pruefziffern"><span class="n">··</span>Prüfziffern</a>
     <a href="#start"><span class="n">00</span>Start</a>
     <a href="#von-hand"><span class="n">01</span>Von Hand</a>
     <a href="#labor"><span class="n">02</span>Hash-Labor</a>
@@ -186,8 +261,30 @@ html[data-variant="b"] .chip{border-radius:2px}
 </nav>
 
 <main>
+<!-- PRUEFZIFFERN -->
+<section class="view" id="v-pruefziffern">
+  <p class="eyebrow">Vorspann</p>
+  <section class="deck" id="pz-deck" aria-roledescription="Folien" aria-label="Prüfziffern im Alltag">
+    <div class="deck-nav">
+      <button type="button" class="btn" id="pz-prev" aria-label="Vorheriges Beispiel">← Zurück</button>
+      <div class="dots" id="pz-dots"></div>
+      <button type="button" class="btn primary" id="pz-next" aria-label="Nächstes Beispiel">Weiter →</button>
+    </div>
+    <div id="pz-slides"></div>
+    <div class="deck-nav bottom">
+      <button type="button" class="btn" id="pz-prev2">← Zurück</button>
+      <span class="count" id="pz-count2"></span>
+      <button type="button" class="btn primary" id="pz-next2">Weiter →</button>
+    </div>
+  </section>
+</section>
+
 <!-- START -->
 <section class="view" id="v-start">
+  <div class="auftrag" style="margin-top:0">
+    <span class="tag">Leitfrage</span>
+    <p style="margin:0">Eine Website will Ihr Passwort <strong>nicht</strong> speichern, beim Login aber trotzdem prüfen, ob es stimmt. Wie kann das funktionieren? Eine Prüfziffer reicht dafür nicht: Sie lässt sich von allen ausrechnen.</p>
+  </div>
   <p class="eyebrow">Überblick</p>
   <h2>Der digitale Fingerabdruck</h2>
   <p class="lead">Eine <strong>Hashfunktion</strong> macht aus einer Eingabe beliebiger Länge einen kurzen Wert fester Länge, den <strong>Hashwert</strong>.</p>
@@ -538,9 +635,9 @@ const $=id=>document.getElementById(id);
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ---------- Navigation ---------- */
-const views=['start','von-hand','labor','integritaet','passwoerter','doppelgaenger','quiz'];
+const views=['pruefziffern','start','von-hand','labor','integritaet','passwoerter','doppelgaenger','quiz'];
 function route(){
-  let h=(location.hash||'#start').slice(1); if(!views.includes(h))h='start';
+  let h=(location.hash||'#pruefziffern').slice(1); if(!views.includes(h))h='pruefziffern';
   views.forEach(v=>$('v-'+v).classList.toggle('active',v===h));
   document.querySelectorAll('.tabs a').forEach(a=>{ if(a.getAttribute('href')==='#'+h)a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
 }
@@ -705,6 +802,470 @@ function qRender(){
 }
 function qScore(){const n=Object.keys(qAns).length, r=Object.entries(qAns).filter(([i,j])=>QUIZ[i].a===j).length; $('qScore').textContent=`${r} von ${n} richtig · ${QUIZ.length-n} offen`;}
 $('qReset').addEventListener('click',()=>{qAns={};qRender();}); qRender();
+
+/* ---------- Prüfziffern (eingebettet) ---------- */
+(() => {
+
+// Illustrationen (SVG), fixe Farben unabhängig vom Theme
+const ILL = (() => {
+  const N = { n0:"#2E3440",n1:"#3B4252",n2:"#434C5E",n3:"#4C566A",n4:"#D8DEE9",n5:"#E5E9F0",n6:"#ECEFF4",n7:"#8FBCBB",n8:"#88C0D0",n9:"#81A1C1",n10:"#5E81AC",n11:"#BF616A",n12:"#D08770",n13:"#EBCB8B",n14:"#A3BE8C",n15:"#B48EAD" };
+  const MONO = `font-family="Google Sans Code, ui-monospace, Consolas, monospace"`;
+  const SANS = `font-family="Open Sans, system-ui, sans-serif"`;
+  const svg = (inner, label) => `<svg viewBox="0 0 480 300" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><rect width="480" height="300" fill="${N.n5}"/>${inner}</svg>`;
+  // Text mit markierten Teilen: parts = [normal, mark, normal, mark, ...]
+  const tx = (x, y, size, parts, opt = "") => `<text x="${x}" y="${y}" font-size="${size}" ${MONO} fill="${N.n0}" ${opt}>${parts.map((p, i) => i % 2 ? `<tspan fill="${N.n11}" font-weight="700">${p}</tspan>` : p.replace(/</g, "&lt;")).join("")}</text>`;
+  const label = (x, y, t, anchor = "start") => `<g><rect x="${anchor === "end" ? x - 92 : x}" y="${y - 15}" width="92" height="22" rx="11" fill="${N.n11}"/><text x="${anchor === "end" ? x - 46 : x + 46}" y="${y + 1}" font-size="12" font-weight="700" ${SANS} fill="#fff" text-anchor="middle">${t}</text></g>`;
+  const t = (x, y, size, s, opt = "") => `<text x="${x}" y="${y}" font-size="${size}" ${SANS} fill="${N.n0}" ${opt}>${s}</text>`;
+  const shadow = (x, y, w, h, r) => `<rect x="${x + 4}" y="${y + 6}" width="${w}" height="${h}" rx="${r}" fill="${N.n0}" opacity=".12"/>`;
+
+  // Echter EAN-13-Strichcode
+  const L = ["0001101","0011001","0010011","0111101","0100011","0110001","0101111","0111011","0110111","0001011"];
+  const G = ["0100111","0110011","0011011","0100001","0011101","0111001","0000101","0010001","0001001","0010111"];
+  const R = ["1110010","1100110","1101100","1000010","1011100","1001110","1010000","1000100","1001000","1110100"];
+  const PAR = ["LLLLLL","LLGLGG","LLGGLG","LLGGGL","LGLLGG","LGGLLG","LGGGLG","LGLGGL","LGLGLG","LGGLGL"];
+  function barcode(code, x, y, m, h) {
+    const d = code.split("").map(Number), p = PAR[d[0]];
+    let bits = "101";
+    for (let i = 1; i <= 6; i++) bits += (p[i - 1] === "L" ? L : G)[d[i]];
+    bits += "01010";
+    for (let i = 7; i <= 12; i++) bits += R[d[i]];
+    bits += "101";
+    let out = `<rect x="${x - 12 * m}" y="${y - 6}" width="${(95 + 20) * m}" height="${h + 26}" fill="#fff"/>`;
+    for (let i = 0; i < bits.length; i++) if (bits[i] === "1") {
+      const guard = i < 3 || (i >= 45 && i < 50) || i >= 92;
+      out += `<rect x="${x + i * m}" y="${y}" width="${m}" height="${h + (guard ? 8 : 0)}" fill="${N.n0}"/>`;
+    }
+    const fs = m * 9;
+    out += `<text x="${x - 8 * m}" y="${y + h + 14}" font-size="${fs}" ${MONO} fill="${N.n0}">${d[0]}</text>`;
+    out += `<text x="${x + 4 * m}" y="${y + h + 14}" font-size="${fs}" ${MONO} fill="${N.n0}" textLength="${41 * m}">${code.slice(1, 7)}</text>`;
+    out += `<text x="${x + 50 * m}" y="${y + h + 14}" font-size="${fs}" ${MONO} fill="${N.n0}" textLength="${41 * m}">${code.slice(7, 12)}<tspan fill="${N.n11}" font-weight="700">${code[12]}</tspan></text>`;
+    return out;
+  }
+
+  const smallCard = (x, y, w, h, fill) => shadow(x, y, w, h, 14) + `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="${fill}"/>`;
+
+  return {
+    ean: () => svg(
+      `<g transform="rotate(-4 240 150)">${shadow(110, 30, 260, 250, 6)}<rect x="110" y="30" width="260" height="250" rx="6" fill="${N.n13}"/>
+       <rect x="110" y="30" width="260" height="60" rx="6" fill="${N.n12}"/>${t(130, 70, 26, "Knusper-Müesli", `font-weight="700" fill="#fff"`)}
+       ${t(130, 115, 13, "Hafer, Honig, Nüsse · 500 g")}
+       ${barcode("4006381333931", 160, 160, 1.7, 62)}</g>
+       ${label(470, 280, "Prüfziffer", "end")}`, "Verpackung mit Strichcode, die letzte Ziffer ist markiert"),
+
+    ahv: () => svg(
+      `${smallCard(70, 45, 340, 214, "#fff")}<rect x="70" y="45" width="340" height="48" rx="14" fill="${N.n14}"/><rect x="70" y="79" width="340" height="14" fill="${N.n14}"/>
+       ${t(90, 76, 16, "Krankenversicherungskarte", `font-weight="700"`)}
+       <rect x="90" y="110" width="70" height="86" rx="6" fill="${N.n4}"/><circle cx="125" cy="140" r="16" fill="${N.n9}"/><path d="M98 196 q27 -40 54 0z" fill="${N.n9}"/>
+       ${t(178, 122, 11, "Name", `fill="${N.n3}"`)}${t(178, 140, 15, "Muster Anna", `font-weight="600"`)}
+       ${t(178, 166, 11, "Versichertennummer (AHV-Nr.)", `fill="${N.n3}"`)}
+       ${tx(178, 188, 16, ["756.9217.0769.8", "5", ""])}
+       ${t(90, 236, 11, "Musterkarte, keine echte Versicherung", `fill="${N.n3}"`)}
+       ${label(400, 222, "Prüfziffer", "end")}`, "Versichertenkarte mit AHV-Nummer, die letzte Ziffer ist markiert"),
+
+    iban: () => svg(
+      `${smallCard(60, 50, 360, 200, N.n10)}
+       ${t(84, 90, 18, "Muster Bank", `font-weight="700" fill="#fff"`)}${t(84, 110, 11, "Debitkarte · Rückseite", `fill="${N.n6}"`)}
+       <rect x="60" y="126" width="360" height="34" fill="${N.n0}"/>
+       <rect x="84" y="172" width="312" height="52" rx="6" fill="#fff"/>
+       ${t(96, 190, 10, "IBAN", `fill="${N.n3}"`)}
+       ${tx(96, 212, 17, ["CH", "93", " 0076 2011 6238 5295 7"])}
+       ${label(84, 284, "Prüfziffern")}`, "Rückseite einer Bankkarte mit IBAN, die Stellen 3 und 4 sind markiert"),
+
+    qr: () => {
+      let q = "", seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+      const qx = 40, qy = 70, s = 4.6, n = 29;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        const inF = (a, b) => i >= a && i < a + 7 && j >= b && j < b + 7;
+        if (inF(0, 0) || inF(0, n - 7) || inF(n - 7, 0)) continue;
+        if (rnd() > .5) q += `<rect x="${qx + j * s}" y="${qy + i * s}" width="${s}" height="${s}" fill="${N.n0}"/>`;
+      }
+      const finder = (a, b) => `<rect x="${qx + b * s}" y="${qy + a * s}" width="${7 * s}" height="${7 * s}" fill="${N.n0}"/><rect x="${qx + (b + 1) * s}" y="${qy + (a + 1) * s}" width="${5 * s}" height="${5 * s}" fill="#fff"/><rect x="${qx + (b + 2) * s}" y="${qy + (a + 2) * s}" width="${3 * s}" height="${3 * s}" fill="${N.n0}"/>`;
+      const c = qx + n * s / 2;
+      return svg(
+        `${shadow(20, 20, 440, 260, 4)}<rect x="20" y="20" width="440" height="260" rx="4" fill="#fff"/>
+         ${t(40, 52, 16, "Zahlteil", `font-weight="700"`)}
+         ${q}${finder(0, 0)}${finder(0, n - 7)}${finder(n - 7, 0)}
+         <rect x="${c - 11}" y="${qy + n * s / 2 - 11}" width="22" height="22" fill="#fff"/><rect x="${c - 9}" y="${qy + n * s / 2 - 9}" width="18" height="18" fill="${N.n0}"/>
+         <rect x="${c - 2}" y="${qy + n * s / 2 - 6}" width="4" height="12" fill="#fff"/><rect x="${c - 6}" y="${qy + n * s / 2 - 2}" width="12" height="4" fill="#fff"/>
+         ${t(40, 226, 10, "Symbolbild, nicht scannbar", `fill="${N.n3}"`)}
+         ${t(200, 64, 11, "Konto / Zahlbar an", `font-weight="700"`)}${t(200, 80, 11, "CH44 3199 9123 0008 8901 2")}${t(200, 95, 11, "Muster Verein, Bülach")}
+         ${t(200, 122, 11, "Referenz", `font-weight="700"`)}
+         ${tx(200, 140, 11.5, ["21 00000 00003 13947 14300 0901", "7", ""])}
+         ${t(200, 168, 11, "Betrag", `font-weight="700"`)}${t(200, 184, 13, "CHF 50.00")}
+         ${label(450, 272, "Prüfziffer", "end")}`, "Zahlteil einer QR-Rechnung, die letzte Ziffer der Referenz ist markiert");
+    },
+
+    post: () => svg(
+      `<g transform="rotate(3 240 150)">${shadow(40, 50, 400, 200, 2)}<rect x="40" y="50" width="400" height="200" rx="2" fill="${N.n12}"/>
+       <rect x="40" y="50" width="400" height="200" rx="2" fill="#fff" opacity=".55"/>
+       <line x1="190" y1="50" x2="190" y2="250" stroke="${N.n12}" stroke-width="2" stroke-dasharray="6 4"/>
+       ${t(56, 76, 13, "Empfangsschein", `font-weight="700"`)}${t(206, 76, 13, "Einzahlung für", `font-weight="700"`)}
+       ${t(206, 98, 13, "Muster Sportverein")}${t(206, 116, 13, "8180 Bülach")}
+       ${t(206, 156, 11, "Konto", `fill="${N.n3}"`)}<rect x="206" y="162" width="140" height="30" fill="#fff"/>${tx(214, 183, 18, ["01-162-", "8", ""])}
+       ${t(56, 156, 11, "Konto", `fill="${N.n3}"`)}${tx(56, 178, 14, ["01-162-", "8", ""])}
+       ${t(56, 236, 10, "Früherer oranger Einzahlungsschein, Muster", `fill="${N.n3}"`)}</g>
+       ${label(470, 290, "Prüfziffer", "end")}`, "Oranger Einzahlungsschein mit Postkontonummer, die letzte Ziffer ist markiert"),
+
+    uid: () => svg(
+      `${shadow(90, 14, 300, 274, 2)}<rect x="90" y="14" width="300" height="274" fill="#fff"/>
+       <rect x="110" y="40" width="34" height="34" rx="6" fill="${N.n7}"/>${t(154, 58, 16, "Muster AG", `font-weight="700"`)}${t(154, 74, 11, "Schreinerei · 8180 Bülach", `fill="${N.n3}"`)}
+       ${t(110, 112, 18, "Rechnung", `font-weight="700"`)}
+       ${[0, 1, 2].map(i => `<rect x="110" y="${128 + i * 20}" width="${[230, 190, 210][i]}" height="8" rx="4" fill="${N.n4}"/>`).join("")}
+       ${t(110, 206, 12, "Total CHF 1'280.00", `font-weight="600"`)}
+       <line x1="110" y1="226" x2="370" y2="226" stroke="${N.n4}"/>
+       ${tx(110, 250, 15, ["CHE-123.456.78", "8", " MWST"])}
+       ${label(110, 282, "Prüfziffer")}`, "Rechnung einer Firma mit UID, die letzte Ziffer ist markiert"),
+
+    mrz: () => svg(
+      `${smallCard(30, 40, 420, 230, N.n6)}<rect x="30" y="40" width="420" height="230" rx="14" fill="${N.n9}" opacity=".25"/>
+       ${t(52, 72, 14, "REISEPASS · PASSPORT · Muster", `font-weight="700"`)}
+       <rect x="52" y="86" width="84" height="104" rx="4" fill="${N.n4}"/><circle cx="94" cy="122" r="19" fill="${N.n9}"/><path d="M60 190 q34 -50 68 0z" fill="${N.n9}"/>
+       ${t(152, 100, 10, "Name", `fill="${N.n3}"`)}${t(152, 116, 13, "ERIKSSON Anna Maria", `font-weight="600"`)}
+       ${t(152, 138, 10, "Geburtsdatum", `fill="${N.n3}"`)}${t(152, 154, 13, "06.08.1969", `font-weight="600"`)}
+       ${t(152, 176, 10, "Staat: Utopia (Musterstaat der ICAO)", `fill="${N.n3}"`)}
+       <rect x="30" y="204" width="420" height="66" fill="#fff" opacity=".7"/>
+       ${tx(42, 228, 12.4, ["P&lt;UTOERIKSSON&lt;&lt;ANNA&lt;MARIA&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;"], `textLength="396"`)}
+       ${tx(42, 254, 12.4, ["L898902C&lt;", "3", "UTO690806", "1", "F940623", "6", "ZE184226B&lt;&lt;&lt;&lt;&lt;", "1", "", "4", ""], `textLength="396"`)}
+       ${label(450, 292, "Prüfziffern", "end")}`, "Musterpass mit maschinenlesbarer Zone, mehrere Prüfziffern sind markiert"),
+
+    luhn: () => svg(
+      `${smallCard(60, 45, 360, 220, N.n1)}
+       <rect x="60" y="45" width="360" height="220" rx="14" fill="${N.n15}" opacity=".35"/>
+       <rect x="88" y="100" width="50" height="38" rx="6" fill="${N.n13}"/><path d="M88 119h50M113 100v38M100 100v38M126 100v38" stroke="${N.n12}" stroke-width="1.2"/>
+       ${t(88, 82, 15, "Muster Card", `font-weight="700" fill="#fff"`)}
+       <text x="88" y="190" font-size="24" ${MONO} fill="#fff" letter-spacing="1">4111 1111 1111 111<tspan fill="${N.n13}" font-weight="700">1</tspan></text>
+       ${t(88, 222, 11, "Gültig bis 12/30", `fill="${N.n6}"`)}${t(88, 244, 12, "ANNA MUSTER", `fill="${N.n6}"`)}
+       ${t(300, 244, 10, "Testnummer", `fill="${N.n6}"`)}
+       ${label(420, 288, "Prüfziffer", "end")}`, "Kreditkarte mit Testnummer, die letzte Ziffer ist markiert"),
+
+    isbn: () => svg(
+      `${shadow(120, 12, 240, 274, 3)}<rect x="120" y="12" width="240" height="274" rx="3" fill="${N.n10}"/>
+       <rect x="120" y="12" width="14" height="274" fill="${N.n0}" opacity=".25"/>
+       ${t(150, 54, 13, "Klappentext", `font-weight="700" fill="#fff"`)}
+       ${[0, 1, 2, 3].map(i => `<rect x="150" y="${68 + i * 14}" width="${[180, 170, 185, 120][i]}" height="6" rx="3" fill="#fff" opacity=".5"/>`).join("")}
+       <rect x="144" y="140" width="190" height="24" rx="4" fill="#fff"/>${tx(152, 157, 12, ["ISBN 978-3-16-148410-", "0", ""])}
+       ${barcode("9783161484100", 162, 186, 1.6, 54)}
+       ${label(116, 290, "Prüfziffer", "end")}`, "Buchrückseite mit ISBN und Strichcode, die letzte Ziffer ist markiert"),
+    euro: () => svg(
+      `<g transform="rotate(-3 240 150)">${shadow(40, 55, 400, 200, 8)}<rect x="40" y="55" width="400" height="200" rx="8" fill="${N.n14}"/>
+       <rect x="52" y="67" width="376" height="176" rx="5" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.5"/>
+       ${[0, 1, 2, 3, 4, 5].map(i => `<circle cx="${130 + i * 8}" cy="160" r="${70 - i * 10}" fill="none" stroke="${N.n7}" stroke-width="2" opacity=".7"/>`).join("")}
+       ${t(66, 228, 64, "50", `font-weight="700" fill="#fff" opacity=".9"`)}
+       ${t(250, 150, 22, "EURO", `font-weight="700" fill="${N.n0}" opacity=".75"`)}
+       <rect x="262" y="78" width="164" height="28" rx="4" fill="#fff" opacity=".85"/>
+       ${tx(270, 98, 15, ["NA453248920", "9", ""])}
+       ${t(250, 230, 10, "Symbolbild, Rückseite", `fill="${N.n0}"`)}</g>
+       ${label(470, 290, "Prüfziffer", "end")}`, "Euroschein mit Seriennummer, die letzte Ziffer ist markiert"),
+  };
+})();
+
+const PZ = (() => {
+  const digits = s => s.replace(/\D/g, "");
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // Tabelle für gewichtete Summen
+  function weightTable(chars, weights, labelW = "Gewicht") {
+    const prods = chars.map((c, i) => c.v * weights[i]);
+    const row = (lab, arr, cls = "") => `<tr class="${cls}"><th scope="row">${lab}</th>${arr.map(x => `<td>${esc(x)}</td>`).join("")}</tr>`;
+    return {
+      sum: prods.reduce((a, b) => a + b, 0),
+      html: `<div class="tbl"><table>${row("Zeichen", chars.map(c => c.c))}${chars.some(c => String(c.v) !== c.c) ? row("Wert", chars.map(c => c.v)) : ""}${row(labelW, weights, "w")}${row("Produkt", prods, "p")}</table></div>`
+    };
+  }
+
+  // EAN-13 / GTIN / AHV / ISBN-13
+  function ean(raw, n = 13) {
+    const d = digits(raw);
+    if (d.length !== n && d.length !== n - 1) return { error: `Bitte ${n - 1} oder ${n} Ziffern eingeben (jetzt: ${d.length}).` };
+    const body = d.slice(0, n - 1).split("").map(c => ({ c, v: +c }));
+    const w = body.map((_, i) => (i % 2 === 0 ? 1 : 3));
+    const t = weightTable(body, w);
+    const exp = (10 - (t.sum % 10)) % 10;
+    const steps = t.html + `<p>Summe der Produkte: <code>${t.sum}</code>. Rest bei Division durch 10: <code>${t.sum % 10}</code>.<br>Prüfziffer = (10 − ${t.sum % 10}) mod 10 = <code>${exp}</code></p>`;
+    return { expected: String(exp), given: d.length === n ? d[n - 1] : null, steps };
+  }
+
+  // Modulo 10 rekursiv (QR-Referenz, ESR, Postkonto)
+  const REK = [0, 9, 4, 6, 8, 2, 7, 1, 3, 5];
+  function mod10rek(bodyDigits) {
+    let carry = 0; const rows = [];
+    for (const ch of bodyDigits) { const d = +ch, idx = (carry + d) % 10, nxt = REK[idx]; rows.push([carry, d, idx, nxt]); carry = nxt; }
+    const exp = (10 - carry) % 10;
+    const html = `<div class="tbl"><table><tr><th scope="row">Übertrag</th>${rows.map(r => `<td>${r[0]}</td>`).join("")}</tr><tr><th scope="row">Ziffer</th>${rows.map(r => `<td>${r[1]}</td>`).join("")}</tr><tr class="w"><th scope="row">Zeile</th>${rows.map(r => `<td>${r[2]}</td>`).join("")}</tr><tr class="p"><th scope="row">Neuer Übertrag</th>${rows.map(r => `<td>${r[3]}</td>`).join("")}</tr></table></div>`
+      + `<p>Tabelle: Zeile 0→0, 1→9, 2→4, 3→6, 4→8, 5→2, 6→7, 7→1, 8→3, 9→5.<br>Letzter Übertrag: <code>${carry}</code>. Prüfziffer = (10 − ${carry}) mod 10 = <code>${exp}</code></p>`;
+    return { exp, html };
+  }
+  function qrref(raw) {
+    const d = digits(raw);
+    if (d.length !== 27 && d.length !== 26) return { error: `Bitte 26 oder 27 Ziffern eingeben (jetzt: ${d.length}).` };
+    const r = mod10rek(d.slice(0, 26));
+    return { expected: String(r.exp), given: d.length === 27 ? d[26] : null, steps: r.html };
+  }
+  function postkonto(raw) {
+    const m = raw.trim().match(/^(\d{2})-(\d{1,6})(?:-(\d))?$/);
+    if (!m) return { error: "Format: zwei Ziffern, Bindestrich, 1 bis 6 Ziffern, Bindestrich, Prüfziffer, z. B. 80-2-5." };
+    const body = m[1] + m[2].padStart(6, "0");
+    const r = mod10rek(body);
+    return { expected: String(r.exp), given: m[3] ?? null, steps: `<p>Mittelteil auf 6 Stellen mit Nullen auffüllen: <code>${m[1]}-${m[2].padStart(6, "0")}</code></p>` + r.html };
+  }
+
+  // IBAN Modulo 97
+  function iban(raw) {
+    const s = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/.test(s)) return { error: "Eine IBAN beginnt mit zwei Buchstaben und zwei Ziffern, z. B. CH93 …" };
+    if (s.startsWith("CH") && s.length !== 21) return { error: `Eine Schweizer IBAN hat 21 Zeichen (jetzt: ${s.length}).` };
+    const conv = t => t.replace(/[A-Z]/g, c => String(c.charCodeAt(0) - 55));
+    const rearr = s.slice(4) + s.slice(0, 4);
+    const num = conv(rearr);
+    const rem = Number(BigInt(num) % 97n);
+    const zero = conv(s.slice(4) + s.slice(0, 2) + "00");
+    const exp = String(98 - Number(BigInt(zero) % 97n)).padStart(2, "0");
+    const steps = `<ol class="steps">
+      <li>Die ersten vier Zeichen ans Ende stellen: <code class="wrap">${esc(rearr)}</code></li>
+      <li>Buchstaben ersetzen (A = 10 … Z = 35, also ${[...new Set(s.slice(0, 2))].map(c => `${c} = ${c.charCodeAt(0) - 55}`).join(", ")}): <code class="wrap">${num}</code></li>
+      <li>Diese Zahl durch 97 teilen. Rest: <code>${rem}</code>. Gültig ist die IBAN genau dann, wenn der Rest 1 ist.</li>
+      <li>Prüfziffern berechnen: Prüfziffern durch 00 ersetzen, Rest bestimmen (<code>${Number(BigInt(zero) % 97n)}</code>), dann 98 − Rest = <code>${exp}</code></li></ol>`;
+    return { expected: exp, given: s.slice(2, 4), steps };
+  }
+
+  // UID Modulo 11
+  function uid(raw) {
+    const d = digits(raw);
+    if (d.length !== 9 && d.length !== 8) return { error: `Bitte 8 oder 9 Ziffern eingeben, CHE darf davor stehen (jetzt: ${d.length}).` };
+    const body = d.slice(0, 8).split("").map(c => ({ c, v: +c }));
+    const t = weightTable(body, [5, 4, 3, 2, 7, 6, 5, 4]);
+    const r = t.sum % 11, p = 11 - r;
+    const exp = p === 11 ? "0" : p === 10 ? "–" : String(p);
+    const steps = t.html + `<p>Summe: <code>${t.sum}</code>. Rest bei Division durch 11: <code>${r}</code>.<br>Prüfziffer = 11 − ${r} = <code>${p}</code>${p === 11 ? " → 11 wird zu 0" : ""}${p === 10 ? ". Ergibt sich 10, wird diese Nummer gar nicht vergeben." : ""}</p>`;
+    return { expected: exp, given: d.length === 9 ? d[8] : null, steps };
+  }
+
+  // MRZ 7-3-1
+  function mrz(raw) {
+    const s = raw.toUpperCase().replace(/\s/g, "");
+    if (!/^[A-Z0-9<]{2,15}$/.test(s)) return { error: "Erlaubt sind Ziffern, Grossbuchstaben und <. Zum Beispiel ein Geburtsdatum JJMMTT mit Prüfziffer: 0803154" };
+    const body = s.slice(0, -1);
+    const chars = body.split("").map(c => ({ c, v: c === "<" ? 0 : /\d/.test(c) ? +c : c.charCodeAt(0) - 55 }));
+    const w = chars.map((_, i) => [7, 3, 1][i % 3]);
+    const t = weightTable(chars, w);
+    const exp = String(t.sum % 10);
+    const steps = `<p>Das letzte Zeichen ist die Prüfziffer, davor steht das Feld.</p>` + t.html + `<p>Summe: <code>${t.sum}</code>. Prüfziffer = Summe mod 10 = <code>${exp}</code></p>`;
+    return { expected: exp, given: s.slice(-1), steps };
+  }
+
+  // Luhn
+  function luhn(raw) {
+    const d = digits(raw);
+    if (d.length < 8 || d.length > 19) return { error: `Bitte 8 bis 19 Ziffern eingeben (jetzt: ${d.length}).` };
+    const body = d.slice(0, -1).split("");
+    const n = body.length;
+    const cells = body.map((c, i) => { const dbl = (n - 1 - i) % 2 === 0; let v = +c * (dbl ? 2 : 1); const shown = v; if (v > 9) v -= 9; return { c, dbl, shown, v }; });
+    const sum = cells.reduce((a, x) => a + x.v, 0);
+    const exp = String((10 - (sum % 10)) % 10);
+    const steps = `<p>Von rechts her (ohne Prüfziffer) jede zweite Ziffer verdoppeln, beginnend mit der Ziffer direkt links der Prüfziffer. Ergibt das mehr als 9, wird 9 abgezogen (Quersumme).</p><div class="tbl"><table>
+      <tr><th scope="row">Ziffer</th>${cells.map(x => `<td>${x.c}</td>`).join("")}</tr>
+      <tr class="w"><th scope="row">Faktor</th>${cells.map(x => `<td>${x.dbl ? 2 : 1}</td>`).join("")}</tr>
+      <tr class="p"><th scope="row">Wert</th>${cells.map(x => `<td>${x.v}</td>`).join("")}</tr></table></div>
+      <p>Summe: <code>${sum}</code>. Prüfziffer = (10 − ${sum % 10}) mod 10 = <code>${exp}</code></p>`;
+    return { expected: exp, given: d.slice(-1), steps };
+  }
+
+  // ISBN-10 Modulo 11
+  function isbn10(raw) {
+    const s = raw.toUpperCase().replace(/[^0-9X]/g, "");
+    if (!/^\d{9}[0-9X]?$/.test(s)) return { error: `Bitte 9 oder 10 Zeichen eingeben, das letzte darf X sein (jetzt: ${s.length}).` };
+    const body = s.slice(0, 9).split("").map(c => ({ c, v: +c }));
+    const t = weightTable(body, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+    const r = t.sum % 11, p = (11 - r) % 11;
+    const exp = p === 10 ? "X" : String(p);
+    const steps = t.html + `<p>Summe: <code>${t.sum}</code>. Rest bei Division durch 11: <code>${r}</code>.<br>Prüfziffer = (11 − ${r}) mod 11 = <code>${p}</code>${p === 10 ? " → wird als X geschrieben" : ""}</p>`;
+    return { expected: exp, given: s.length === 10 ? s[9] : null, steps };
+  }
+
+  // Euro-Banknote: Quersumme (Neunerrest)
+  function euro(raw) {
+    const s = raw.toUpperCase().replace(/\s/g, "");
+    if (!/^[A-Z]{1,2}\d+$/.test(s) || (s.length !== 12 && s.length !== 11)) return { error: `Eine Seriennummer hat 12 Zeichen: ein oder zwei Buchstaben, dann Ziffern, z. B. NA4532489209 (jetzt: ${s.length}).` };
+    const full = s.length === 12;
+    const body = full ? s.slice(0, -1) : s;
+    const parts = body.split("").map(c => /\d/.test(c) ? { c, v: c } : { c, v: String(c.charCodeAt(0)) });
+    const p0 = (9 - parts.map(p => p.v).join("").split("").reduce((a, d) => a + +d, 0) % 9) % 9;
+    const given = full ? s.slice(-1) : null;
+    const allDigits = parts.map(p => p.v).join("") + (given ?? String(p0 === 0 ? 9 : p0));
+    const chain = [];
+    let q = allDigits.split("").reduce((a, d) => a + +d, 0); chain.push(q);
+    while (q > 9) { q = String(q).split("").reduce((a, d) => a + +d, 0); chain.push(q); }
+    const sBody = parts.map(p => p.v).join("").split("").reduce((a, d) => a + +d, 0);
+    const p = (9 - sBody % 9) % 9;
+    const exp = p === 0 ? "9" : String(p);
+    const ok = given !== null && (sBody + +given) % 9 === 0;
+    const steps = `<ol class="steps">
+      <li>Buchstaben durch ihren ASCII-Code ersetzen (A = 65 … Z = 90): ${parts.filter(x => x.c !== x.v).map(x => `${x.c} = ${x.v}`).join(", ")}</li>
+      <li>Alle Ziffern einschliesslich Prüfziffer${given === null ? ` (berechnet: ${exp})` : ""} hintereinander schreiben: <code class="wrap">${allDigits}</code></li>
+      <li>Quersumme bilden, so lange, bis eine einzige Ziffer übrig bleibt: <code>${chain.join(" → ")}</code></li>
+      <li>Gültig ist die Nummer, wenn am Ende <code>9</code> herauskommt, die Quersumme also durch 9 teilbar ist.${p === 0 ? " Hier passen 0 und 9 als Prüfziffer, verwendet wird 9." : ""}</li></ol>`;
+    return { expected: ok ? given : exp, given, steps };
+  }
+
+  return { ean, qrref, postkonto, iban, uid, mrz, luhn, isbn10, euro };
+})();
+
+const CODES = [
+  { id: "euro", title: "Euro-Banknote", c: "var(--nord14)", tag: "Quersumme (Neunerrest)",
+    where: "Auf der Rückseite jedes Euroscheins, oben rechts.",
+    format: "12 Zeichen: ein Buchstabe und 11 Ziffern (erste Serie) oder zwei Buchstaben und 10 Ziffern (Europa-Serie). Das letzte Zeichen ist die Prüfziffer.",
+    how: "Das einfachste Verfahren auf dieser Seite: keine Gewichte, nur die Quersumme. Buchstaben durch ihren ASCII-Code ersetzen, dann wiederholt die Quersumme bilden. Am Ende muss 9 stehen. Schwäche: Die Quersumme achtet nicht auf die Reihenfolge, vertauschte Ziffern bleiben unentdeckt. Bei Banknoten ist das kein Problem, weil die Nummer maschinell gelesen und nicht abgetippt wird.",
+    ex: "NA4532489209", fn: v => PZ.euro(v), hint: "Prüfen Sie eine Note aus Ihrem Portemonnaie. Die Seriennummer der ersten Serie, z. B. P36007033744, funktioniert ebenfalls." },
+  { id: "ean", title: "Strichcode (EAN / GTIN)", c: "var(--nord8)", tag: "Modulo 10, Gewichte 1-3",
+    where: "Auf fast jeder Verpackung unter dem Strichcode. Schweizer Produkte beginnen meist mit 76.",
+    format: "13 Ziffern, die letzte ist die Prüfziffer", how: "Ziffern abwechselnd mit 1 und 3 multiplizieren, Produkte addieren. Die Prüfziffer ergänzt die Summe auf das nächste Vielfache von 10.",
+    ex: "4006381333931", fn: v => PZ.ean(v) },
+  { id: "ahv", title: "AHV-Nummer", c: "var(--nord14)", tag: "Modulo 10, Gewichte 1-3",
+    where: "Auf der Krankenversicherungskarte und im Lohnausweis.",
+    format: "756.XXXX.XXXX.XP, 13 Ziffern, 756 steht für die Schweiz", how: "Gleiches Verfahren wie beim Strichcode (EAN-13).",
+    ex: "756.9217.0769.85", fn: v => PZ.ean(v) },
+  { id: "iban", title: "IBAN", c: "var(--nord10)", tag: "Modulo 97",
+    where: "Auf Bankkarten, Rechnungen und im E-Banking.",
+    format: "CH + 2 Prüfziffern + 5 Ziffern Bank + 12 Zeichen Konto (21 Zeichen)", how: "Ländercode und Prüfziffern ans Ende stellen, Buchstaben in Zahlen umwandeln. Die riesige Zahl muss bei Division durch 97 den Rest 1 ergeben.",
+    ex: "CH93 0076 2011 6238 5295 7", fn: v => PZ.iban(v) },
+  { id: "qr", title: "QR-Referenz (QR-Rechnung)", c: "var(--nord15)", tag: "Modulo 10 rekursiv",
+    where: "Auf dem Zahlteil einer QR-Rechnung unter «Referenz». Das gleiche Verfahren nutzte der frühere orange Einzahlungsschein.",
+    format: "27 Ziffern, die letzte ist die Prüfziffer", how: "Ziffer für Ziffer einen Übertrag mitführen: (Übertrag + Ziffer) bestimmt die Tabellenzeile, die den neuen Übertrag liefert. Zum Schluss ergänzt die Prüfziffer den Übertrag auf 10.",
+    ex: "21 00000 00003 13947 14300 09017", fn: v => PZ.qrref(v) },
+  { id: "post", title: "Postkontonummer", c: "var(--nord12)", tag: "Modulo 10 rekursiv",
+    where: "Bei Vereinen, Spendenaufrufen und auf älteren Rechnungen.",
+    format: "XX-YYYYYY-P, der Mittelteil hat 1 bis 6 Ziffern", how: "Mittelteil mit Nullen auf 6 Stellen auffüllen, dann wie bei der QR-Referenz rechnen.",
+    ex: "01-162-8", fn: v => PZ.postkonto(v), digitsOnly: false },
+  { id: "uid", title: "Unternehmens-Identifikationsnummer (UID)", c: "var(--nord7)", tag: "Modulo 11, Gewichte",
+    where: "Auf Rechnungen von Firmen, im Handelsregister und auf uid.admin.ch.",
+    format: "CHE-XXX.XXX.XXP, 9 Ziffern", how: "Die ersten 8 Ziffern mit 5, 4, 3, 2, 7, 6, 5, 4 multiplizieren und addieren. Prüfziffer = 11 − Rest. Aus 11 wird 0, Nummern mit Ergebnis 10 werden nicht vergeben.",
+    ex: "CHE-123.456.788", fn: v => PZ.uid(v) },
+  { id: "mrz", title: "Pass und Identitätskarte", c: "var(--nord9)", tag: "Modulo 10, Gewichte 7-3-1",
+    where: "In der maschinenlesbaren Zone unten auf Pass oder ID (die Zeilen mit «<<<»).",
+    format: "Jedes Feld (Dokumentnummer, Geburtsdatum JJMMTT, Ablaufdatum) hat eine eigene Prüfziffer", how: "Ziffern zählen als Wert, Buchstaben A = 10 … Z = 35, das Füllzeichen < = 0. Gewichte 7, 3, 1 wiederholen, Summe modulo 10.",
+    ex: "L898902C<3", fn: v => PZ.mrz(v), hint: "Weitere Beispiele: Geburtsdatum 6908061 (6. August 1969, Prüfziffer 1)" },
+  { id: "luhn", title: "Bank- und Kreditkarten", c: "var(--nord13)", tag: "Luhn-Algorithmus",
+    where: "Die lange Nummer auf Debit- und Kreditkarten, weltweit gleich.",
+    format: "Meist 16 Ziffern, die letzte ist die Prüfziffer", how: "Von rechts jede zweite Ziffer verdoppeln (bei Ergebnis über 9 wird 9 abgezogen), alles addieren. Die Summe muss durch 10 teilbar sein.",
+    ex: "4111 1111 1111 1111", fn: v => PZ.luhn(v), hint: "Bekannte Testnummer, keine echte Karte." },
+  { id: "isbn", title: "ISBN bei Büchern", c: "var(--nord11)", tag: "Modulo 11 / EAN",
+    where: "Auf der Rückseite und im Impressum jedes Buches.",
+    format: "Alt: 10 Zeichen, Prüfzeichen 0 bis 9 oder X. Neu (ISBN-13): beginnt mit 978 oder 979 und wird wie eine EAN geprüft.", how: "ISBN-10: Ziffern mit 10, 9, 8 … 2 multiplizieren und addieren. Die Prüfziffer ergänzt auf ein Vielfaches von 11, für 10 steht X.",
+    ex: "3-16-148410-X", fn: v => PZ.isbn10(v), hint: "Dasselbe Buch als ISBN-13: 978-3-16-148410-0, prüfbar beim Strichcode (Beispiel 2)." },
+];
+
+const $ = id => document.getElementById(id);
+
+function render(def, el) {
+  const r = def.fn(el.input.value);
+  el.res.className = "res";
+  if (r.error) { el.res.textContent = r.error; el.steps.innerHTML = "<p>Kein Rechenweg, die Eingabe hat nicht das richtige Format.</p>"; return; }
+  if (r.given === null) { el.res.innerHTML = `Die Prüfziffer lautet <span class="pd">${r.expected}</span>.`; }
+  else if (r.given === r.expected) { el.res.classList.add("ok"); el.res.innerHTML = r.expected.length > 1 ? `Gültig: Die Prüfziffern <span class="pd">${r.expected}</span> passen.` : `Gültig: Die Prüfziffer <span class="pd">${r.expected}</span> passt.`; }
+  else { el.res.classList.add("bad"); el.res.innerHTML = r.expected === "–"
+      ? "Ungültig: Für diese Ziffern ergibt sich 10, solche UIDs werden nicht vergeben."
+      : `Ungültig: Eingegeben <span class="pd">${r.given}</span>, richtig wäre <span class="pd">${r.expected}</span>.`; }
+  el.steps.innerHTML = r.steps;
+}
+
+function typo(def, el) {
+  const v = el.input.value;
+  const pos = [...v].map((ch, i) => /\d/.test(ch) ? i : -1).filter(i => i >= 0);
+  if (def.id === "iban") pos.splice(0, 2); // Prüfziffern der IBAN nicht verändern
+  pos.pop(); // Prüfziffer selbst nicht verändern
+  if (!pos.length) return;
+  const i = pos[Math.floor(Math.random() * pos.length)];
+  let d; do { d = String(Math.floor(Math.random() * 10)); } while (d === v[i]);
+  el.input.value = v.slice(0, i) + d + v.slice(i + 1);
+  el.input.setSelectionRange?.(i, i + 1); el.input.focus();
+  render(def, el);
+}
+
+const SLIDES = {
+  ean: { title: "Strichcode auf Produkten", q: "Auf fast jeder Verpackung im Laden.", num: ["400638133393", "1", ""] },
+  ahv: { title: "AHV-Nummer", q: "Auf der Krankenversicherungskarte und im Lohnausweis.", num: ["756.9217.0769.8", "5", ""] },
+  iban: { title: "IBAN", q: "Auf der Bankkarte, auf Rechnungen und im E-Banking.", num: ["CH", "93", " 0076 2011 6238 5295 7"] },
+  qr: { title: "QR-Rechnung", q: "Im Zahlteil jeder Rechnung, die Referenz unter dem Konto.", num: ["21 00000 00003 13947 14300 0901", "7", ""] },
+  post: { title: "Postkonto", q: "Bei Vereinen und auf dem früheren orangen Einzahlungsschein.", num: ["01-162-", "8", ""] },
+  uid: { title: "Firmennummer (UID)", q: "Auf jeder Rechnung einer Schweizer Firma.", num: ["CHE-123.456.78", "8", ""] },
+  mrz: { title: "Pass und ID", q: "In den Zeilen mit «<<<» unten auf dem Ausweis. Hier stecken gleich mehrere Prüfziffern: Dokumentnummer, Geburtsdatum, Ablaufdatum und eine Gesamtprüfziffer.", num: ["L898902C<", "3", " · 690806", "1", " · 940623", "6", ""] },
+  luhn: { title: "Bank- und Kreditkarte", q: "Die lange Nummer auf der Vorderseite.", num: ["4111 1111 1111 111", "1", ""] },
+  isbn: { title: "Bücher (ISBN)", q: "Auf der Rückseite jedes Buches.", num: ["978-3-16-148410-", "0", ""] },
+  euro: { title: "Euro-Banknote", q: "Auf der Rückseite jedes Euroscheins. Hier genügt die Quersumme.", num: ["NA453248920", "9", ""] },
+};
+const escT = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const slideEls = [], slideIds = [], slideNames = [];
+function addSlide(id, name, html) {
+  const sec = document.createElement("article");
+  sec.className = "slide plain"; sec.id = "pz-" + id; sec.innerHTML = html;
+  $("pz-slides").appendChild(sec); slideEls.push(sec); slideIds.push(id); slideNames.push(name);
+}
+addSlide("start", "Einführung", `
+  <h1>Prüfziffern im Alltag</h1>
+  <p class="lead">Viele Nummern in der Schweiz enthalten eine Prüfziffer. Sie wird aus den übrigen Ziffern berechnet und angehängt.</p>
+  <p class="lead">Vertippt man sich, passt die Prüfziffer nicht mehr, und das System bemerkt den Fehler, bevor Geld falsch überwiesen oder ein Paket falsch verbucht wird.</p>
+  <p class="lead">Wo begegnen Ihnen solche Nummern? Klicken Sie sich durch die ${CODES.length} Beispiele.</p>`);
+CODES.forEach((def, k) => {
+  const sl = SLIDES[def.id];
+  const sec = document.createElement("article");
+  sec.className = "slide"; sec.id = "pz-" + def.id;
+  sec.style.setProperty("--c", def.c);
+  sec.innerHTML = `
+    <div class="intro">
+      <figure>${ILL[def.id]()}</figure>
+      <div class="txt">
+        <span class="count">Beispiel ${k + 1} von ${CODES.length}</span>
+        <h2>${sl.title}</h2>
+        <p>${escT(sl.q)}</p>
+        <p class="num">${sl.num.map((p, i) => i % 2 ? `<mark>${escT(p)}</mark>` : escT(p)).join("")}</p>
+        <p class="hint">Rot markiert: ${sl.num.length > 3 || sl.num[1].length > 1 ? "die Prüfziffern" : "die Prüfziffer"}</p>
+      </div>
+    </div>
+    <div class="calc">
+      <div class="calc-head"><h3>Berechnung</h3><span class="tag"></span></div>
+      <dl class="facts"><dt>Aufbau</dt><dd class="f-format"></dd><dt>Verfahren</dt><dd class="f-how"></dd></dl>
+      <div class="ctl">
+        <label for="in-${def.id}">Nummer prüfen</label>
+        <input id="in-${def.id}" spellcheck="false" autocomplete="off" inputmode="${["iban", "mrz", "isbn", "euro"].includes(def.id) ? "text" : "numeric"}">
+        <button type="button" class="btn b-typo">Tippfehler einbauen</button>
+        <button type="button" class="btn b-ex">Beispiel</button>
+      </div>
+      <p class="res" aria-live="polite"></p>
+      <div class="steps-host"></div>
+    </div>`;
+  sec.querySelector(".tag").textContent = def.tag;
+  sec.querySelector(".f-format").textContent = def.format;
+  sec.querySelector(".f-how").textContent = def.how + (def.hint ? " " + def.hint : "");
+  const el = { input: sec.querySelector("input"), res: sec.querySelector(".res"), steps: sec.querySelector(".steps-host") };
+  el.input.value = def.ex;
+  el.input.addEventListener("input", () => render(def, el));
+  sec.querySelector(".b-ex").addEventListener("click", () => { el.input.value = def.ex; render(def, el); });
+  sec.querySelector(".b-typo").addEventListener("click", () => typo(def, el));
+  $("pz-slides").appendChild(sec); slideEls.push(sec); slideIds.push(def.id); slideNames.push(`Beispiel ${k + 1}: ${sl.title}`);
+  render(def, el);
+});
+addSlide("merke", "Merke", `
+  <div class="merke big"><strong>Merke</strong>Eine Prüfziffer schützt vor Versehen, nicht vor Absicht. Das Verfahren ist öffentlich: Wer eine Nummer fälschen will, rechnet die passende Prüfziffer einfach aus. Gegen Fälschung braucht es kryptografische Verfahren wie Hashes mit Schlüssel oder digitale Signaturen.</div>`);
+slideNames.forEach((name, k) => { const d = document.createElement("button"); d.type = "button"; d.setAttribute("aria-label", name); d.addEventListener("click", () => show(k)); $("pz-dots").appendChild(d); });
+let cur = 0;
+function show(i, scroll = true) {
+  const n = slideEls.length;
+  cur = Math.max(0, Math.min(n - 1, i));
+  slideEls.forEach((s, k) => s.hidden = k !== cur);
+  [...$("pz-dots").children].forEach((b, k) => b.setAttribute("aria-current", String(k === cur)));
+  $("pz-count2").textContent = `${cur + 1} / ${n}`;
+  for (const id of ["pz-prev", "pz-prev2"]) $(id).disabled = cur === 0;
+  for (const id of ["pz-next", "pz-next2"]) $(id).disabled = cur === n - 1;
+  if (scroll && $("pz-deck").getBoundingClientRect().top < 0) $("pz-deck").scrollIntoView({ block: "start" });
+}
+$("pz-prev").addEventListener("click", () => show(cur - 1, false));
+$("pz-next").addEventListener("click", () => show(cur + 1, false));
+$("pz-prev2").addEventListener("click", () => show(cur - 1));
+$("pz-next2").addEventListener("click", () => show(cur + 1));
+document.addEventListener("keydown", e => { if (e.target.closest("input") || !$("v-pruefziffern").classList.contains("active")) return; if (e.key === "ArrowRight") show(cur + 1, false); if (e.key === "ArrowLeft") show(cur - 1, false); });
+show(0, false);
+
+})();
 </script>
 </body>
 </html>
