@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Ergänzung zu «Was ist ein Roboter?») · Zielgruppe: Schüler:innen · Anrede: du · Gerät: gemischt
+  Inhalt: 24 Roboter aus Film und Fernsehen 1927–2024 mit Werk, Jahr, Form, Rolle, Kurzbeschreibung und «Realitätscheck»
+    (Was gibt es davon heute wirklich? Ist es nach unserer Definition ein Roboter?); Kasten zu Asimovs Robotergesetzen (umschrieben);
+    Diskussionsfragen
+  Bilder: nur die von der Lehrperson bereitgestellten (Ordner bilder/), keine selbst gezeichneten Figuren; alle 26 Roboter mit Bild
+  Interaktivität: Zeitleiste (klickbar), Filter nach Rolle, Form und Medium, Suche, Sortierung, aufklappbarer Realitätscheck
+  Datenhaltung: keine · Export: keiner
+  Design: nur Variante «Technik», nur Dunkelmodus (wie die übrigen micro:bit/Robotik-Seiten); keine langen Gedankenstriche
+-->
+<html lang="de-CH" style="color-scheme:dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roboter in Film und Fernsehen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);--r:6px;
+  --c-gut:var(--nord14);--c-boese:var(--nord11);--c-zwie:var(--nord13);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:400 17px/1.6 var(--font)}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+p{max-width:70ch}
+header.top{border-bottom:1px solid var(--nord2);padding:24px 0 20px}
+.kicker{margin:0;font:400 .8rem var(--font-mono);color:var(--nord8);text-transform:uppercase;letter-spacing:.06em}
+h1{margin:2px 0 6px;font-size:2.2rem;font-weight:700;line-height:1.15}
+.lead{margin:0;color:var(--muted);max-width:66ch}
+main{padding:14px 0 40px}
+h2.sec{font-size:1.4rem;font-weight:700;margin:34px 0 10px}
+.sec-no{font:600 .8em var(--font-mono);color:var(--accent);margin-right:10px}
+.muted{color:var(--muted);font-size:.9rem}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:1px 9px;border-radius:999px;background:var(--bc,var(--nord8));color:var(--nord0);font:600 .7rem var(--font-mono);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.badge.n{background:var(--nord2);color:var(--nord6)}
+
+/* Zeitleiste */
+.tl{background-color:var(--nord0);background-image:linear-gradient(rgba(76,86,106,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(76,86,106,.35) 1px,transparent 1px);background-size:24px 24px;border:1px solid var(--nord2);border-radius:var(--r);padding:12px;overflow-x:auto}
+.tl svg{display:block;min-width:760px;width:100%;height:auto}
+.tl .axis{stroke:var(--nord3);stroke-width:2}
+.tl .tick{stroke:var(--nord3)}
+.tl .yr{fill:var(--nord4);font:400 12px var(--font-mono);text-anchor:middle}
+.tl .dot{cursor:pointer;stroke:var(--nord0);stroke-width:2;transition:r .15s}
+.tl .dot:hover,.tl .dot:focus{stroke:var(--nord6);outline:none}
+.tl .dot.dim{opacity:.18}
+.tl .dot.sel{stroke:var(--nord6);stroke-width:3}
+.tl .lbl{fill:var(--nord6);font:600 11px var(--font);pointer-events:none}
+.tl .lbl.dim{opacity:.18}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:50%;background:var(--lc)}
+
+/* Filter */
+.filters{display:grid;grid-template-columns:1fr;gap:10px;margin:16px 0 14px}
+.frow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.frow .fl{font:600 .75rem var(--font-mono);color:var(--muted);text-transform:uppercase;min-width:70px}
+.chip{border:2px solid var(--surface-2);background:var(--surface);border-radius:999px;padding:2px 12px;cursor:pointer;font-weight:600;font-size:.88rem;display:inline-flex;gap:6px;align-items:center}
+.chip .dot{width:10px;height:10px;border-radius:50%;background:var(--cc)}
+.chip[aria-pressed=true]{border-color:var(--cc,var(--nord8));background:var(--nord2)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tools input,.tools select{background:var(--surface);border:1px solid var(--nord3);border-radius:var(--r);padding:5px 10px}
+.tools input{flex:1 1 220px;min-width:0}
+.count{font:600 .85rem var(--font-mono);color:var(--nord13)}
+
+/* Karten */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--surface-2);border-left:5px solid var(--cc);border-radius:var(--r);padding:14px;scroll-margin-top:12px}
+.card.sel{outline:3px solid var(--nord13);outline-offset:-1px}
+.pic{margin:-14px -14px 12px -9px;height:210px;background:var(--nord0);border-radius:0 var(--r) 0 0;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.pic img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.pic .cr{position:absolute;right:6px;bottom:4px;font:400 .68rem var(--font-mono);color:var(--nord4);background:rgba(46,52,64,.8);padding:0 6px;border-radius:3px}
+.card-top{display:flex;gap:12px;align-items:flex-start}
+.card .ic{flex:none;width:44px;height:44px;border-radius:50%;background:var(--nord2);display:grid;place-items:center;font-size:1.35rem}
+.card h3{margin:0;font-size:1.15rem;font-weight:700;line-height:1.25}
+.card .werk{font-size:.9rem;color:var(--muted);margin:2px 0 0}
+.card .yr{font:600 .85rem var(--font-mono);color:var(--nord13)}
+.card .tags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 8px}
+.card p.d{margin:0;font-size:.95rem}
+details.rc{margin-top:10px;background:var(--nord0);border-radius:var(--r);padding:8px 12px}
+details.rc summary{cursor:pointer;font-weight:600;font-size:.92rem;color:var(--nord8)}
+details.rc p{margin:6px 0 2px;font-size:.92rem}
+details.rc .def{display:flex;gap:8px;align-items:baseline;margin-top:6px;font-size:.92rem}
+.empty{padding:20px;text-align:center;color:var(--muted);background:var(--surface);border-radius:var(--r)}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.note{background:var(--surface);border:1px solid var(--surface-2);border-left:5px solid var(--bc,var(--nord8));border-radius:var(--r);padding:14px 16px}
+.note h3{margin:0 0 6px;font-size:1.1rem}
+.note ol,.note ul{margin:6px 0;padding-left:1.3em}
+.note li{margin:4px 0}
+footer{padding:10px 0 40px;font-size:.85rem;color:var(--muted)}
+@media (max-width:700px){h1{font-size:1.8rem}.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">Informatik // Robotik</p>
+    <h1>Roboter in Film und Fernsehen</h1>
+    <p class="lead">Lange bevor es echte Roboter gab, gab es sie im Kino. Hier findest du bekannte Roboter aus fast hundert Jahren Film- und Fernsehgeschichte. Bei jedem kannst du den <b>Realitätscheck</b> aufklappen: Was davon gibt es heute wirklich, und ist es nach unserer Definition überhaupt ein Roboter?</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <h2 class="sec" style="margin-top:10px"><span class="sec-no">01</span>Zeitleiste</h2>
+  <div class="tl" id="tl"></div>
+  <div class="legend"><span><i style="--lc:var(--c-gut)"></i>✓ Freund / Helfer</span><span><i style="--lc:var(--c-zwie)"></i>≈ zwiespältig</span><span><i style="--lc:var(--c-boese)"></i>⚠ Bedrohung</span><span>Klicke auf einen Punkt, um zum Roboter zu springen.</span></div>
+
+  <h2 class="sec"><span class="sec-no">02</span>Alle Roboter</h2>
+  <div class="filters">
+    <div class="frow" id="fRolle"><span class="fl">Rolle</span></div>
+    <div class="frow" id="fForm"><span class="fl">Bauform</span></div>
+    <div class="frow" id="fMedium"><span class="fl">Medium</span></div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Suchen: Name, Film, Jahr …" aria-label="Roboter suchen">
+      <select id="sort" aria-label="Sortierung"><option value="jahr">nach Jahr</option><option value="name">nach Name</option></select>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+  <div class="cards" id="cards"></div>
+
+  <h2 class="sec"><span class="sec-no">03</span>Hintergrund und Diskussion</h2>
+  <div class="grid2">
+    <div class="note" style="--bc:var(--nord15)"><h3>📜 Asimovs Robotergesetze</h3>
+      <p style="margin:0">Der Science-Fiction-Autor <b>Isaac Asimov</b> erfand 1942 in einer Kurzgeschichte drei Regeln für Roboter. Sinngemäss:</p>
+      <ol><li>Ein Roboter darf keinem Menschen schaden und auch nicht zulassen, dass ein Mensch durch Untätigkeit zu Schaden kommt.</li><li>Ein Roboter muss Befehlen von Menschen gehorchen, ausser sie widersprechen dem ersten Gesetz.</li><li>Ein Roboter muss sich selbst schützen, solange das nicht dem ersten oder zweiten Gesetz widerspricht.</li></ol>
+      <p class="muted" style="margin:0">Viele Geschichten, etwa «I, Robot» oder «Der 200 Jahre Mann», spielen damit, wie diese Regeln in schwierigen Situationen zu Widersprüchen führen. Echte Roboter werden nicht mit solchen Gesetzen programmiert: Ihre Sicherheit entsteht durch Normen, Sensoren und sorgfältige Programmierung.</p></div>
+    <div class="note" style="--bc:var(--nord13)"><h3>💬 Fragen zum Diskutieren</h3>
+      <ul><li>Warum sind Roboter im Film so oft eine <b>Bedrohung</b>? Zähle in der Zeitleiste nach: Hat sich das über die Jahrzehnte verändert?</li><li>Viele Filmroboter sehen aus wie <b>Menschen</b>. Die meisten echten Roboter nicht. Warum ist das so?</li><li>Welcher Filmroboter ist am <b>realistischsten</b>? Begründe mit Sense, Think und Act.</li><li>Filmroboter haben oft <b>Gefühle</b>. Kann eine Maschine Gefühle haben, oder tut sie nur so?</li><li>Wie verändern Filme, was wir von <b>echten Robotern</b> erwarten oder befürchten?</li></ul></div>
+  </div>
+</main>
+<footer class="wrap">Alle Figuren, Werke und Bilder gehören ihren jeweiligen Rechteinhabern. HAL-9000-Grafik: MorningLemon, CC BY 3.0. Jahr = Erscheinungsjahr des Films bzw. Startjahr der Serie (Originalfassung). Deutsche Titel in Klammern.</footer>
+
+<script>
+const ROLLEN={gut:{nm:'Freund / Helfer',ic:'✓',c:'var(--c-gut)'},zwie:{nm:'zwiespältig',ic:'≈',c:'var(--c-zwie)'},boese:{nm:'Bedrohung',ic:'⚠',c:'var(--c-boese)'}};
+const FORMEN={human:{nm:'menschenähnlich',ic:'🧍'},maschine:{nm:'Maschine',ic:'⚙'},fahrzeug:{nm:'Fahrzeug',ic:'🚗'},computer:{nm:'Computer / KI',ic:'🖥'},cyborg:{nm:'Cyborg',ic:'🦾'}};
+const MEDIEN={film:'🎬 Film',serie:'📺 Serie'};
+const DEF={ja:['var(--nord14)','✓ Roboter'],grenz:['var(--nord13)','≈ Grenzfall'],nein:['var(--nord11)','✗ kein Roboter']};
+const R=[
+ {n:'Maria (Maschinenmensch)',img:'maria.webp',w:'Metropolis',j:1927,m:'film',f:'human',r:'boese',
+  d:'Im deutschen Stummfilm von Fritz Lang erhält eine Maschine das Aussehen einer Frau und stiftet Unruhe unter den Arbeiter:innen. Eine der ersten Roboterfiguren der Filmgeschichte.',
+  rc:'Menschenähnliche Roboter, die man nicht von echten Menschen unterscheiden kann, gibt es bis heute nicht. Schon Gang und Mimik sind technisch sehr schwierig.',def:'ja'},
+ {n:'Robby',img:'robby.webp',w:'Forbidden Planet (Alarm im Weltall)',j:1956,m:'film',f:'human',r:'gut',
+  d:'Ein höflicher, sehr starker Diener-Roboter auf einem fernen Planeten. Robby wurde so berühmt, dass er später in vielen anderen Filmen und Serien auftauchte.',
+  rc:'Robby versteht Sprache und führt Befehle aus. Sprachsteuerung gibt es heute in jedem Handy, ein Roboter, der beliebige Aufgaben im Haushalt erledigt, aber noch nicht.',def:'ja'},
+ {n:'Rosie',img:'rosie.webp',w:'The Jetsons (Die Jetsons)',j:1962,m:'serie',f:'human',r:'gut',
+  d:'Die Roboter-Haushälterin einer Zeichentrickfamilie der Zukunft. Sie putzt, kocht und hat zu allem eine Meinung.',
+  rc:'Heute putzen Saug- und Wischroboter den Boden. Einen Allzweck-Haushaltsroboter wie Rosie gibt es noch nicht, daran wird aber geforscht.',def:'ja'},
+ {n:'Roboter B-9',img:'b9.webp',w:'Lost in Space (Verschollen zwischen fremden Welten)',j:1965,m:'serie',f:'maschine',r:'gut',
+  d:'Begleitet eine Familie im Weltall und warnt sie mit seinen Sensoren vor Gefahren. Seine Warnrufe wurden zum Kult.',
+  rc:'Ein Roboter, der die Umgebung mit Sensoren überwacht und Alarm gibt, ist sehr realistisch. Das machen heute zum Beispiel Inspektionsroboter in Industrieanlagen.',def:'ja'},
+ {n:'HAL 9000',img:'hal9000.svg',cr:'Grafik: MorningLemon, CC BY 3.0',w:'2001: A Space Odyssey (2001: Odyssee im Weltraum)',j:1968,m:'film',f:'computer',r:'boese',
+  d:'Der Bordcomputer eines Raumschiffs spricht ruhig und freundlich, verfolgt aber bald eigene Ziele gegen die Besatzung. HAL ist nur als rotes Kameraauge zu sehen.',
+  rc:'HAL hat keinen eigenen Körper, steuert aber das ganze Raumschiff. Sprachassistenten können heute sprechen und zuhören, haben jedoch keine eigenen Absichten.',def:'grenz'},
+ {n:'Robbi',img:'robbi.webp',w:'Robbi, Tobbi und das Fliewatüüt',j:1972,m:'serie',f:'maschine',r:'gut',
+  d:'Ein kleiner Roboter, der mit dem Erfinderjungen Tobbi in einem fliegenden, schwimmenden und fahrenden Gefährt auf Reisen geht. Eine bekannte deutsche Kinderserie nach dem Buch von Boy Lornsen.',
+  rc:'Robbi ist ein Schüler-Roboter, der Aufgaben lösen muss. Echte Lernroboter für die Schule gibt es heute viele, etwa mit dem micro:bit als Gehirn.',def:'ja'},
+ {n:'R2-D2',img:'r2d2.webp',w:'Star Wars (Krieg der Sterne)',j:1977,m:'film',f:'maschine',r:'gut',
+  d:'Ein kleiner, tonnenförmiger Reparatur-Roboter, der nur in Piep- und Pfeiftönen spricht. Er repariert Raumschiffe und verbindet sich mit fremden Computern.',
+  rc:'Kleine Roboter auf Rädern, die Wartungsarbeiten erledigen, sind realistisch. Dass R2-D2 sich in jeden fremden Computer einklinken kann, ist dagegen reine Fantasie.',def:'ja'},
+ {n:'C-3PO',img:'c3po.webp',w:'Star Wars (Krieg der Sterne)',j:1977,m:'film',f:'human',r:'gut',
+  d:'Ein goldener, menschenähnlicher Protokoll-Roboter, der viele Sprachen beherrscht und gern übervorsichtig ist.',
+  rc:'Übersetzen zwischen vielen Sprachen können Computer heute ziemlich gut. Ein Roboter, der sich so geschickt wie ein Mensch bewegt, ist aber noch Zukunftsmusik.',def:'ja'},
+ {n:'Marvin',img:'marvin.webp',w:'The Hitchhiker’s Guide to the Galaxy (Per Anhalter durch die Galaxis)',j:1981,m:'serie',f:'human',r:'zwie',
+  d:'Ein extrem intelligenter, aber dauerhaft schlecht gelaunter Roboter. Er findet alle Aufgaben unter seiner Würde. Zuerst als BBC-Fernsehserie, 2005 auch als Kinofilm.',
+  rc:'Marvin ist eine Parodie: Echte Roboter haben keine Launen. Er zeigt aber humorvoll die Frage, ob eine sehr kluge Maschine sich langweilen könnte.',def:'ja'},
+ {n:'KITT',img:'kitt.webp',w:'Knight Rider',j:1982,m:'serie',f:'fahrzeug',r:'gut',
+  d:'Ein sprechendes Auto mit künstlicher Intelligenz, das selbst fährt und seinem Fahrer bei der Verbrecherjagd hilft.',
+  rc:'Selbstfahrende Autos gibt es heute tatsächlich, sie fahren in einigen Städten bereits ohne Fahrer:in. KITT war seiner Zeit damit weit voraus.',def:'ja'},
+ {n:'T-800',img:'t800.webp',w:'The Terminator (Terminator)',j:1984,m:'film',f:'human',r:'boese',
+  d:'Ein Kampfroboter aus Metall, mit künstlicher Haut überzogen, wird aus der Zukunft zurückgeschickt. Er gilt als Inbegriff des gefährlichen Roboters.',
+  rc:'Kampfroboter mit menschlichem Aussehen gibt es nicht. Ob Maschinen allein über Gewalt entscheiden dürfen, wird aber in der Politik ernsthaft diskutiert.',def:'ja'},
+ {n:'Nummer 5',img:'nummer5.webp',w:'Short Circuit (Nummer 5 lebt!)',j:1986,m:'film',f:'maschine',r:'gut',
+  d:'Ein Militärroboter wird von einem Blitz getroffen, entwickelt plötzlich ein eigenes Bewusstsein und will nicht mehr zerstört werden.',
+  rc:'Raupenroboter mit Kameras und Greifarmen werden heute zum Beispiel zur Bombenentschärfung eingesetzt. Dass ein Blitz Bewusstsein erzeugt, ist reine Fiktion.',def:'ja'},
+ {n:'Data',img:'data.webp',w:'Star Trek: The Next Generation (Raumschiff Enterprise: Das nächste Jahrhundert)',j:1987,m:'serie',f:'human',r:'gut',
+  d:'Ein Android als Offizier an Bord eines Raumschiffs. Er ist stärker und schneller als jeder Mensch und möchte unbedingt menschlicher werden.',
+  rc:'Data stellt die grosse Frage: Wann ist eine Maschine eine Person mit Rechten? Echte Androiden sind von seinen Fähigkeiten aber noch weit entfernt.',def:'ja'},
+ {n:'RoboCop',img:'robocop.webp',w:'RoboCop',j:1987,m:'film',f:'cyborg',r:'zwie',
+  d:'Ein schwer verletzter Polizist wird mit einem Maschinenkörper wieder zum Leben gebracht und als Polizeiroboter eingesetzt.',
+  rc:'RoboCop ist ein Cyborg: halb Mensch, halb Maschine. Echte Prothesen, die mit Nervensignalen gesteuert werden, gibt es heute schon für Arme und Beine.',def:'grenz'},
+ {n:'Bender',img:'bender.webp',w:'Futurama',j:1999,m:'serie',f:'human',r:'zwie',
+  d:'Ein frecher Industrieroboter in einer Zeichentrickserie, eigentlich zum Biegen von Metall gebaut. Er ist egoistisch, aber trotzdem ein Freund.',
+  rc:'Bender ist Satire. Dass ein Biegeroboter eine eigene Persönlichkeit hat, zeigt humorvoll, wie Menschen Maschinen gern menschliche Eigenschaften zuschreiben.',def:'ja'},
+ {n:'Der Gigant',img:'gigant.webp',w:'The Iron Giant (Der Gigant aus dem All)',j:1999,m:'film',f:'human',r:'gut',
+  d:'Ein riesiger Roboter aus dem All landet in einer Kleinstadt und freundet sich mit einem Jungen an. Er entscheidet sich, nicht die Waffe zu sein, als die er gebaut wurde.',
+  rc:'Ein Roboter, der selbst entscheidet, was er sein will, ist Fiktion. Der Film stellt aber eine echte Frage: Wer bestimmt, wofür eine Maschine eingesetzt wird?',def:'ja'},
+ {n:'Andrew',img:'andrew.webp',w:'Bicentennial Man (Der 200 Jahre Mann)',j:1999,m:'film',f:'human',r:'gut',
+  d:'Ein Haushaltsroboter entwickelt über zwei Jahrhunderte Kreativität und Gefühle und kämpft darum, als Mensch anerkannt zu werden. Nach einer Geschichte von Isaac Asimov.',
+  rc:'Roboter, die sich über Jahre hinweg weiterentwickeln, gibt es nicht. Software kann aber durch Updates und maschinelles Lernen neue Fähigkeiten bekommen.',def:'ja'},
+ {n:'David',img:'david.webp',w:'A.I. Artificial Intelligence (A.I. – Künstliche Intelligenz)',j:2001,m:'film',f:'human',r:'gut',
+  d:'Ein Roboterjunge, der darauf programmiert ist, seine Mutter zu lieben, und sich wünscht, ein echtes Kind zu sein.',
+  rc:'Es gibt Roboter, die Gefühle zeigen, etwa mit einem Gesicht auf einem Bildschirm. Ob sie dabei wirklich etwas fühlen, ist eine offene Frage der Philosophie.',def:'ja'},
+ {n:'Sonny',img:'sonny.webp',w:'I, Robot',j:2004,m:'film',f:'human',r:'zwie',
+  d:'Ein Roboter steht unter Verdacht, einen Menschen getötet zu haben, obwohl Roboter nach den Robotergesetzen das gar nicht dürften. Inspiriert von Asimovs Geschichten.',
+  rc:'Der Film zeigt, dass einfache Regeln für Roboter in der Praxis zu Widersprüchen führen können. Siehe Kasten zu den Robotergesetzen weiter unten.',def:'ja'},
+ {n:'Optimus Prime',img:'optimus.webp',w:'Transformers',j:2007,m:'film',f:'fahrzeug',r:'gut',
+  d:'Ausserirdischer Roboter, der sich in einen Lastwagen verwandeln kann. Die Figur stammt ursprünglich aus einer Spielzeugreihe und einer Zeichentrickserie der 1980er-Jahre.',
+  rc:'Transformers sind ausserirdische Lebewesen, keine von Menschen gebauten Maschinen. Echte Roboter, die ihre Form verändern, gibt es nur in sehr kleinem Massstab in der Forschung.',def:'grenz'},
+ {n:'WALL·E',img:'walle.webp',w:'WALL·E',j:2008,m:'film',f:'maschine',r:'gut',
+  d:'Ein kleiner Müllsammelroboter räumt allein eine verlassene Erde auf und verliebt sich in die Erkundungsroboterin EVE. Der Film kommt lange fast ohne Worte aus.',
+  rc:'Roboter, die Abfall sortieren, gibt es heute in Recyclinganlagen. WALL·E zeigt typische Roboterbauteile gut: Kameras, Raupen, Greifer und eine Solarbatterie.',def:'ja'},
+ {n:'Baymax',img:'baymax.webp',w:'Big Hero 6 (Baymax – Riesiges Robowabohu)',j:2014,m:'film',f:'human',r:'gut',
+  d:'Ein aufblasbarer, weicher Pflegeroboter, der Verletzungen untersucht und sich um die Gesundheit seines jungen Besitzers kümmert.',
+  rc:'Weiche Roboter aus nachgiebigen Materialien (Soft Robotics) sind ein echtes Forschungsgebiet, gerade weil sie Menschen nicht verletzen können.',def:'ja'},
+ {n:'TARS',img:'tars.webp',w:'Interstellar',j:2014,m:'film',f:'maschine',r:'gut',
+  d:'Ein Roboter aus beweglichen Metallblöcken begleitet eine Raumfahrtmission. Man kann seinen Humor und seine Ehrlichkeit per Regler einstellen.',
+  rc:'TARS sieht nicht menschlich aus, sondern ist auf seine Aufgabe zugeschnitten. Das ist sehr realistisch: Echte Roboter haben die Form, die für ihre Arbeit am besten passt.',def:'ja'},
+ {n:'Ava',img:'ava.webp',w:'Ex Machina',j:2014,m:'film',f:'human',r:'zwie',
+  d:'Ein Programmierer soll testen, ob die Androidin Ava ein echtes Bewusstsein hat. Bald ist unklar, wer hier wen testet.',
+  rc:'Der Film greift den Turing-Test auf: Kann eine Maschine im Gespräch einen Menschen täuschen? Heutige Chatbots kommen dem in Textgesprächen erstaunlich nahe.',def:'ja'},
+ {n:'Chappie',img:'chappie.webp',w:'Chappie',j:2015,m:'film',f:'human',r:'zwie',
+  d:'Ein Polizeiroboter erhält eine Software, mit der er wie ein Kind lernt. Er wächst bei Kriminellen auf und muss selbst herausfinden, was richtig ist.',
+  rc:'Maschinelles Lernen funktioniert tatsächlich durch Beispiele, ähnlich wie Kinder lernen. Was ein Roboter lernt, hängt darum stark von seinen Daten ab.',def:'ja'},
+ {n:'Roz',img:'roz.webp',w:'The Wild Robot (Der wilde Roboter)',j:2024,m:'film',f:'human',r:'gut',
+  d:'Ein Serviceroboter strandet auf einer Insel voller Tiere, lernt ihre Sprache und zieht ein verwaistes Gänseküken auf.',
+  rc:'Roz zeigt, wie ein Roboter durch Beobachten lernt und sich an eine neue Umgebung anpasst. Genau daran wird in der Robotik heute intensiv geforscht.',def:'ja'}
+];
+R.forEach((x,i)=>x.id='r'+i);
+
+const st={rolle:new Set(),form:new Set(),medium:new Set(),q:'',sort:'jahr',sel:null};
+function chips(id,obj,key,label,color){
+  const el=document.getElementById(id);
+  el.innerHTML=`<span class="fl">${label}</span>`+Object.entries(obj).map(([k,v])=>{
+    const nm=typeof v==='string'?v:`${v.ic} ${v.nm}`;const c=v.c?`--cc:${v.c}`:'';
+    return `<button type="button" class="chip" style="${c}" data-k="${key}" data-v="${k}" aria-pressed="${st[key].has(k)}">${v.c?'<span class="dot"></span>':''}${nm}</button>`;}).join('');
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>{const s=st[key];s.has(b.dataset.v)?s.delete(b.dataset.v):s.add(b.dataset.v);render();});
+}
+const match=x=>(!st.rolle.size||st.rolle.has(x.r))&&(!st.form.size||st.form.has(x.f))&&(!st.medium.size||st.medium.has(x.m))&&
+  (!st.q||(x.n+' '+x.w+' '+x.j).toLowerCase().includes(st.q.toLowerCase()));
+
+function timeline(){
+  const W=1100,x0=40,x1=W-30,a=1920,b=2030;
+  const X=j=>x0+(j-a)/(b-a)*(x1-x0);
+  const sorted=[...R].sort((p,q)=>p.j-q.j),lanes=[],pos=[];
+  sorted.forEach(x=>{const px=X(x.j),lab=x.n.split(' (')[0],end=px+14+lab.length*6.4;let lane=0;while(lanes[lane]!==undefined&&px-8<lanes[lane])lane++;lanes[lane]=end;pos.push([x,px,lane,lab]);});
+  const y=40+lanes.length*22,H=y+40;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="group" aria-label="Zeitleiste der Filmroboter von 1920 bis 2030"><line class="axis" x1="${x0}" y1="${y}" x2="${x1}" y2="${y}"/>`;
+  for(let d=a;d<=b;d+=10)s+=`<line class="tick" x1="${X(d)}" y1="${y-6}" x2="${X(d)}" y2="${y+6}"/><text class="yr" x="${X(d)}" y="${y+26}">${d}er</text>`;
+  pos.forEach(([x,px,lane,lab])=>{
+    const cy=y-18-lane*22,on=match(x);
+    s+=`<line x1="${px}" y1="${y}" x2="${px}" y2="${cy}" stroke="var(--nord3)" ${on?'':'opacity=".18"'}/><circle class="dot${on?'':' dim'}${st.sel===x.id?' sel':''}" cx="${px}" cy="${cy}" r="7" fill="${ROLLEN[x.r].c}" data-go="${x.id}" tabindex="0" role="button" aria-label="${x.n}, ${x.j}"><title>${x.n} (${x.j})</title></circle><text class="lbl${on?'':' dim'}" x="${px+10}" y="${cy+4}">${lab}</text>`;
+  });
+  document.getElementById('tl').innerHTML=s+'</svg>';
+  document.querySelectorAll('[data-go]').forEach(c=>{const f=()=>goTo(c.dataset.go);c.addEventListener('click',f);c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f();}});});
+}
+function goTo(id){
+  const x=R.find(r=>r.id===id);
+  if(!match(x)){st.rolle.clear();st.form.clear();st.medium.clear();st.q='';document.getElementById('q').value='';}
+  st.sel=id;render();
+  const el=document.getElementById(id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.querySelector('details').open=true;}
+}
+function render(){
+  chips('fRolle',ROLLEN,'rolle','Rolle');chips('fForm',FORMEN,'form','Bauform');chips('fMedium',MEDIEN,'medium','Medium');
+  timeline();
+  const list=R.filter(match).sort((p,q)=>st.sort==='name'?p.n.localeCompare(q.n,'de'):p.j-q.j||p.n.localeCompare(q.n,'de'));
+  document.getElementById('count').textContent=`${list.length} von ${R.length}`;
+  document.getElementById('cards').innerHTML=list.length?list.map(x=>{
+    const ro=ROLLEN[x.r],fo=FORMEN[x.f],df=DEF[x.def];
+    return `<article class="card${st.sel===x.id?' sel':''}" id="${x.id}" style="--cc:${ro.c}">
+      ${x.img?`<div class="pic"><img src="bilder/${x.img}" alt="${x.n} aus «${x.w.split(' (')[0]}»" loading="lazy">${x.cr?`<span class="cr">${x.cr}</span>`:''}</div>`:''}
+      <div class="card-top"><span class="ic" aria-hidden="true">${fo.ic}</span><div><h3>${x.n}</h3><p class="werk"><span class="yr">${x.j}</span> · ${x.w}</p></div></div>
+      <div class="tags"><span class="badge" style="--bc:${ro.c}">${ro.ic} ${ro.nm}</span><span class="badge n">${fo.nm}</span><span class="badge n">${MEDIEN[x.m]}</span></div>
+      <p class="d">${x.d}</p>
+      <details class="rc"><summary>🔍 Realitätscheck</summary><p>${x.rc}</p><div class="def"><span class="badge" style="--bc:${df[0]}">${df[1]}</span><span class="muted">nach unserer Definition</span></div></details>
+    </article>`;}).join(''):'<div class="empty">Kein Roboter passt zu diesen Filtern.</div>';
+}
+document.getElementById('q').addEventListener('input',e=>{st.q=e.target.value;render();});
+document.getElementById('sort').addEventListener('change',e=>{st.sort=e.target.value;render();});
+render();
+</script>
+</body>
+</html>
