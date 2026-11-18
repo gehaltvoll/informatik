@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik · Zielgruppe: Schüler:innen · Gerät: gemischt
+  Inhalt: 7 aufbauende Einführungsprogramme für den micro:bit V2 in MakeCode-Blöcken
+    (Sequenz, Schleife, Ereignis, Variable, Zufall, Bedingung, Wiederholung mit Zähler)
+  Interaktivität: Schritt-für-Schritt-Ablauf (Vor/Zurück, Pfeiltasten) mit hervorgehobenem Block,
+    virtuellem micro:bit (LED-Anzeige, Knöpfe, Schütteln), Variablen- und Sensoranzeige
+  Übungen: pro Programm eine, Lösung in Blöcken einblendbar
+  Code: nur MakeCode-Blöcke (HTML-Nachbau, Nord-Farben), kein JavaScript
+  Datenhaltung: keine · Export: keiner · Navigation über #p1 … #p7
+  Design: nur Variante «Technik», nur Dunkelmodus (wie Artefakt «micro:bit V2 – Sensoren und Aktoren»)
+-->
+<html lang="de-CH" style="color-scheme:dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>micro:bit – Erste Programme Schritt für Schritt</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);--r:6px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:400 17px/1.6 var(--font)}
+button{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.mono{font-family:var(--font-mono)}
+header.top{border-bottom:1px solid var(--nord2);padding:22px 0 18px}
+.kicker{margin:0;font:400 .8rem var(--font-mono);color:var(--nord8);text-transform:uppercase;letter-spacing:.06em}
+h1{margin:2px 0 4px;font-size:2rem;font-weight:700;line-height:1.15}
+.lead{margin:0;max-width:66ch;color:var(--nord4)}
+main{padding:18px 0 40px}
+p{max-width:70ch}
+
+/* Programmwahl */
+.nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0 20px}
+.nav button{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--r);padding:8px 12px;text-align:left;cursor:pointer;line-height:1.3}
+.nav button:hover{border-color:var(--nord3)}
+.nav button[aria-current=true]{border-color:var(--nord8);background:var(--nord2);box-shadow:inset 0 -3px 0 var(--nord8)}
+.nav .no{display:block;font:600 .75rem var(--font-mono);color:var(--nord8)}
+.nav .nm{display:block;font-weight:600;font-size:.95rem}
+.nav .cp{display:block;font-size:.8rem;color:var(--nord4)}
+
+.prog-head{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-bottom:4px}
+.prog-head h2{margin:0;font-size:1.6rem;font-weight:700}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:999px;background:var(--nord8);color:var(--nord0);font:600 .72rem var(--font-mono);text-transform:uppercase;letter-spacing:.04em}
+
+/* Arbeitsbereich */
+.work{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;margin-top:14px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--r);padding:14px}
+.panel-t{font:600 .75rem var(--font-mono);color:var(--nord4);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px}
+.blocks{background:var(--nord2);border-radius:var(--r);padding:16px;overflow-x:auto;display:flex;flex-direction:column;gap:12px;align-items:flex-start;background-image:radial-gradient(rgba(76,86,106,.6) 1px,transparent 1px);background-size:16px 16px}
+
+/* Blöcke */
+.k-basic{--c:var(--nord9)}.k-input{--c:var(--nord15)}.k-loops{--c:var(--nord14)}.k-logic{--c:var(--nord8)}.k-var{--c:var(--nord12)}.k-math{--c:var(--nord7)}
+.ev,.cb{display:inline-block;color:var(--nord0);font:600 14px/1.3 var(--font);min-width:180px}
+.ev-head,.cb-row{background:var(--c);padding:7px 12px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.ev-head{border-radius:18px 18px 4px 0;padding-top:10px}
+.cb-row{border-radius:4px 4px 4px 0}
+.cb-body + .cb-row{border-radius:0 4px 4px 0}
+.ev-body,.cb-body{border-left:14px solid var(--c);padding:3px 0;min-height:18px;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.ev-foot,.cb-foot{background:var(--c);height:14px;border-radius:0 4px 4px 4px;width:70%}
+.cb-foot{height:10px}
+.st{background:var(--c);color:var(--nord0);padding:6px 12px;border-radius:4px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.rep{background:var(--c);color:var(--nord0);border-radius:999px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(46,52,64,.3)}
+.rep.bool{border-radius:0;border:0;padding:4px 16px;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,10px 100%,0 50%)}
+.slot{background:var(--nord6);color:var(--nord0);border-radius:999px;padding:0 9px;font-weight:400;min-width:24px;text-align:center;display:inline-flex;gap:4px;align-items:center}
+.slot.num{font-family:var(--font-mono)}
+.slot.dd{background:rgba(236,239,244,.5);border:1px solid rgba(46,52,64,.3);font-weight:600}
+.ledgrid{display:inline-grid;grid-template-columns:repeat(5,10px);gap:2px;padding:4px;background:var(--nord0);border-radius:4px}
+.ledgrid i{width:10px;height:10px;border-radius:2px;background:var(--nord3)}
+.ledgrid i.on{background:var(--nord11)}
+[data-b]{transition:outline-color .15s,box-shadow .15s;outline:3px solid transparent;outline-offset:2px}
+[data-b].hl{outline-color:var(--nord13);box-shadow:0 0 0 7px rgba(235,203,139,.28);position:relative;z-index:1}
+
+/* Virtueller micro:bit */
+.sim{display:flex;flex-direction:column;gap:12px}
+.vmb-wrap{display:flex;justify-content:center;padding:6px 0}
+.vmb{position:relative;width:260px;max-width:100%;aspect-ratio:13/10;background:var(--nord0);border:2px solid var(--nord3);border-radius:18px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:34px 10px 18px}
+.vmb.shake{animation:shake .5s ease-in-out 2}
+@keyframes shake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-8px) rotate(-4deg)}75%{transform:translateX(8px) rotate(4deg)}}
+.logo{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:3px}
+.logo i{width:18px;height:12px;border:3px solid var(--nord13);border-radius:8px}
+.matrix{display:grid;grid-template-columns:repeat(5,16px);gap:9px;justify-content:center}
+.matrix i{width:16px;height:16px;border-radius:3px;background:var(--nord2);transition:background .15s}
+.matrix i.on{background:var(--nord11);box-shadow:0 0 10px rgba(191,97,106,.8)}
+.btn{justify-self:center;display:flex;flex-direction:column;align-items:center;gap:4px;font:600 .9rem var(--font-mono);color:var(--nord4)}
+.btn i{width:34px;height:34px;border-radius:50%;background:var(--nord1);border:3px solid var(--nord3);transition:all .15s}
+.btn.on i{background:var(--nord13);border-color:var(--nord13);box-shadow:0 0 0 6px rgba(235,203,139,.3)}
+.btn.on{color:var(--nord13)}
+.strip{height:30px;border-radius:var(--r);background:var(--nord0);border:1px solid var(--nord3);overflow:hidden;position:relative}
+.strip span{position:absolute;top:50%;transform:translateY(-50%);white-space:nowrap;font:600 1rem var(--font-mono);color:var(--nord11);letter-spacing:.2em;left:100%;animation:scroll 4s linear infinite}
+.strip.empty::after{content:"– kein Lauftext –";position:absolute;inset:0;display:grid;place-items:center;font:400 .8rem var(--font-mono);color:var(--nord3)}
+@keyframes scroll{from{left:100%}to{left:0;transform:translate(-100%,-50%)}}
+.ev-tag{min-height:28px;text-align:center}
+.ev-tag .badge{background:var(--nord13);font-size:.8rem}
+.state{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.state .box{background:var(--nord0);border:1px solid var(--nord3);border-radius:var(--r);padding:8px 10px;font-size:.9rem}
+.state .box b{display:block;font:600 .72rem var(--font-mono);color:var(--nord4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.vars{font-family:var(--font-mono)}
+.vars .v{display:flex;justify-content:space-between;gap:8px}
+.vars .v span:last-child{color:var(--nord12);font-weight:600}
+.vars .v.changed span:last-child{color:var(--nord13)}
+.muted{color:var(--nord4);font-size:.85rem}
+
+/* Schrittsteuerung */
+.stepper{margin-top:16px;background:var(--surface);border:1px solid var(--surface-2);border-left:5px solid var(--nord13);border-radius:var(--r);padding:14px 16px}
+.step-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.step-no{font:600 .85rem var(--font-mono);color:var(--nord13)}
+.step-text{margin:8px 0 12px;min-height:3.2em}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cbtn{background:var(--nord2);border:1px solid var(--nord3);border-radius:var(--r);padding:6px 14px;cursor:pointer;font-weight:600}
+.cbtn.primary{background:var(--nord8);color:var(--nord0);border-color:var(--nord8)}
+.cbtn:disabled{opacity:.4;cursor:default}
+.dots{display:flex;gap:5px;flex-wrap:wrap}
+.dots button{width:12px;height:12px;border-radius:50%;border:0;padding:0;background:var(--nord3);cursor:pointer}
+.dots button.done{background:var(--nord9)}
+.dots button[aria-current=true]{background:var(--nord13)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:16px;align-items:start}
+.note{background:var(--surface);border:1px solid var(--surface-2);border-left:5px solid var(--bc);border-radius:var(--r);padding:12px 16px}
+.note h3{margin:0 0 4px;font-size:1.05rem;font-weight:600}
+.note p{margin:0 0 8px}
+.sol{margin-top:10px}
+footer{padding:24px 0 40px;font-size:.85rem;color:var(--nord4)}
+@media (max-width:860px){.work{grid-template-columns:1fr}h1{font-size:1.7rem}}
+@media (prefers-reduced-motion:reduce){.vmb.shake{animation:none}.strip span{animation:none;left:8px;transform:translateY(-50%)}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">micro:bit V2 // Einführung in MakeCode</p>
+    <h1>Erste Programme Schritt für Schritt</h1>
+    <p class="lead">Sieben kleine Programme, die aufeinander aufbauen. Klicke dich mit «Weiter» durch: Der gelb markierte Block wird gerade ausgeführt, rechts siehst du, was der micro:bit dabei macht.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="nav" id="nav" aria-label="Programme"></nav>
+  <section id="prog" aria-live="polite"></section>
+</main>
+<footer class="wrap">Blockbeschriftungen können je nach MakeCode-Version leicht abweichen. Die Blockfarben sind ans Nord-Farbschema angepasst. Ausprobieren: <a href="https://makecode.microbit.org/">makecode.microbit.org</a></footer>
+
+<script>
+/* ---------- Block-Bausteine (mit IDs zum Hervorheben) ---------- */
+const E=(c,id,head,...body)=>`<div class="ev k-${c}"><div class="ev-head"${id?` data-b="${id}"`:''}>${head}</div><div class="ev-body">${body.join('')}</div><div class="ev-foot"></div></div>`;
+const C=(c,id,branches)=>`<div class="cb k-${c}">${branches.map((br,i)=>`<div class="cb-row"${id?` data-b="${id}${i}"`:''}>${br[0]}</div><div class="cb-body">${br[1].join('')}</div>`).join('')}<div class="cb-foot"></div></div>`;
+const S=(c,id,...p)=>`<div class="st k-${c}"${id?` data-b="${id}"`:''}>${p.join(' ')}</div>`;
+const R=(c,...p)=>`<span class="rep k-${c}">${p.join(' ')}</span>`;
+const Bo=(c,...p)=>`<span class="rep bool k-${c}">${p.join(' ')}</span>`;
+const N=v=>`<span class="slot num">${v}</span>`;
+const D=v=>`<span class="slot dd">${v}<span aria-hidden="true">▾</span></span>`;
+const T=v=>`<span class="slot">"${v}"</span>`;
+const L=p=>`<span class="ledgrid" role="img" aria-label="LED-Muster">${p.replace(/\s/g,'').split('').map(ch=>`<i class="${ch==='#'?'on':''}"></i>`).join('')}</span>`;
+
+/* ---------- LED-Muster ---------- */
+const ICONS={
+  clear:".....|.....|.....|.....|.....",
+  all:"#####|#####|#####|#####|#####",
+  heart:".#.#.|#####|#####|.###.|..#..",
+  small:".....|.#.#.|.###.|..#..|.....",
+  happy:".....|.#.#.|.....|#...#|.###.",
+  sad:".....|.#.#.|.....|.###.|#...#",
+  yes:".....|....#|...#.|#.#..|.#...",
+  diamond:".....|..#..|.#.#.|..#..|.....",
+  own:"#...#|.#.#.|..#..|.#.#.|#...#"
+};
+const DIG=[".##..|#..#.|#..#.|#..#.|.##..","..#..|.##..|..#..|..#..|.###.","###..|...#.|.##..|#....|####.","####.|...#.|..#..|#..#.|.##..","..##.|.#.#.|#..#.|####.|...#.","####.|#....|###..|...#.|###..","...#.|..#..|.###.|#...#|.###.","#####|...#.|..#..|.#...|#....",".###.|#...#|.###.|#...#|.###.",".###.|#...#|.###.|..#..|.#..."];
+const OWN="#...# .#.#. ..#.. .#.#. #...#";
+const ALL="##### ##### ##### ##### #####";
+
+/* ---------- Programme ---------- */
+const PROGS=[
+{id:'p1',title:'Hallo micro:bit',concept:'Sequenz',
+ intro:'Das allererste Programm: Der micro:bit zeigt ein Bild und dann einen Text.',
+ blocks:E('basic','a','beim Start',S('basic','b',`zeige Symbol ${D('♥')}`),S('basic','c',`zeige Text ${T('Hallo')}`)),
+ steps:[
+  {t:'Das Programm ist auf den micro:bit geladen. Sobald er Strom bekommt, startet er.',d:'clear'},
+  {b:'a',t:'<b>«beim Start»</b> läuft genau <b>einmal</b>, direkt nach dem Einschalten. Die Blöcke darin werden von oben nach unten ausgeführt.'},
+  {b:'b',t:'Der erste Befehl: Auf der LED-Anzeige erscheint ein Herz.',d:'heart'},
+  {b:'c',t:'Der zweite Befehl: Der Text «Hallo» läuft Buchstabe für Buchstabe von rechts nach links über die Anzeige.',d:{text:'Hallo'}},
+  {t:'Fertig! Alle Befehle sind ausgeführt, die Anzeige bleibt leer. Das Programm macht erst wieder etwas, wenn du den micro:bit neu startest.',d:'clear'}
+ ],
+ merke:'Befehle werden <b>der Reihe nach</b> ausgeführt – von oben nach unten. Das nennt man <b>Sequenz</b>. Die Reihenfolge ist wichtig!',
+ task:'Ändere das Programm: Zuerst soll dein Name durchlaufen, danach ein selbst gezeichnetes Bild erscheinen. Tipp: Der Block «zeige LEDs» ist in der Kategorie «Grundlagen».',
+ sol:E('basic','','beim Start',S('basic','',`zeige Text ${T('Mia')}`),S('basic','',`zeige LEDs ${L(OWN)}`))},
+
+{id:'p2',title:'Blinkendes Herz',concept:'Endlosschleife',
+ intro:'Ein Herz, das schlägt: gross – klein – gross – klein …',
+ blocks:E('basic','a','dauerhaft',S('basic','b',`zeige Symbol ${D('♥')}`),S('basic','c',`pausiere (ms) ${N(500)}`),S('basic','d',`zeige Symbol ${D('♡ klein')}`),S('basic','e',`pausiere (ms) ${N(500)}`)),
+ steps:[
+  {t:'Das Programm startet.',d:'clear'},
+  {b:'a',t:'<b>«dauerhaft»</b> wiederholt seinen Inhalt immer wieder – ohne Ende. Runde 1 beginnt.'},
+  {b:'b',t:'Das grosse Herz erscheint.',d:'heart'},
+  {b:'c',t:'<b>«pausiere 500 ms»</b>: Der micro:bit wartet eine halbe Sekunde (1000 ms = 1 s). Ohne Pause wäre das Bild so schnell weg, dass man es kaum sieht.'},
+  {b:'d',t:'Das kleine Herz erscheint.',d:'small'},
+  {b:'e',t:'Wieder eine halbe Sekunde warten.'},
+  {b:'a',t:'Der letzte Block ist erledigt – also springt «dauerhaft» wieder nach oben. Runde 2 beginnt.'},
+  {b:'b',t:'Grosses Herz …',d:'heart'},
+  {b:'c',t:'… Pause …'},
+  {b:'d',t:'… kleines Herz …',d:'small'},
+  {b:'e',t:'… Pause – und so weiter, bis du den Strom ausschaltest. Das sieht aus wie ein schlagendes Herz.'}
+ ],
+ merke:'Eine <b>Schleife</b> wiederholt Befehle. «dauerhaft» ist eine <b>Endlosschleife</b>: Sie hört nie auf.',
+ task:'Lass das Herz doppelt so schnell schlagen und füge als drittes Bild einen Diamanten ein.',
+ sol:E('basic','','dauerhaft',S('basic','',`zeige Symbol ${D('♥')}`),S('basic','',`pausiere (ms) ${N(250)}`),S('basic','',`zeige Symbol ${D('♡ klein')}`),S('basic','',`pausiere (ms) ${N(250)}`),S('basic','',`zeige Symbol ${D('◇ Diamant')}`),S('basic','',`pausiere (ms) ${N(250)}`))},
+
+{id:'p3',title:'Knöpfe A und B',concept:'Ereignis',
+ intro:'Der micro:bit reagiert auf dich: Knopf A macht ihn fröhlich, Knopf B traurig.',
+ blocks:E('input','a',`wenn Knopf ${D('A')} gedrückt`,S('basic','b',`zeige Symbol ${D('☺')}`))+E('input','c',`wenn Knopf ${D('B')} gedrückt`,S('basic','d',`zeige Symbol ${D('☹')}`)),
+ steps:[
+  {t:'Das Programm startet. Es gibt keinen «beim Start»-Block, also passiert zuerst … nichts. Der micro:bit <b>wartet</b> auf ein Ereignis.',d:'clear'},
+  {b:'a',ev:'A',t:'Du drückst <b>Knopf A</b>. Damit wird das Ereignis «wenn Knopf A gedrückt» ausgelöst.'},
+  {b:'b',t:'Die Blöcke darin werden ausgeführt: Ein fröhliches Gesicht erscheint.',d:'happy'},
+  {t:'Wieder warten. Das Gesicht bleibt stehen, bis etwas anderes angezeigt wird.'},
+  {b:'c',ev:'B',t:'Du drückst <b>Knopf B</b>. Jetzt wird der andere Ereignis-Block ausgelöst.'},
+  {b:'d',t:'Ein trauriges Gesicht erscheint.',d:'sad'},
+  {b:'a',ev:'A',t:'Du drückst noch einmal <b>Knopf A</b>. Ein Ereignis kann beliebig oft ausgelöst werden.'},
+  {b:'b',t:'Wieder das fröhliche Gesicht.',d:'happy'}
+ ],
+ merke:'Ein <b>Ereignis</b>-Block («wenn …») wartet, bis etwas passiert, z. B. ein Knopfdruck. Erst dann werden die Blöcke darin ausgeführt.',
+ task:'Ergänze einen dritten Ereignis-Block: Wenn A und B gleichzeitig gedrückt werden, soll die Anzeige gelöscht werden.',
+ sol:E('input','',`wenn Knopf ${D('A+B')} gedrückt`,S('basic','','Bildschirminhalt löschen'))},
+
+{id:'p4',title:'Klick-Zähler',concept:'Variable',
+ intro:'Der micro:bit zählt, wie oft du Knopf A drückst.',
+ blocks:E('basic','a','beim Start',S('var','b',`setze ${D('zähler')} auf ${N(0)}`))+E('input','c',`wenn Knopf ${D('A')} gedrückt`,S('var','d',`ändere ${D('zähler')} um ${N(1)}`),S('basic','e',`zeige Zahl ${R('var','zähler')}`)),
+ steps:[
+  {t:'Das Programm startet.',d:'clear'},
+  {b:'a',t:'Zuerst läuft «beim Start».'},
+  {b:'b',t:'Die <b>Variable</b> «zähler» bekommt den Wert 0. Stell dir eine Schachtel mit der Aufschrift «zähler» vor, in der jetzt eine 0 liegt.',vars:{'zähler':0}},
+  {t:'Jetzt wartet der micro:bit auf einen Knopfdruck.'},
+  {b:'c',ev:'A',t:'Du drückst <b>Knopf A</b>.'},
+  {b:'d',t:'«ändere zähler um 1»: Der alte Wert (0) wird aus der Schachtel genommen, 1 dazugezählt und das Ergebnis (1) wieder hineingelegt.',vars:{'zähler':1}},
+  {b:'e',t:'Der aktuelle Wert der Variable wird angezeigt: 1.',d:{num:1}},
+  {b:'c',ev:'A',t:'Du drückst wieder <b>Knopf A</b>.'},
+  {b:'d',t:'0 + 1 war 1, jetzt 1 + 1 = 2.',vars:{'zähler':2}},
+  {b:'e',t:'Angezeigt wird 2.',d:{num:2}},
+  {b:'c',ev:'A',t:'Und noch einmal <b>Knopf A</b> …'},
+  {b:'d',t:'2 + 1 = 3. Die Variable merkt sich den Wert zwischen den Knopfdrücken.',vars:{'zähler':3}},
+  {b:'e',t:'Angezeigt wird 3.',d:{num:3}}
+ ],
+ merke:'Eine <b>Variable</b> speichert einen Wert unter einem Namen. Der Wert kann sich während des Programms ändern.',
+ task:'Erweitere den Zähler: Knopf B soll um 1 zurückzählen, A+B setzt den Zähler wieder auf 0.',
+ sol:E('input','',`wenn Knopf ${D('B')} gedrückt`,S('var','',`ändere ${D('zähler')} um ${N(-1)}`),S('basic','',`zeige Zahl ${R('var','zähler')}`))+E('input','',`wenn Knopf ${D('A+B')} gedrückt`,S('var','',`setze ${D('zähler')} auf ${N(0)}`),S('basic','',`zeige Zahl ${R('var','zähler')}`))},
+
+{id:'p5',title:'Würfel',concept:'Zufall',
+ intro:'Schüttle den micro:bit und er würfelt eine Zahl von 1 bis 6.',
+ blocks:E('input','a',`wenn ${D('geschüttelt')}`,S('var','b',`setze ${D('wurf')} auf ${R('math',`wähle zufällig von ${N(1)} bis ${N(6)}`)}`),S('basic','c',`zeige Zahl ${R('var','wurf')}`)),
+ steps:[
+  {t:'Das Programm startet und wartet darauf, dass der micro:bit geschüttelt wird.',d:'clear'},
+  {b:'a',ev:'shake',t:'Du <b>schüttelst</b> den micro:bit. Der Beschleunigungssensor erkennt die Bewegung und löst das Ereignis aus.'},
+  {b:'b',t:'«wähle zufällig von 1 bis 6» liefert eine <b>Zufallszahl</b> – diesmal die 4. Sie wird in der Variable «wurf» gespeichert.',vars:{wurf:4}},
+  {b:'c',t:'Die 4 wird angezeigt.',d:{num:4}},
+  {b:'a',ev:'shake',t:'Du schüttelst noch einmal.'},
+  {b:'b',t:'Neue Zufallszahl: 2. Der alte Wert in «wurf» wird überschrieben.',vars:{wurf:2}},
+  {b:'c',t:'Die 2 wird angezeigt.',d:{num:2}},
+  {b:'a',ev:'shake',t:'Und ein drittes Mal …'},
+  {b:'b',t:'… wieder eine 2! Jeder Wurf ist unabhängig vom vorherigen – auch zweimal dieselbe Zahl ist möglich.',vars:{wurf:2}},
+  {b:'c',t:'Die 2 wird angezeigt.',d:{num:2}}
+ ],
+ merke:'Mit <b>Zufallszahlen</b> wird ein Programm bei jedem Durchlauf anders. Du kannst nicht vorhersagen, welche Zahl kommt – nur, in welchem Bereich sie liegt.',
+ task:'Baue aus dem Würfel einen Münzwurf: Es soll nur 1 oder 2 herauskommen. Zeige vor dem Ergebnis kurz ein Fragezeichen an.',
+ sol:E('input','',`wenn ${D('geschüttelt')}`,S('basic','',`zeige Text ${T('?')}`),S('var','',`setze ${D('wurf')} auf ${R('math',`wähle zufällig von ${N(1)} bis ${N(2)}`)}`),S('basic','',`zeige Zahl ${R('var','wurf')}`))},
+
+{id:'p6',title:'Nachtlicht',concept:'Bedingung',
+ intro:'Wird es dunkel, gehen alle LEDs an. Ist es hell, bleiben sie aus.',
+ blocks:E('basic','a','dauerhaft',C('logic','b',[[`wenn ${Bo('logic',R('input','Lichtstärke'),'&lt;',N(50))} dann`,[S('basic','c',`zeige LEDs ${L(ALL)}`)]],['sonst',[S('basic','d','Bildschirminhalt löschen')]]])),
+ steps:[
+  {t:'Das Programm startet. Im Zimmer ist es hell.',d:'clear',sens:180},
+  {b:'a',t:'«dauerhaft» beginnt mit Runde 1.'},
+  {b:'b0',t:'Die <b>Bedingung</b> wird geprüft: Der Lichtsensor misst 180. Ist 180 &lt; 50? <b>Nein → falsch.</b>'},
+  {b:'b1',t:'Weil die Bedingung falsch ist, wird der «dann»-Teil übersprungen. Es geht im <b>«sonst»</b>-Teil weiter.'},
+  {b:'d',t:'Die Anzeige wird gelöscht – alles bleibt dunkel.',d:'clear'},
+  {b:'a',t:'Runde 2. In der Zwischenzeit macht jemand das Licht aus.',sens:20},
+  {b:'b0',t:'Der Sensor misst jetzt 20. Ist 20 &lt; 50? <b>Ja → wahr.</b>'},
+  {b:'c',t:'Weil die Bedingung wahr ist, wird der «dann»-Teil ausgeführt: Alle LEDs gehen an.',d:'all'},
+  {b:'a',t:'Runde 3. Das Licht wird wieder eingeschaltet.',sens:210},
+  {b:'b0',t:'210 &lt; 50? <b>Nein → falsch.</b>'},
+  {b:'b1',t:'Also wieder der «sonst»-Teil …'},
+  {b:'d',t:'… und die LEDs gehen aus. Weil «dauerhaft» immer wieder prüft, reagiert das Nachtlicht sofort auf jede Änderung.',d:'clear'}
+ ],
+ merke:'Eine <b>Bedingung</b> («wenn … dann … sonst») ist eine Weiche: Ist sie <b>wahr</b>, läuft der «dann»-Teil, sonst der «sonst»-Teil. Nie beide.',
+ task:'Ergänze einen dritten Fall: Ist es sehr hell (Lichtstärke grösser als 200), soll ein fröhliches Gesicht erscheinen. Tipp: Mit dem Plus-Zeichen am «wenn»-Block bekommst du ein «sonst wenn».',
+ sol:E('basic','','dauerhaft',C('logic','',[[`wenn ${Bo('logic',R('input','Lichtstärke'),'&lt;',N(50))} dann`,[S('basic','',`zeige LEDs ${L(ALL)}`)]],[`sonst wenn ${Bo('logic',R('input','Lichtstärke'),'&gt;',N(200))} dann`,[S('basic','',`zeige Symbol ${D('☺')}`)]],['sonst',[S('basic','','Bildschirminhalt löschen')]]]))},
+
+{id:'p7',title:'Countdown',concept:'Wiederholung',
+ intro:'Auf Knopfdruck zählt der micro:bit 3 – 2 – 1 herunter und zeigt dann ein Häkchen.',
+ blocks:E('input','a',`wenn Knopf ${D('A')} gedrückt`,S('var','b',`setze ${D('zahl')} auf ${N(3)}`),C('loops','c',[[`wiederhole ${N(3)} mal`,[S('basic','d',`zeige Zahl ${R('var','zahl')}`),S('var','e',`ändere ${D('zahl')} um ${N(-1)}`)]]]),S('basic','f',`zeige Symbol ${D('✓')}`)),
+ steps:[
+  {t:'Das Programm wartet auf Knopf A.',d:'clear'},
+  {b:'a',ev:'A',t:'Du drückst <b>Knopf A</b>.'},
+  {b:'b',t:'Die Variable «zahl» bekommt den Startwert 3.',vars:{zahl:3}},
+  {b:'c0',t:'<b>«wiederhole 3 mal»</b>: Die Blöcke darin laufen genau dreimal. Durchgang 1 von 3.'},
+  {b:'d',t:'Die aktuelle Zahl wird angezeigt: 3.',d:{num:3}},
+  {b:'e',t:'«ändere zahl um −1» zählt herunter: 3 − 1 = 2.',vars:{zahl:2}},
+  {b:'c0',t:'Durchgang 2 von 3.'},
+  {b:'d',t:'Anzeige: 2.',d:{num:2}},
+  {b:'e',t:'2 − 1 = 1.',vars:{zahl:1}},
+  {b:'c0',t:'Durchgang 3 von 3 – der letzte.'},
+  {b:'d',t:'Anzeige: 1.',d:{num:1}},
+  {b:'e',t:'1 − 1 = 0.',vars:{zahl:0}},
+  {b:'c0',t:'Drei Durchgänge sind erledigt. Anders als «dauerhaft» hört diese Schleife jetzt auf, und das Programm macht <b>unter</b> der Schleife weiter.'},
+  {b:'f',t:'Zum Schluss erscheint ein Häkchen. Start!',d:'yes'}
+ ],
+ merke:'«wiederhole … mal» ist eine <b>Zählschleife</b>: Sie läuft eine feste Anzahl Durchgänge und hört dann auf. Danach geht es mit dem nächsten Block weiter.',
+ task:'Ändere den Countdown so, dass er von 5 herunterzählt und am Ende «Start!» als Lauftext anzeigt.',
+ sol:E('input','',`wenn Knopf ${D('A')} gedrückt`,S('var','',`setze ${D('zahl')} auf ${N(5)}`),C('loops','',[[`wiederhole ${N(5)} mal`,[S('basic','',`zeige Zahl ${R('var','zahl')}`),S('var','',`ändere ${D('zahl')} um ${N(-1)}`)]]]),S('basic','',`zeige Text ${T('Start!')}`))}
+];
+
+/* ---------- Zustand und Darstellung ---------- */
+let cur=0, step=0, solOpen=false;
+
+function stateAt(p,i){
+  const s={d:'clear',vars:{},sens:null};
+  for(let k=0;k<=i;k++){const st=p.steps[k];if(st.d!==undefined)s.d=st.d;if(st.vars)Object.assign(s.vars,st.vars);if(st.sens!==undefined)s.sens=st.sens;}
+  return s;
+}
+function matrixHTML(d){
+  let pat=ICONS.clear;
+  if(typeof d==='string')pat=ICONS[d]||ICONS.clear;
+  else if(d&&d.num!==undefined&&d.num>=0&&d.num<=9)pat=DIG[d.num];
+  return pat.replace(/\|/g,'').split('').map(c=>`<i class="${c==='#'?'on':''}"></i>`).join('');
+}
+function renderNav(){
+  document.getElementById('nav').innerHTML=PROGS.map((p,i)=>`<button type="button" data-p="${i}" aria-current="${i===cur}"><span class="no">${String(i+1).padStart(2,'0')}</span><span class="nm">${p.title}</span><span class="cp">${p.concept}</span></button>`).join('');
+  document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{location.hash=PROGS[+b.dataset.p].id;});
+}
+function renderProg(){
+  const p=PROGS[cur];
+  document.getElementById('prog').innerHTML=`
+  <div class="prog-head"><span class="badge">Programm ${cur+1} · ${p.concept}</span><h2>${p.title}</h2></div>
+  <p style="margin:4px 0 0">${p.intro}</p>
+  <div class="work">
+    <div class="panel"><p class="panel-t">MakeCode-Blöcke</p><div class="blocks" id="blk">${p.blocks}</div></div>
+    <div class="panel sim">
+      <p class="panel-t" style="margin:0">Virtueller micro:bit</p>
+      <div class="ev-tag" id="evtag"></div>
+      <div class="vmb-wrap"><div class="vmb" id="vmb" role="img" aria-label="Virtueller micro:bit">
+        <div class="logo" aria-hidden="true"><i></i><i></i></div>
+        <div class="btn" id="btnA"><span>A</span><i></i></div>
+        <div class="matrix" id="mx"></div>
+        <div class="btn" id="btnB"><span>B</span><i></i></div>
+      </div></div>
+      <div class="strip" id="strip" aria-label="Lauftext"></div>
+      <div class="state">
+        <div class="box"><b>Variablen</b><div class="vars" id="vars"></div></div>
+        <div class="box"><b>Lichtsensor</b><div id="sens" class="mono"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="stepper">
+    <div class="step-top"><span class="step-no" id="stepno"></span><div class="dots" id="dots"></div></div>
+    <p class="step-text" id="steptext"></p>
+    <div class="ctrl">
+      <button type="button" class="cbtn" id="prev">← Zurück</button>
+      <button type="button" class="cbtn primary" id="next">Weiter →</button>
+      <button type="button" class="cbtn" id="reset">↺ Von vorne</button>
+      <span class="muted">Tipp: Pfeiltasten ← → funktionieren auch.</span>
+    </div>
+  </div>
+  <div class="cards">
+    <div class="note" style="--bc:var(--nord15)"><h3>📌 Merke</h3><p>${p.merke}</p></div>
+    <div class="note" style="--bc:var(--nord14)"><h3>✎ Übung</h3><p>${p.task}</p>
+      <button type="button" class="cbtn" id="solbtn" aria-expanded="false">Lösung zeigen</button>
+      <div class="sol" id="sol" hidden><div class="blocks">${p.sol}</div><p class="muted" style="margin:8px 0 0">${cur===0?'Name und Bild darfst du natürlich frei wählen.':'Das ist eine mögliche Lösung – andere Wege können auch richtig sein.'}</p></div>
+    </div>
+  </div>`;
+  document.getElementById('prev').onclick=()=>go(step-1);
+  document.getElementById('next').onclick=()=>go(step+1);
+  document.getElementById('reset').onclick=()=>go(0);
+  const sb=document.getElementById('solbtn');
+  sb.onclick=()=>{const s=document.getElementById('sol');s.hidden=!s.hidden;sb.setAttribute('aria-expanded',!s.hidden);sb.textContent=s.hidden?'Lösung zeigen':'Lösung ausblenden';};
+  renderStep(false);
+}
+function go(i){const p=PROGS[cur];if(i<0||i>=p.steps.length)return;const prev=step;step=i;renderStep(i!==prev);}
+function renderStep(animate){
+  const p=PROGS[cur],st=p.steps[step],s=stateAt(p,step),prevS=step>0?stateAt(p,step-1):{vars:{}};
+  document.querySelectorAll('#blk [data-b]').forEach(el=>el.classList.toggle('hl',el.dataset.b===st.b));
+  document.getElementById('mx').innerHTML=matrixHTML(s.d);
+  const strip=document.getElementById('strip');
+  if(s.d&&s.d.text){strip.className='strip';strip.innerHTML=`<span>${s.d.text}</span>`;}
+  else if(s.d&&s.d.num!==undefined&&(s.d.num>9||s.d.num<0)){strip.className='strip';strip.innerHTML=`<span>${s.d.num}</span>`;}
+  else{strip.className='strip empty';strip.innerHTML='';}
+  document.getElementById('btnA').classList.toggle('on',st.ev==='A'||st.ev==='AB');
+  document.getElementById('btnB').classList.toggle('on',st.ev==='B'||st.ev==='AB');
+  const vmb=document.getElementById('vmb');vmb.classList.remove('shake');
+  if(st.ev==='shake'&&animate){void vmb.offsetWidth;vmb.classList.add('shake');}
+  const evt={A:'▼ Knopf A gedrückt',B:'▼ Knopf B gedrückt',AB:'▼ A+B gedrückt',shake:'↯ geschüttelt'}[st.ev];
+  document.getElementById('evtag').innerHTML=evt?`<span class="badge">${evt}</span>`:'';
+  const vk=Object.keys(s.vars);
+  document.getElementById('vars').innerHTML=vk.length?vk.map(k=>`<div class="v${prevS.vars[k]!==s.vars[k]&&st.vars&&k in st.vars?' changed':''}"><span>${k}</span><span>${s.vars[k]}</span></div>`).join(''):'<span class="muted">keine</span>';
+  document.getElementById('sens').innerHTML=s.sens===null?'<span class="muted">nicht benutzt</span>':`Lichtstärke = <b style="color:var(--nord13)">${s.sens}</b> <span class="muted">(${s.sens<50?'dunkel':'hell'})</span>`;
+  document.getElementById('stepno').textContent=`Schritt ${step+1} / ${p.steps.length}`;
+  document.getElementById('steptext').innerHTML=st.t;
+  document.getElementById('dots').innerHTML=p.steps.map((_,i)=>`<button type="button" aria-label="Schritt ${i+1}" aria-current="${i===step}" class="${i<step?'done':''}" data-s="${i}"></button>`).join('');
+  document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>go(+b.dataset.s));
+  document.getElementById('prev').disabled=step===0;
+  const nx=document.getElementById('next');nx.disabled=step===p.steps.length-1;
+}
+function fromHash(){
+  const i=PROGS.findIndex(p=>'#'+p.id===location.hash);
+  cur=i<0?0:i;step=0;renderNav();renderProg();
+}
+window.addEventListener('hashchange',()=>{fromHash();document.getElementById('prog').scrollIntoView({behavior:'smooth',block:'start'});});
+document.addEventListener('keydown',e=>{
+  if(e.target.closest&&e.target.closest('input,textarea'))return;
+  if(e.key==='ArrowRight')go(step+1);else if(e.key==='ArrowLeft')go(step-1);
+});
+fromHash();
+</script>
+</body>
+</html>

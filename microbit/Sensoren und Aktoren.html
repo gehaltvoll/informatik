@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik · Zielgruppe: Schüler:innen · Gerät: gemischt (Desktop + Handy)
+  Inhalt: micro:bit V2 (aktuelle Revision V2.2x) – alle eingebauten Sensoren, Aktoren, Funk/Bluetooth, Reset-Taste; keine Hinweise zu V1 (auf Wunsch entfernt)
+  Interaktivität: leicht – klickbares Board (Vorder-/Rückseite schematisch), Filter Sensor/Aktor/Kommunikation, Detailansicht
+  Code: nur MakeCode-Blöcke (nachgebaut in HTML, Nord-Farben statt Original-Kategoriefarben); JavaScript auf Wunsch entfernt
+  Datenhaltung: keine
+  Export: keiner
+  Design: nur Variante «Technik» (Polar-Night-Kopf, Monospace-Labels, eckig), nur Dunkelmodus – Variante «Freundlich» und Hell-Modus entfernt
+-->
+<html lang="de-CH" style="color-scheme:dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>micro:bit V2 – Sensoren und Aktoren</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --c-sensor:var(--nord15);--c-aktor:var(--nord12);--c-komm:var(--nord13);--c-other:var(--nord7);
+}
+:root{--bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--text:var(--nord6);--text-muted:var(--nord4);--accent:var(--nord8);--canvas:var(--nord2);--link:var(--nord8)}
+:root{--r:6px;--stage:var(--nord0)}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:400 17px/1.6 var(--font)}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--link);text-decoration:underline}
+code,pre,kbd{font-family:var(--font-mono)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Kopf */
+header.top{padding:22px 0 18px}
+.top-inner{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
+.kicker{margin:0;font-size:.8rem;letter-spacing:.06em}
+h1{margin:2px 0 4px;line-height:1.15}
+.lead{margin:0;max-width:62ch;color:var(--text-muted)}
+.seg{display:inline-flex;border:1px solid var(--surface-2);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:6px 12px;cursor:pointer;font-size:.88rem;font-weight:600}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--bg)}
+
+/* Design: Technik, dunkel */
+header.top{background:var(--nord0);color:var(--nord6);border-bottom:1px solid var(--nord2)}
+header.top .lead{color:var(--nord4)}
+.kicker{font-family:var(--font-mono);color:var(--nord8);text-transform:uppercase}
+h1{font-size:2rem;font-weight:700}
+.badge,.meta dt,.sec-no,.side-lbl{font-family:var(--font-mono)}
+.badge{text-transform:uppercase;font-size:.72rem;letter-spacing:.04em}
+.stage{background-color:var(--nord0);background-image:linear-gradient(rgba(76,86,106,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(76,86,106,.35) 1px,transparent 1px);background-size:24px 24px;color:var(--nord6);border:1px solid var(--nord2)}
+.stage .seg{background:var(--nord1);border-color:var(--nord3);color:var(--nord6)}
+.stage .seg button[aria-pressed=true]{background:var(--nord8);color:var(--nord0)}
+.stage .hint{color:var(--nord4)}
+h2.sec{font-size:1.35rem}
+.card{border-top:3px solid var(--cc)}
+
+
+main{padding:22px 0 40px}
+h2.sec{font-weight:700;margin:34px 0 10px;line-height:1.25}
+.sec-no{color:var(--accent);margin-right:8px;font-weight:600;font-size:.85em}
+p{max-width:70ch}
+
+/* Filter */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px}
+.chip{border:2px solid var(--surface-2);background:var(--surface);border-radius:999px;padding:4px 14px;cursor:pointer;font-weight:600;font-size:.92rem;display:inline-flex;gap:6px;align-items:center}
+.chip .dot{width:12px;height:12px;border-radius:50%;background:var(--cc,var(--accent))}
+.chip[aria-pressed=true]{border-color:var(--cc,var(--accent));background:var(--bg)}
+
+/* Board + Detail */
+.explore{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px;align-items:start}
+.stage{border-radius:var(--r);padding:14px;position:sticky;top:12px}
+.stage-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.hint{font-size:.85rem;color:var(--text-muted)}
+svg.pcb{width:100%;height:auto;display:block}
+.pcb-base{fill:var(--nord1);stroke:var(--nord3);stroke-width:2}
+.pad{fill:var(--nord13)}
+.hole{fill:var(--stage)}
+.padlbl{fill:var(--nord0);font:600 15px var(--font-mono);text-anchor:middle}
+.silk{fill:var(--nord6);font:600 18px var(--font);text-anchor:middle}
+.chiplbl{fill:var(--nord4);font:400 11px var(--font-mono);text-anchor:middle}
+.led-off{fill:var(--nord3)}.led-on{fill:var(--nord11)}
+.chip-sh{fill:var(--nord0);stroke:var(--nord3);stroke-width:2}
+.hs{fill:transparent;stroke:var(--hc,var(--nord8));stroke-width:2.5;stroke-opacity:.45;stroke-dasharray:6 4;cursor:pointer;transition:fill .15s,stroke-opacity .15s}
+.hs:hover,.hs:focus{stroke-opacity:1;fill:rgba(136,192,208,.18);outline:none}
+.hs:focus-visible{stroke-width:4}
+.hs.off{stroke-opacity:0}
+.hs.off:hover,.hs.off:focus{stroke-opacity:.6}
+.hs.sel{stroke-opacity:1;stroke-dasharray:none;stroke-width:4;fill:rgba(136,192,208,.22)}
+
+.detail{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--r);padding:20px}
+.detail h2{margin:6px 0 6px;font-size:1.6rem;line-height:1.2}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:999px;background:var(--cc,var(--surface-2));color:var(--nord0);font-weight:600;font-size:.8rem}
+.badge.neutral{background:var(--surface-2);color:var(--text)}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0;font-size:.95rem}
+.meta dt{font-weight:600;color:var(--text-muted)}
+.meta dd{margin:0}
+.box{border-left:5px solid var(--bc);background:var(--bg);padding:10px 14px;border-radius:var(--r);margin:14px 0;font-size:.95rem}
+.box strong{display:block;margin-bottom:2px}
+.sib{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.9rem;margin:10px 0}
+.sib button{border:2px solid var(--cc);background:var(--bg);border-radius:999px;padding:2px 12px;cursor:pointer;font-weight:600;font-size:.88rem}
+h3{font-size:1.1rem;font-weight:600;margin:20px 0 8px}
+
+/* MakeCode-Blöcke (Nachbau) */
+.example{margin:12px 0 18px}
+.example-t{font-weight:600;font-size:.95rem;margin-bottom:6px}
+.blocks{background:var(--canvas);border-radius:var(--r);padding:14px;overflow-x:auto;display:flex;flex-direction:column;gap:10px;align-items:flex-start;background-image:radial-gradient(rgba(76,86,106,.25) 1px,transparent 1px);background-size:16px 16px}
+.k-basic{--c:var(--nord9)}.k-input{--c:var(--nord15)}.k-music{--c:var(--nord12)}.k-led{--c:var(--nord7)}
+.k-radio{--c:var(--nord13)}.k-pins{--c:var(--nord11)}.k-logic{--c:var(--nord14)}.k-math{--c:var(--nord8)}
+.ev,.cb{display:inline-block;color:var(--nord0);font:600 14px/1.3 var(--font);min-width:180px}
+.ev-head,.cb-row{background:var(--c);padding:7px 12px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.ev-head{border-radius:18px 18px 4px 0;padding-top:10px}
+.cb-row{border-radius:4px 4px 4px 0}
+.cb-body + .cb-row{border-radius:0 4px 4px 0}
+.ev-body,.cb-body{border-left:14px solid var(--c);padding:3px 0;min-height:18px;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.ev-foot,.cb-foot{background:var(--c);height:14px;border-radius:0 4px 4px 4px;width:70%}
+.cb-foot{height:10px}
+.st{background:var(--c);color:var(--nord0);padding:6px 12px;border-radius:4px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.rep{background:var(--c);color:var(--nord0);border-radius:999px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(46,52,64,.3)}
+.rep.bool{border-radius:0;border:0;padding:4px 16px;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,10px 100%,0 50%)}
+.slot{background:var(--nord6);color:var(--nord0);border-radius:999px;padding:0 9px;font-weight:400;min-width:24px;text-align:center;display:inline-flex;gap:4px;align-items:center}
+.slot.num{font-family:var(--font-mono)}
+.slot.dd{background:rgba(236,239,244,.5);border:1px solid rgba(46,52,64,.3);font-weight:600}
+.ledgrid{display:inline-grid;grid-template-columns:repeat(5,10px);gap:2px;padding:4px;background:var(--nord0);border-radius:4px}
+.ledgrid i{width:10px;height:10px;border-radius:2px;background:var(--nord3)}
+.ledgrid i.on{background:var(--nord11)}
+
+.note{font-size:.85rem;color:var(--text-muted)}
+
+/* Karten-Liste */
+.groups{display:grid;gap:8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:10px}
+.card{text-align:left;background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--r);padding:14px;cursor:pointer;display:flex;gap:12px;align-items:flex-start}
+.card:hover{background:var(--bg)}
+.card[aria-current=true]{outline:3px solid var(--cc);outline-offset:-1px}
+.card .ic{flex:none;width:34px;height:34px;border-radius:50%;background:var(--cc);color:var(--nord0);display:grid;place-items:center;font-weight:700}
+.card b{display:block;line-height:1.3}
+.card span.s{font-size:.88rem;color:var(--text-muted);display:block;margin-top:2px}
+h3.grp{display:flex;align-items:center;gap:8px;margin:18px 0 8px}
+
+/* Grundlagen */
+.basics{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:12px 0}
+.flow > div{flex:1 1 170px;background:var(--surface);border:1px solid var(--surface-2);border-top:5px solid var(--cc);border-radius:var(--r);padding:12px}
+.flow .arr{flex:0 0 auto;align-self:center;border:0;background:none;padding:0;font-size:1.4rem;color:var(--text-muted)}
+details.facts{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--r);padding:12px 16px;margin-top:12px}
+details.facts summary{cursor:pointer;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:.95rem;margin-top:8px}
+td{padding:6px 8px;border-top:1px solid var(--surface-2);vertical-align:top}
+td:first-child{font-weight:600;width:38%}
+td.mono{font-family:var(--font-mono)}
+footer{padding:20px 0 40px;font-size:.88rem;color:var(--text-muted)}
+
+@media (max-width:860px){
+  .explore{grid-template-columns:1fr}
+  .stage{position:static}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-inner">
+    <div>
+      <p class="kicker">micro:bit V2 // Hardware-Übersicht</p>
+      <h1>Sensoren und Aktoren des micro:bit</h1>
+      <p class="lead">Klicke auf ein Bauteil auf dem Board oder in der Liste. Du siehst, was es misst oder tut, welche Werte es liefert und wie du es mit MakeCode-Blöcken programmierst.</p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <h2 class="sec" style="margin-top:6px"><span class="sec-no">01</span>Sensor oder Aktor?</h2>
+  <div class="flow" aria-label="Eingabe, Verarbeitung, Ausgabe">
+    <div style="--cc:var(--c-sensor)"><span class="badge" style="--cc:var(--c-sensor)">◉ Sensor · Eingabe</span><p style="margin:6px 0 0">Ein <b>Sensor</b> misst etwas aus der Umgebung und macht daraus eine Zahl oder ein Ereignis.<br><span class="note">Beispiel: Lichtsensor misst 30.</span></p></div>
+    <div class="arr" aria-hidden="true">→</div>
+    <div style="--cc:var(--nord9)"><span class="badge" style="--cc:var(--nord9)">⚙ Programm · Verarbeitung</span><p style="margin:6px 0 0">Dein <b>Programm</b> entscheidet, was mit dem Messwert passiert.<br><span class="note">Beispiel: Ist 30 kleiner als 50?</span></p></div>
+    <div class="arr" aria-hidden="true">→</div>
+    <div style="--cc:var(--c-aktor)"><span class="badge" style="--cc:var(--c-aktor)">▶ Aktor · Ausgabe</span><p style="margin:6px 0 0">Ein <b>Aktor</b> bewirkt etwas in der Welt: Licht, Ton, Bewegung.<br><span class="note">Beispiel: Die LED-Anzeige zeigt einen Mond.</span></p></div>
+  </div>
+
+  <h2 class="sec"><span class="sec-no">02</span>Das Board erkunden</h2>
+  <div class="filters" role="group" aria-label="Bauteile filtern">
+    <button class="chip" data-filter="all" aria-pressed="true">Alle</button>
+    <button class="chip" data-filter="sensor" style="--cc:var(--c-sensor)" aria-pressed="false"><span class="dot"></span>◉ Sensoren</button>
+    <button class="chip" data-filter="aktor" style="--cc:var(--c-aktor)" aria-pressed="false"><span class="dot"></span>▶ Aktoren</button>
+    <button class="chip" data-filter="komm" style="--cc:var(--c-komm)" aria-pressed="false"><span class="dot"></span>⇄ Kommunikation</button>
+  </div>
+
+  <div class="explore">
+    <div class="stage">
+      <div class="stage-bar">
+        <div class="seg" role="group" aria-label="Seite des Boards">
+          <button type="button" data-side="front">Vorderseite</button>
+          <button type="button" data-side="back">Rückseite</button>
+        </div>
+        <span class="hint side-lbl">schematisch · gestrichelt = anklickbar</span>
+      </div>
+      <div id="board"></div>
+    </div>
+    <article class="detail" id="detail" aria-live="polite"></article>
+  </div>
+
+  <h2 class="sec"><span class="sec-no">03</span>Alle Bauteile</h2>
+  <div id="list"></div>
+
+  <details class="facts">
+    <summary>Steckbrief micro:bit V2</summary>
+    <table>
+      <tr><td>Aktuelle Revision</td><td>V2.2x (z. B. V2.21) – gleiche Funktionen wie V2.0</td></tr>
+      <tr><td>Prozessor</td><td class="mono">Nordic nRF52833 · Arm Cortex-M4 · 64 MHz</td></tr>
+      <tr><td>Speicher</td><td class="mono">512 KB Flash · 128 KB RAM</td></tr>
+      <tr><td>Funk</td><td>micro:bit-Funk und Bluetooth 5.0</td></tr>
+      <tr><td>Strom</td><td>USB (Micro-B) oder Batteriepack 2 × AAA (3 V)</td></tr>
+      <tr><td>Grösse</td><td class="mono">ca. 4 × 5 cm</td></tr>
+    </table>
+  </details>
+</main>
+
+<footer class="wrap">
+  Blockbeschriftungen können je nach MakeCode-Version und Spracheinstellung leicht abweichen. Die Blockfarben sind hier an das Nord-Farbschema angepasst und entsprechen nicht genau den Farben im Editor.<br>
+  Weitere Infos: <a href="https://microbit.org/get-started/features/overview/">microbit.org – Features</a> · Editor: <a href="https://makecode.microbit.org/">makecode.microbit.org</a>
+</footer>
+
+<script>
+/* ---------- Block-Bausteine ---------- */
+const E=(c,head,...body)=>`<div class="ev k-${c}"><div class="ev-head">${head}</div><div class="ev-body">${body.join('')}</div><div class="ev-foot"></div></div>`;
+const C=(c,head,body,els)=>`<div class="cb k-${c}"><div class="cb-row">${head}</div><div class="cb-body">${body.join('')}</div>${els?`<div class="cb-row">sonst</div><div class="cb-body">${els.join('')}</div>`:''}<div class="cb-foot"></div></div>`;
+const S=(c,...p)=>`<div class="st k-${c}">${p.join(' ')}</div>`;
+const R=(c,...p)=>`<span class="rep k-${c}">${p.join(' ')}</span>`;
+const Bo=(c,...p)=>`<span class="rep bool k-${c}">${p.join(' ')}</span>`;
+const N=v=>`<span class="slot num">${v}</span>`;
+const D=v=>`<span class="slot dd">${v}<span aria-hidden="true">▾</span></span>`;
+const T=v=>`<span class="slot">"${v}"</span>`;
+const L=p=>`<span class="ledgrid" role="img" aria-label="LED-Muster">${p.replace(/\s/g,'').split('').map(ch=>`<i class="${ch==='#'?'on':''}"></i>`).join('')}</span>`;
+const HEART=".#.#. ##### ##### .###. ..#..";
+
+/* ---------- Inhalte ---------- */
+const TYPES={
+  sensor:{label:'Sensor',sub:'Eingabe',icon:'◉',col:'var(--c-sensor)',group:'Sensoren (Eingabe)'},
+  aktor:{label:'Aktor',sub:'Ausgabe',icon:'▶',col:'var(--c-aktor)',group:'Aktoren (Ausgabe)'},
+  komm:{label:'Kommunikation',sub:'Ein- und Ausgabe',icon:'⇄',col:'var(--c-komm)',group:'Kommunikation'},
+  other:{label:'Sonstiges',sub:'',icon:'◇',col:'var(--c-other)',group:'Sonstiges'}
+};
+const ENTRIES=[
+ {id:'tasten',name:'Tasten A und B',type:'sensor',side:'Vorderseite',short:'Zwei Drucktasten links und rechts',
+  what:'Zwei Drucktasten. Dein Programm merkt, wenn eine Taste gedrückt wird – auch wenn beide gleichzeitig gedrückt werden (A+B).',
+  value:'gedrückt oder nicht gedrückt',range:'wahr / falsch',
+  tip:'Mit «wenn Knopf gedrückt» reagierst du auf einen Druck. Mit dem Block «Knopf A ist gedrückt» fragst du in einer Schleife ab, ob die Taste gerade gehalten wird.',
+  idea:'Baue einen Zähler: A zählt hoch, B zählt runter, A+B setzt auf 0 zurück.',
+  ex:[
+   {t:'Knopf A zeigt ein Herz',h:E('input',`wenn Knopf ${D('A')} gedrückt`,S('basic',`zeige Symbol ${D('♥')}`))},
+   {t:'Beide Tasten gleichzeitig',h:E('input',`wenn Knopf ${D('A+B')} gedrückt`,S('basic',`zeige Text ${T('Hallo')}`))}
+  ]},
+ {id:'logo',name:'Touch-Logo',type:'sensor',side:'Vorderseite',short:'Berührungsempfindliches Logo oben',
+  what:'Das goldene Logo oben ist ein kapazitiver Berührungssensor: Es reagiert schon auf eine leichte Berührung mit dem Finger, ohne dass du drücken musst.',
+  value:'berührt oder nicht berührt',range:'Ereignisse: gedrückt, losgelassen, lang gedrückt, berührt',
+  tip:'Das Logo reagiert auf verschiedene Arten: kurz antippen, loslassen oder lange gedrückt halten. Wähle im Block aus, worauf dein Programm reagieren soll.',
+  idea:'Ein geheimer Schalter: Nur wer das Logo berührt, sieht die versteckte Nachricht.',
+  ex:[
+   {t:'Logo berühren zeigt ein Smiley',h:E('input',`wenn Logo ${D('gedrückt')}`,S('basic',`zeige Symbol ${D('☺')}`))},
+   {t:'Solange der Finger auf dem Logo liegt',h:E('basic','dauerhaft',C('logic',`wenn ${Bo('input','Logo ist gedrückt')} dann`,[S('basic',`zeige Symbol ${D('♥')}`)],[S('basic','Bildschirminhalt löschen')]))}
+  ]},
+ {id:'beschl',name:'Beschleunigungssensor',type:'sensor',side:'Rückseite',short:'Erkennt Bewegung, Neigung und Schütteln',
+  what:'Misst die Beschleunigung in drei Richtungen (x, y, z). Weil die Erdanziehung immer wirkt, erkennt er auch, wie der micro:bit geneigt ist. Daraus werden Gesten wie «geschüttelt», «Logo oben» oder «freier Fall» erkannt.',
+  value:'Beschleunigung in mg (Milli-g); 1000 mg ≈ Erdanziehung',range:'standardmässig −2048 bis 2048 mg (einstellbar bis ±8 g)',
+  tip:'Liegt der micro:bit flach auf dem Tisch, ist x ≈ 0, y ≈ 0 und z ≈ −1000. Probiere aus, wie sich die Werte beim Kippen ändern.',
+  idea:'Ein Würfel, der beim Schütteln eine Zahl von 1 bis 6 zeigt, oder eine Wasserwaage.',
+  ex:[
+   {t:'Würfel: Schütteln zeigt eine Zufallszahl',h:E('input',`wenn ${D('geschüttelt')}`,S('basic',`zeige Zahl ${R('math',`wähle zufällig von ${N(1)} bis ${N(6)}`)}`))},
+   {t:'Neigung nach links/rechts anzeigen',h:E('basic','dauerhaft',S('basic',`zeige Zahl ${R('input',`Beschleunigung (mg) ${D('x')}`)}`))}
+  ]},
+ {id:'kompass',name:'Kompass (Magnetometer)',type:'sensor',side:'Rückseite',short:'Misst Magnetfelder und die Himmelsrichtung',
+  what:'Misst das Magnetfeld in drei Richtungen. Daraus berechnet der micro:bit die Himmelsrichtung. Er erkennt auch Magnete in der Nähe.',
+  value:'Richtung in Grad oder Magnetkraft in µT (Mikrotesla)',range:'Kompassausrichtung 0–359° (0 = Norden, 90 = Osten)',
+  tip:'Beim ersten Gebrauch muss der Kompass kalibriert werden: Auf der Anzeige erscheint «TILT TO FILL SCREEN». Neige den micro:bit, bis alle LEDs leuchten.',
+  idea:'Ein Magnet-Detektor, der umso mehr LEDs zeigt, je näher ein Magnet ist.',
+  ex:[
+   {t:'Himmelsrichtung anzeigen',h:E('basic','dauerhaft',S('basic',`zeige Zahl ${R('input','Kompassausrichtung (°)')}`))},
+   {t:'Magnet-Detektor',h:E('basic','dauerhaft',S('led',`zeichne Balkendiagramm von ${R('input',`Magnetkraft (µT) ${D('Stärke')}`)} bis ${N(200)}`))}
+  ]},
+ {id:'licht',name:'Lichtsensor',type:'sensor',side:'Vorderseite',short:'Die LED-Anzeige misst die Helligkeit',
+  what:'Es gibt keinen eigenen Lichtsensor: Die LEDs der Anzeige werden rückwärts benutzt und messen so, wie viel Licht auf sie fällt.',
+  value:'Helligkeit',range:'0 (dunkel) bis 255 (hell)',
+  tip:'Die erste Messung nach dem Start kann ungenau sein. Weil die LEDs messen, stört eine leuchtende Anzeige die Messung ein wenig.',
+  idea:'Ein Nachtlicht, das automatisch angeht, wenn es dunkel wird.',
+  ex:[
+   {t:'Nachtlicht: dunkel → schlafendes Gesicht',h:E('basic','dauerhaft',C('logic',`wenn ${Bo('logic',R('input','Lichtstärke'),'<',N(50))} dann`,[S('basic',`zeige Symbol ${D('☾')}`)],[S('basic',`zeige Symbol ${D('☺')}`)]))}
+  ]},
+ {id:'temp',name:'Temperatursensor',type:'sensor',side:'Rückseite',short:'Sitzt im Prozessor und misst °C',
+  what:'Der Temperatursensor ist im Prozessor eingebaut. Er misst eigentlich die Temperatur des Chips, die aber ungefähr der Umgebungstemperatur entspricht.',
+  value:'Temperatur in °C',range:'ganze Grad Celsius',
+  tip:'Der Wert ist oft etwas höher als die Raumtemperatur, weil sich der Prozessor beim Arbeiten erwärmt. Vergleiche mit einem echten Thermometer.',
+  idea:'Ein Kühlschrank-Test: Wie schnell kühlt der micro:bit ab?',
+  ex:[
+   {t:'Temperatur auf Knopfdruck',h:E('input',`wenn Knopf ${D('A')} gedrückt`,S('basic',`zeige Zahl ${R('input','Temperatur (°C)')}`))}
+  ]},
+ {id:'mikro',name:'Mikrofon',type:'sensor',side:'Vorder- und Rückseite',short:'Misst die Lautstärke',
+  what:'Ein kleines MEMS-Mikrofon auf der Rückseite hört durch ein Loch auf der Vorderseite. Es misst, wie laut es ist. Die kleine LED neben dem Loch zeigt, wann das Mikrofon eingeschaltet ist.',
+  value:'Lautstärke',range:'0 (leise) bis 255 (laut); Ereignisse «laut» und «leise»',
+  tip:'Das Mikrofon misst nur die Lautstärke – es kann keine Sprache verstehen und nichts aufnehmen.',
+  idea:'Eine Lärmampel fürs Schulzimmer oder ein Klatschschalter.',
+  ex:[
+   {t:'Klatschen zeigt ein Herz',h:E('input',`wenn Geräusch ${D('laut')}`,S('basic',`zeige Symbol ${D('♥')}`))},
+   {t:'Lautstärke als Balken',h:E('basic','dauerhaft',S('led',`zeichne Balkendiagramm von ${R('input','Lautstärke')} bis ${N(255)}`))}
+  ]},
+ {id:'pinsIn',name:'Pins P0, P1, P2 als Eingang',type:'sensor',side:'Vorder- und Rückseite',short:'Anschlüsse für Krokodilklemmen und eigene Sensoren',
+  what:'Die drei grossen Anschlüsse am unteren Rand kannst du mit Krokodilklemmen verbinden. Als Eingang erkennen sie Berührung oder lesen Werte von angeschlossenen Sensoren, z. B. einem Drehregler oder Bodenfeuchtesensor.',
+  value:'digital: 0 oder 1 · analog: Spannung als Zahl',range:'analog 0–1023 · Spannung höchstens 3 V',
+  tip:'Für «wenn Pin gedrückt» musst du mit der einen Hand GND und mit der anderen den Pin berühren – so fliesst ein kleiner Strom durch dich.',
+  idea:'Eine Banane als Taste: Verbinde sie mit P0 und halte GND.',
+  ex:[
+   {t:'Pin berühren',h:E('input',`wenn Pin ${D('P0')} gedrückt`,S('basic',`zeige Symbol ${D('✓')}`))},
+   {t:'Analogen Sensor an P1 auslesen',h:E('basic','dauerhaft',S('led',`zeichne Balkendiagramm von ${R('pins',`analoge Werte von Pin ${D('P1')}`)} bis ${N(1023)}`))}
+  ]},
+ {id:'ledmatrix',name:'LED-Anzeige (5 × 5)',type:'aktor',side:'Vorderseite',short:'25 rote LEDs für Text, Zahlen und Bilder',
+  what:'25 rote LEDs in 5 Reihen und 5 Spalten. Du kannst Lauftext, Zahlen, Symbole und eigene Bilder anzeigen oder einzelne Punkte ein- und ausschalten.',
+  value:'Text, Zahlen, Bilder, einzelne Punkte',range:'Koordinaten x und y je 0–4 · Helligkeit 0–255',
+  tip:'Die Koordinaten beginnen oben links bei (0, 0). Die Mitte ist (2, 2).',
+  idea:'Ein Namensschild mit Lauftext oder eine kleine Animation aus mehreren Bildern.',
+  ex:[
+   {t:'Eigenes Bild und Text beim Start',h:E('basic','beim Start',S('basic',`zeige LEDs ${L(HEART)}`),S('basic',`zeige Text ${T('Hallo')}`))},
+   {t:'Einzelnen Punkt einschalten',h:E('input',`wenn Knopf ${D('A')} gedrückt`,S('led',`zeichne x ${N(2)} y ${N(2)}`),S('led',`setze Helligkeit ${N(50)}`))}
+  ]},
+ {id:'lautsprecher',name:'Lautsprecher',type:'aktor',side:'Rückseite',short:'Spielt Töne, Melodien und Soundeffekte',
+  what:'Ein kleiner Lautsprecher auf der Rückseite spielt Töne, Melodien und fertige Klänge wie «giggle» oder «happy».',
+  value:'Tonhöhe und Dauer',range:'Töne in Hz (z. B. mittleres C = 262 Hz) · Dauer in Schlägen',
+  tip:'Du kannst den eingebauten Lautsprecher ausschalten. Dann kommt der Ton nur über Pin P0 – zum Beispiel für Kopfhörer an P0 und GND.',
+  idea:'Eine Türklingel, die eine kurze Melodie spielt, wenn jemand Knopf A drückt.',
+  ex:[
+   {t:'Ton auf Knopfdruck',h:E('input',`wenn Knopf ${D('A')} gedrückt`,S('music',`spiele Ton ${D('Mittleres C')} für ${D('1 Schlag')}`))},
+   {t:'Soundeffekt',h:E('input',`wenn Logo ${D('gedrückt')}`,S('music',`spiele Klang ${D('giggle')} ${D('bis zum Ende')}`))},
+   {t:'Leise schalten (Ton nur über P0)',h:E('basic','beim Start',S('music',`eingebauten Lautsprecher ${D('aus')}`))}
+  ]},
+ {id:'pinsOut',name:'Pins P0, P1, P2 als Ausgang',type:'aktor',side:'Vorder- und Rückseite',short:'Steuern LEDs, Summer, Servos',
+  what:'Als Ausgang schalten die Pins eine Spannung ein oder aus. So steuerst du eine externe LED, einen Summer oder einen Servomotor. Mit einem analogen Wert kannst du z. B. eine LED dimmen.',
+  value:'digital: aus (0) oder an (1) · analog: Stärke',range:'analog 0–1023 · Spannung 3 V',
+  tip:'Die Pins liefern nur wenig Strom. Für Motoren brauchst du ein Erweiterungsboard mit Motortreiber.',
+  idea:'Eine Ampel aus drei LEDs an P0, P1 und P2.',
+  ex:[
+   {t:'Externe LED an P0 blinken lassen',h:E('basic','dauerhaft',S('pins',`schreibe digitalen Wert von Pin ${D('P0')} auf ${N(1)}`),S('basic',`pausiere (ms) ${N(500)}`),S('pins',`schreibe digitalen Wert von Pin ${D('P0')} auf ${N(0)}`),S('basic',`pausiere (ms) ${N(500)}`))},
+   {t:'LED an P1 halb hell',h:E('basic','beim Start',S('pins',`schreibe analogen Wert von Pin ${D('P1')} auf ${N(512)}`))}
+  ]},
+ {id:'funk',name:'Funk und Bluetooth',type:'komm',side:'Rückseite',short:'Nachrichten an andere micro:bits senden',
+  what:'Über die Antenne sendet und empfängt der micro:bit Zahlen und Texte an andere micro:bits in derselben Funkgruppe. Bluetooth verbindet ihn mit Handy oder Tablet.',
+  value:'Zahlen, Text, Name-Wert-Paare',range:'Funkgruppen 0–255 · Reichweite einige Dutzend Meter (je nach Umgebung)',
+  tip:'Nur micro:bits in derselben Gruppe hören einander. Wählt in der Klasse unterschiedliche Gruppen, sonst stören sich die Programme.',
+  idea:'Schere, Stein, Papier zwischen zwei micro:bits oder eine geheime Klassen-Botschaft.',
+  ex:[
+   {t:'Sender und Empfänger in einem Programm (auf zwei micro:bits laden)',h:E('basic','beim Start',S('radio',`setze Funkgruppe ${N(1)}`))+E('input',`wenn Knopf ${D('A')} gedrückt`,S('radio',`sende Zahl ${N(1)}`))+E('radio',`wenn Datenpaket empfangen ${R('radio','receivedNumber')}`,S('basic',`zeige Zahl ${R('radio','receivedNumber')}`))}
+  ]},
+ {id:'reset',name:'Reset- und Power-Taste',type:'other',side:'Rückseite',short:'Neustart und Schlafmodus',
+  what:'Die kleine Taste auf der Rückseite startet dein Programm neu. Ein langes Drücken schickt den micro:bit in den Schlafmodus; ein kurzes Drücken weckt ihn wieder.',
+  value:'Neustart / Schlafen / Aufwachen',range:'kein Messwert (nicht programmierbar)',
+  tip:'Diese Taste kannst du nicht mit Blöcken programmieren. Sie ist praktisch, um ein Programm von vorne zu starten.',
+  idea:'Beobachte: Was passiert mit einer Variablen, wenn du Reset drückst?',ex:[]}
+];
+const byId=Object.fromEntries(ENTRIES.map(e=>[e.id,e]));
+
+/* ---------- Board ---------- */
+const HS={
+ front:[
+  {e:'logo',x:222,y:38,w:76,h:40},
+  {e:'mikro',x:306,y:42,w:38,h:32},
+  {e:'ledmatrix',also:['licht'],x:160,y:90,w:200,h:200},
+  {e:'tasten',x:46,y:132,w:78,h:104},
+  {e:'tasten',x:396,y:132,w:78,h:104},
+  {e:'pinsIn',also:['pinsOut'],x:24,y:294,w:274,h:94}
+ ],
+ back:[
+  {e:'funk',x:30,y:20,w:112,h:62},
+  {e:'mikro',x:186,y:40,w:36,h:32},
+  {e:'reset',x:296,y:10,w:42,h:50},
+  {e:'temp',x:222,y:84,w:96,h:98},
+  {e:'beschl',also:['kompass'],x:352,y:108,w:60,h:74},
+  {e:'lautsprecher',x:228,y:198,w:84,h:94},
+  {e:'pinsIn',also:['pinsOut'],x:222,y:294,w:274,h:94}
+ ]
+};
+function boardSVG(side){
+  const xs=[30,129,228,327,426], lb=['0','1','2','3V','GND'];
+  const labels=side==='front'?lb:[...lb].reverse();
+  let s=`<svg class="pcb" viewBox="0 0 520 400" role="group" aria-label="micro:bit ${side==='front'?'Vorderseite':'Rückseite'}, schematische Darstellung">`;
+  s+=`<rect x="8" y="8" width="504" height="384" rx="22" class="pcb-base"/>`;
+  xs.forEach((x,i)=>{s+=`<rect x="${x}" y="300" width="64" height="84" rx="8" class="pad"/><circle cx="${x+32}" cy="331" r="15" class="hole"/><text x="${x+32}" y="374" class="padlbl">${labels[i]}</text>`;});
+  for(let i=0;i<4;i++){for(let k=0;k<4;k++){s+=`<rect x="${xs[i]+69+k*7.5}" y="334" width="4" height="50" class="pad"/>`;}}
+  if(side==='front'){
+    s+=`<rect x="228" y="47" width="30" height="21" rx="10.5" fill="none" stroke="var(--nord13)" stroke-width="4"/><rect x="262" y="47" width="30" height="21" rx="10.5" fill="none" stroke="var(--nord13)" stroke-width="4"/>`;
+    s+=`<circle cx="318" cy="58" r="4.5" class="hole"/><rect x="327" y="53" width="6" height="10" rx="1" class="led-off"/>`;
+    const rows=HEART.split(' ');
+    for(let j=0;j<5;j++)for(let i=0;i<5;i++){s+=`<rect x="${180+40*i-4}" y="${110+40*j-8}" width="8" height="16" rx="2" class="${rows[j][i]==='#'?'led-on':'led-off'}"/>`;}
+    [['A',85],['B',435]].forEach(([t,cx])=>{s+=`<text x="${cx}" y="153" class="silk">${t}</text><rect x="${cx-30}" y="165" width="60" height="60" rx="8" fill="var(--nord3)"/><circle cx="${cx}" cy="195" r="19" fill="var(--nord0)" stroke="var(--nord4)" stroke-width="2"/>`;});
+  } else {
+    s+=`<path d="M40 30 h20 v24 h14 v-24 h14 v24 h14 v-24 h14 v24 h14" fill="none" stroke="var(--nord13)" stroke-width="3"/><text x="88" y="74" class="chiplbl">Antenne</text>`;
+    s+=`<rect x="228" y="4" width="64" height="26" rx="3" fill="var(--nord4)" stroke="var(--nord3)"/><text x="260" y="46" class="chiplbl">USB</text>`;
+    s+=`<rect x="196" y="50" width="16" height="12" rx="2" fill="var(--nord4)"/><text x="204" y="80" class="chiplbl">Mikro</text>`;
+    s+=`<rect x="304" y="16" width="26" height="22" rx="3" fill="var(--nord3)"/><circle cx="317" cy="27" r="6" fill="var(--nord0)"/><text x="317" y="54" class="chiplbl">Reset</text>`;
+    s+=`<rect x="398" y="14" width="52" height="30" rx="3" fill="var(--nord6)" stroke="var(--nord4)"/><text x="424" y="60" class="chiplbl">Batterie</text>`;
+    s+=`<rect x="128" y="100" width="52" height="52" rx="3" class="chip-sh"/><text x="154" y="168" class="chiplbl">USB-Chip</text>`;
+    s+=`<rect x="230" y="92" width="80" height="80" rx="4" class="chip-sh"/><text x="270" y="130" class="chiplbl">nRF52833</text><text x="270" y="146" class="chiplbl">Prozessor</text>`;
+    s+=`<rect x="362" y="118" width="40" height="40" rx="3" class="chip-sh"/><text x="382" y="174" class="chiplbl">Bewegung</text>`;
+    s+=`<circle cx="270" cy="238" r="32" class="chip-sh"/><circle cx="270" cy="238" r="7" fill="var(--nord3)"/><text x="270" y="288" class="chiplbl">Lautsprecher</text>`;
+  }
+  HS[side].forEach((h,i)=>{
+    const ids=[h.e,...(h.also||[])];
+    const lbl=ids.map(id=>byId[id].name).join(' / ');
+    s+=`<rect class="hs" data-hs="${side}-${i}" x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="10" tabindex="0" role="button" aria-label="${lbl}"><title>${lbl}</title></rect>`;
+  });
+  return s+'</svg>';
+}
+
+
+/* ---------- Zustand ---------- */
+const st={side:'front',sel:'tasten',filter:'all'};
+
+const hsIds=h=>[h.e,...(h.also||[])];
+const sidesOf=id=>['front','back'].filter(s=>HS[s].some(h=>hsIds(h).includes(id)));
+function siblings(id){const set=new Set();['front','back'].forEach(s=>HS[s].forEach(h=>{const ids=hsIds(h);if(ids.includes(id))ids.forEach(x=>x!==id&&set.add(x));}));return [...set];}
+
+function renderBoard(){
+  const el=document.getElementById('board');
+  el.innerHTML=boardSVG(st.side);
+  document.querySelectorAll('[data-side]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.side===st.side));
+  el.querySelectorAll('.hs').forEach(r=>{
+    const [side,i]=r.dataset.hs.split('-');const h=HS[side][+i];const ids=hsIds(h);
+    const match=st.filter==='all'?null:ids.find(id=>byId[id].type===st.filter);
+    const colorId=match||h.e;
+    r.style.setProperty('--hc',st.filter==='all'?'var(--nord8)':TYPES[byId[colorId].type].col);
+    r.classList.toggle('off',st.filter!=='all'&&!match);
+    r.classList.toggle('sel',ids.includes(st.sel));
+    const go=()=>select(ids.includes(st.sel)&&ids.length>1?ids[(ids.indexOf(st.sel)+1)%ids.length]:(match||h.e));
+    r.addEventListener('click',go);
+    r.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();go();}});
+  });
+}
+function renderDetail(){
+  const e=byId[st.sel],t=TYPES[e.type];
+  const sib=siblings(e.id);
+  let h=`<div class="badges"><span class="badge" style="--cc:${t.col}">${t.icon} ${t.label}${t.sub?' · '+t.sub:''}</span><span class="badge neutral">${e.side}</span></div>`;
+  h+=`<h2>${e.name}</h2><p>${e.what}</p>`;
+  h+=`<dl class="meta"><dt>${e.type==='aktor'?'Steuert':'Liefert'}</dt><dd>${e.value}</dd><dt>Bereich</dt><dd>${e.range}</dd></dl>`;
+  if(sib.length)h+=`<div class="sib"><span>Gleiches Bauteil, andere Funktion:</span>${sib.map(id=>`<button type="button" data-goto="${id}" style="--cc:${TYPES[byId[id].type].col}">${TYPES[byId[id].type].icon} ${byId[id].name}</button>`).join('')}</div>`;
+  h+=`<div class="box" style="--bc:var(--nord13)"><strong>💡 Gut zu wissen</strong>${e.tip}</div>`;
+  if(e.ex.length){
+    h+=`<h3>So programmierst du es in MakeCode</h3>`;
+    e.ex.forEach((x,i)=>{
+      h+=`<div class="example"><div class="example-t">${x.t}</div><div class="blocks">${x.h}</div></div>`;
+    });
+  }
+  h+=`<div class="box" style="--bc:var(--nord15)"><strong>🧪 Probier's aus</strong>${e.idea}</div>`;
+  const d=document.getElementById('detail');d.innerHTML=h;d.style.setProperty('--cc',t.col);
+  d.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>select(b.dataset.goto));
+}
+function renderList(){
+  let h='';
+  ['sensor','aktor','komm','other'].forEach(type=>{
+    if(st.filter!=='all'&&st.filter!==type)return;
+    const t=TYPES[type];const items=ENTRIES.filter(e=>e.type===type);
+    h+=`<h3 class="grp"><span class="badge" style="--cc:${t.col}">${t.icon} ${t.label}</span>${t.group}</h3><div class="cards">`;
+    items.forEach(e=>{h+=`<button type="button" class="card" data-card="${e.id}" style="--cc:${t.col}" aria-current="${e.id===st.sel}"><span class="ic" aria-hidden="true">${t.icon}</span><span><b>${e.name}</b><span class="s">${e.short}</span></span></button>`;});
+    h+='</div>';
+  });
+  const l=document.getElementById('list');l.innerHTML=h;
+  l.querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>{select(b.dataset.card);if(matchMedia('(max-width:860px)').matches)document.querySelector('.stage').scrollIntoView({behavior:'smooth'});else document.querySelector('.explore').scrollIntoView({behavior:'smooth'});});
+}
+function select(id){
+  st.sel=id;
+  const sides=sidesOf(id);
+  if(sides.length&&!sides.includes(st.side))st.side=sides[0];
+  renderBoard();renderDetail();renderList();
+}
+document.querySelectorAll('[data-side]').forEach(b=>b.onclick=()=>{st.side=b.dataset.side;renderBoard();});
+document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{
+  st.filter=b.dataset.filter;
+  document.querySelectorAll('[data-filter]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  if(st.filter!=='all'&&byId[st.sel].type!==st.filter){const first=ENTRIES.find(e=>e.type===st.filter);if(first){select(first.id);return;}}
+  renderBoard();renderList();
+});
+select('tasten');
+</script>
+</body>
+</html>
