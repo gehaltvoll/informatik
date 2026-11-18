@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Reihe Robotik/micro:bit) · Zielgruppe: Schüler:innen · Anrede: du · Gerät: gemischt
+  Inhalt: Begriffe und Geschichte; fünf Bauformen von Industrierobotern (eigene schematische Zeichnungen); Greifarm-Simulation
+    (Gelenkwinkel, Vorwärtskinematik, «Roboter rechnet» = inverse Kinematik); Logistikroboter (FTS, AMR, Ware-zur-Person,
+    Pick-Roboter, Hochregallager, Lieferroboter); Lager-Simulation Person-zur-Ware vs. Ware-zur-Person; Zahlen IFR World Robotics 2025;
+    Sicherheit und Arbeitswelt (Quiz auf Wunsch entfernt); Bezug micro:bit-Linienfolger
+  Datenhaltung: keine · Export: keiner
+  Design: nur Variante «Technik», nur Dunkelmodus (wie die übrigen Robotik-Seiten); keine langen Gedankenstriche
+  Quellen: IFR World Robotics 2025 (Pressemitteilungen 25.09.2025 und 08.04.2026); Amazon-Meilenstein 2025 (Medienberichte)
+-->
+<html lang="de-CH" style="color-scheme:dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Industrie- und Logistikroboter</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);--r:6px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:400 17px/1.6 var(--font)}
+button,input{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+p{max-width:70ch}
+.mono{font-family:var(--font-mono)}
+header.top{border-bottom:1px solid var(--nord2);padding:24px 0 20px}
+.kicker{margin:0;font:400 .8rem var(--font-mono);color:var(--nord8);text-transform:uppercase;letter-spacing:.06em}
+h1{margin:2px 0 6px;font-size:2.2rem;font-weight:700;line-height:1.15}
+.lead{margin:0;color:var(--muted);max-width:66ch}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.toc a{font:600 .8rem var(--font-mono);text-decoration:none;color:var(--nord4);border:1px solid var(--nord3);border-radius:999px;padding:3px 12px}
+.toc a:hover{border-color:var(--nord8);color:var(--nord8)}
+main{padding:10px 0 40px}
+h2.sec{font-size:1.5rem;font-weight:700;margin:40px 0 10px;scroll-margin-top:12px}
+.sec-no{font:600 .8em var(--font-mono);color:var(--accent);margin-right:10px}
+h3{font-size:1.1rem;font-weight:600;margin:0 0 6px}
+.muted{color:var(--muted);font-size:.9rem}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:1px 9px;border-radius:999px;background:var(--bc,var(--nord8));color:var(--nord0);font:600 .7rem var(--font-mono);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.panel{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--r);padding:16px 18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.note{background:var(--surface);border:1px solid var(--surface-2);border-left:5px solid var(--bc,var(--nord8));border-radius:var(--r);padding:12px 16px}
+.note p{margin:4px 0 0}
+.grid-bg{background-color:var(--nord0);background-image:linear-gradient(rgba(76,86,106,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(76,86,106,.35) 1px,transparent 1px);background-size:24px 24px;border:1px solid var(--nord2);border-radius:var(--r)}
+.cbtn{background:var(--nord2);border:1px solid var(--nord3);border-radius:var(--r);padding:6px 14px;cursor:pointer;font-weight:600}
+.cbtn.primary{background:var(--nord8);color:var(--nord0);border-color:var(--nord8)}
+
+/* Zeitleiste */
+.hist{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px}
+.hist div{background:var(--surface);border:1px solid var(--surface-2);border-top:3px solid var(--nord13);border-radius:var(--r);padding:10px 12px;font-size:.92rem}
+.hist b{display:block;font:600 1rem var(--font-mono);color:var(--nord13)}
+
+/* Bauformen */
+.types-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.types-nav button{background:var(--surface);border:1px solid var(--surface-2);border-radius:999px;padding:4px 14px;cursor:pointer;font-weight:600;font-size:.92rem}
+.types-nav button[aria-pressed=true]{background:var(--nord8);color:var(--nord0);border-color:var(--nord8)}
+.type-view{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:start}
+.type-svg{padding:12px}
+.type-svg svg{width:100%;height:auto;display:block}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:10px 0;font-size:.95rem}
+.facts dt{font:600 .78rem var(--font-mono);color:var(--muted);text-transform:uppercase;padding-top:3px}
+.facts dd{margin:0}
+
+/* Greifarm */
+.arm{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+.arm-svg{padding:8px}
+.arm-svg svg{width:100%;height:auto;display:block}
+.slider{margin:10px 0}
+.slider label{display:flex;justify-content:space-between;font-weight:600;font-size:.95rem}
+.slider label span{font-family:var(--font-mono);color:var(--nord13)}
+.slider input{width:100%;accent-color:var(--nord8)}
+.readout{font:400 .9rem var(--font-mono);background:var(--nord0);border:1px solid var(--nord3);border-radius:var(--r);padding:8px 12px;margin:10px 0}
+.readout b{color:var(--nord13)}
+.ok{color:var(--nord14);font-weight:700}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Logistik */
+.log{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.lcard{background:var(--surface);border:1px solid var(--surface-2);border-top:4px solid var(--cc);border-radius:var(--r);padding:14px}
+.lcard .ic{font-size:1.5rem}
+.lcard b{display:block;margin:4px 0;font-size:1.05rem}
+.lcard p{margin:0;font-size:.94rem}
+.lcard .how{margin-top:8px;font-size:.88rem;color:var(--muted)}
+.lager{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+.lager-svg{padding:8px}
+.lager-svg svg{width:100%;height:auto;display:block}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.cmp div{background:var(--nord0);border:1px solid var(--nord3);border-radius:var(--r);padding:10px;text-align:center}
+.cmp b{display:block;font:600 1.6rem var(--font-mono)}
+.cmp span{font-size:.85rem;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--nord3);border-radius:var(--r);overflow:hidden}
+.seg button{border:0;background:var(--nord1);padding:6px 12px;cursor:pointer;font-weight:600;font-size:.9rem}
+.seg button[aria-pressed=true]{background:var(--nord8);color:var(--nord0)}
+
+/* Zahlen */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--r);padding:14px}
+.kpi b{display:block;font:600 1.7rem var(--font-mono);color:var(--nord8);line-height:1.2}
+.kpi span{font-size:.9rem;color:var(--muted)}
+.bars{margin-top:16px}
+.bar{display:grid;grid-template-columns:150px 1fr 60px;gap:10px;align-items:center;margin:6px 0;font-size:.92rem}
+.bar .t{height:18px;background:var(--nord2);border-radius:3px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--bcol,var(--nord9))}
+.bar .v{font-family:var(--font-mono);text-align:right}
+.bar.ch .lbl{font-weight:700}
+
+footer{padding:10px 0 40px;font-size:.85rem;color:var(--muted)}
+@media (max-width:860px){.type-view,.arm,.lager{grid-template-columns:1fr}h1{font-size:1.8rem}.bar{grid-template-columns:110px 1fr 50px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">Informatik // Robotik</p>
+    <h1>Industrie- und Logistikroboter</h1>
+    <p class="lead">Die meisten Roboter auf der Welt sehen nicht aus wie im Film. Sie schweissen Autos zusammen, packen Schokolade in Schachteln oder fahren Regale durch riesige Lagerhallen. Hier lernst du, welche Arten es gibt, wie ein Roboterarm «rechnet» und warum Lager heute ganz anders funktionieren als früher.</p>
+    <nav class="toc" aria-label="Inhalt">
+      <a href="#begriffe">01 Begriffe</a><a href="#bauformen">02 Bauformen</a><a href="#greifarm">03 Greifarm</a><a href="#logistik">04 Logistik</a><a href="#lager">05 Lager-Simulation</a><a href="#zahlen">06 Zahlen</a><a href="#mensch">07 Mensch</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- 01 -->
+  <h2 class="sec" id="begriffe"><span class="sec-no">01</span>Was ist ein Industrie-, was ein Logistikroboter?</h2>
+  <div class="grid2">
+    <div class="note" style="--bc:var(--nord9)"><span class="badge" style="--bc:var(--nord9)">🏭 Industrieroboter</span>
+      <p>Ein <b>programmierbarer Roboterarm</b> mit mehreren Gelenken (Achsen), meist fest am Boden montiert. Er arbeitet in Fabriken: schweissen, lackieren, montieren, Teile umsetzen. Man kann ihn für neue Aufgaben umprogrammieren, ohne ihn umzubauen.</p></div>
+    <div class="note" style="--bc:var(--nord12)"><span class="badge" style="--bc:var(--nord12)">📦 Logistikroboter</span>
+      <p>Roboter, die <b>Waren bewegen, lagern und zusammenstellen</b>: fahrende Transportroboter, Systeme, die ganze Regale bringen, und Greifarme, die einzelne Artikel aus Kisten nehmen. Sie arbeiten in Lagern, Spitälern und Versandzentren.</p></div>
+  </div>
+  <div class="hist">
+    <div><b>1961</b>Der erste Industrieroboter, «Unimate», hebt in einem Autowerk von General Motors heisse Metallteile aus einer Giessmaschine.</div>
+    <div><b>1970er</b>Roboter beginnen in der Autoindustrie Karosserien zu punktschweissen. Bis heute ist die Autoindustrie ein Hauptkunde.</div>
+    <div><b>2000er</b>Fahrerlose Transportsysteme und automatische Hochregallager werden in grossen Lagern alltäglich.</div>
+    <div><b>2012</b>Amazon kauft die Firma Kiva, deren kleine Roboter ganze Regale zu den Mitarbeitenden fahren.</div>
+    <div><b>2025</b>Amazon meldet den millionsten Roboter in seinen Lagern. Weltweit arbeiten über 4,6 Millionen Industrieroboter.</div>
+  </div>
+
+  <!-- 02 -->
+  <h2 class="sec" id="bauformen"><span class="sec-no">02</span>Bauformen von Industrierobotern</h2>
+  <p>Jede Bauform ist für bestimmte Aufgaben gemacht. Die <b>Achsen</b> sind die Gelenke, die sich einzeln bewegen lassen. Je mehr Achsen, desto beweglicher ist der Roboter, aber desto komplizierter wird die Steuerung.</p>
+  <div class="types-nav" role="group" aria-label="Bauform wählen" id="typeNav"></div>
+  <div class="type-view">
+    <div class="type-svg grid-bg" id="typeSvg"></div>
+    <div class="panel" id="typeInfo" aria-live="polite"></div>
+  </div>
+
+  <!-- 03 -->
+  <h2 class="sec" id="greifarm"><span class="sec-no">03</span>Ausprobieren: Einen Greifarm steuern</h2>
+  <p>Ein Roboterarm kennt nur seine <b>Gelenkwinkel</b>. Wo sich der Greifer befindet, muss er mit <b>Trigonometrie</b> ausrechnen. Bewege die drei Gelenke so, dass der Greifer das gelbe Paket erreicht. Merkst du, wie schwierig das von Hand ist?</p>
+  <div class="arm">
+    <div class="arm-svg grid-bg" id="armSvg"></div>
+    <div class="panel">
+      <div class="slider"><label for="a1">Gelenk 1 · Schulter <span id="a1v"></span></label><input type="range" id="a1" min="0" max="180" value="60"></div>
+      <div class="slider"><label for="a2">Gelenk 2 · Ellbogen <span id="a2v"></span></label><input type="range" id="a2" min="-150" max="150" value="-60"></div>
+      <div class="slider"><label for="a3">Gelenk 3 · Handgelenk <span id="a3v"></span></label><input type="range" id="a3" min="-150" max="150" value="-30"></div>
+      <div class="readout" id="armRead" aria-live="polite"></div>
+      <div class="ctrl"><button type="button" class="cbtn primary" id="armIK">🧮 Roboter rechnen lassen</button><button type="button" class="cbtn" id="armNew">🎯 Neues Ziel</button></div>
+      <p class="muted" style="margin:10px 0 0"><b>Vorwärts</b> (Winkel → Position) ist einfach zu rechnen. Ein echter Roboter braucht aber meist das <b>Umgekehrte</b>: Er kennt das Ziel und muss die passenden Winkel finden. Das heisst <b>inverse Kinematik</b> und ist ein typisches Problem aus Mathematik und Informatik.</p>
+    </div>
+  </div>
+
+  <!-- 04 -->
+  <h2 class="sec" id="logistik"><span class="sec-no">04</span>Logistikroboter</h2>
+  <p>Wenn du online etwas bestellst, muss jemand den Artikel im Lager finden, holen, verpacken und verschicken. Genau dort helfen Logistikroboter.</p>
+  <div class="log">
+    <div class="lcard" style="--cc:var(--nord9)"><span class="ic" aria-hidden="true">🛤</span><b>Fahrerloses Transportsystem (FTS)</b><p>Fährt Paletten oder Wagen auf <b>festen Routen</b> durch Fabrik oder Spital.</p><p class="how">Wie? Folgt Linien, Magnetstreifen oder Markierungen am Boden, genau wie ein micro:bit-Linienfolger.</p></div>
+    <div class="lcard" style="--cc:var(--nord8)"><span class="ic" aria-hidden="true">🧭</span><b>Autonomer mobiler Roboter (AMR)</b><p>Findet seinen Weg <b>selbst</b>, plant Routen und weicht Menschen und Hindernissen aus.</p><p class="how">Wie? Laserscanner (Lidar) und Kameras erstellen eine Karte; ein Algorithmus berechnet den Weg.</p></div>
+    <div class="lcard" style="--cc:var(--nord14)"><span class="ic" aria-hidden="true">🗄</span><b>Ware zur Person</b><p>Flache Roboter fahren unter ein Regal, heben es an und bringen es zur Packstation. Die Mitarbeiterin muss nicht mehr durchs Lager laufen.</p><p class="how">Wie? Viele Roboter gleichzeitig, koordiniert von einer zentralen Software.</p></div>
+    <div class="lcard" style="--cc:var(--nord15)"><span class="ic" aria-hidden="true">🤏</span><b>Pick-Roboter</b><p>Ein Greifarm nimmt <b>einzelne Artikel</b> aus einer Kiste. Das ist schwierig, weil jedes Produkt eine andere Form hat.</p><p class="how">Wie? Kameras und künstliche Intelligenz erkennen den Artikel; Sauggreifer oder Finger fassen ihn.</p></div>
+    <div class="lcard" style="--cc:var(--nord13)"><span class="ic" aria-hidden="true">🏗</span><b>Automatisches Hochregallager</b><p>Regalbediengeräte fahren in bis zu dutzende Meter hohen Regalgängen und holen Paletten oder Kisten vollautomatisch.</p><p class="how">Wie? Feste Schienen und Koordinaten wie bei einem Portalroboter; jeder Platz hat eine Adresse.</p></div>
+    <div class="lcard" style="--cc:var(--nord12)"><span class="ic" aria-hidden="true">🛵</span><b>Lieferroboter und Drohnen</b><p>Bringen Pakete die «letzte Meile» bis zur Haustür. Noch weitgehend in Tests.</p><p class="how">Warum schwierig? Gehsteige, Treppen, Verkehr und Wetter sind viel unberechenbarer als eine Lagerhalle.</p></div>
+  </div>
+
+  <!-- 05 -->
+  <h2 class="sec" id="lager"><span class="sec-no">05</span>Simulation: Person zur Ware oder Ware zur Person?</h2>
+  <p>Eine Bestellung besteht aus mehreren Artikeln in verschiedenen Regalen. Vergleiche: Läuft eine Person alle Regale ab, oder bringen Roboter die Regale zur Packstation?</p>
+  <div class="lager">
+    <div class="lager-svg grid-bg" id="lagerSvg"></div>
+    <div class="panel">
+      <div class="seg" role="group" aria-label="Arbeitsweise"><button type="button" data-mode="person" aria-pressed="true">🚶 Person zur Ware</button><button type="button" data-mode="robot" aria-pressed="false">🤖 Ware zur Person</button></div>
+      <div class="cmp"><div><b id="walk">0</b><span>Felder Laufweg Mensch</span></div><div><b id="time">0</b><span>Zeitschritte bis fertig</span></div></div>
+      <div class="ctrl"><button type="button" class="cbtn primary" id="lagerNew">📋 Neue Bestellung</button><span class="muted" id="lagerInfo"></span></div>
+      <p class="muted" style="margin:12px 0 0">Vereinfachung: Pro Zeitschritt geht man ein Feld weit. Die Roboter fahren alle gleichzeitig los. Die Person sammelt mit einem einfachen Algorithmus immer den nächstgelegenen Artikel ein («Nächster Nachbar»).</p>
+    </div>
+  </div>
+
+  <!-- 06 -->
+  <h2 class="sec" id="zahlen"><span class="sec-no">06</span>Roboter in Zahlen</h2>
+  <div class="kpis">
+    <div class="kpi"><b>542 076</b><span>Industrieroboter wurden 2024 weltweit neu installiert, mehr als doppelt so viele wie zehn Jahre zuvor.</span></div>
+    <div class="kpi"><b>4,66 Mio.</b><span>Industrieroboter waren 2024 weltweit in Betrieb.</span></div>
+    <div class="kpi"><b>54 %</b><span>aller 2024 neu installierten Industrieroboter gingen nach China.</span></div>
+    <div class="kpi"><b>1 Mio.</b><span>Roboter setzte allein Amazon 2025 in seinen Lagern ein.</span></div>
+  </div>
+  <div class="bars" aria-label="Roboterdichte: Industrieroboter pro 10 000 Beschäftigte in der Industrie, 2024">
+    <h3 style="margin-top:20px">Roboterdichte 2024: Industrieroboter pro 10 000 Beschäftigte</h3>
+    <div id="bars"></div>
+    <p class="muted">Die Schweiz liegt weltweit auf Rang 10. In der Autoindustrie hatte die Schweiz 2023 sogar die höchste Roboterdichte der Welt.</p>
+  </div>
+
+  <!-- 07 -->
+  <h2 class="sec" id="mensch"><span class="sec-no">07</span>Mensch und Roboter</h2>
+  <div class="grid2">
+    <div class="note" style="--bc:var(--nord11)"><h3>🦺 Sicherheit</h3>
+      <p>Klassische Industrieroboter sind schnell und stark. Sie arbeiten deshalb hinter <b>Schutzzäunen</b> oder <b>Lichtvorhängen</b>: Tritt jemand in den Arbeitsbereich, stoppt der Roboter sofort. <b>Cobots</b> (kollaborative Roboter) messen dagegen mit Kraftsensoren, ob sie etwas berühren, und dürfen direkt neben Menschen arbeiten.</p></div>
+    <div class="note" style="--bc:var(--nord13)"><h3>💼 Arbeitswelt</h3>
+      <p>Roboter übernehmen vor allem Arbeit, die <b>eintönig, schwer oder gefährlich</b> ist. Dafür entstehen neue Aufgaben: Roboter programmieren, warten und überwachen. Ob unter dem Strich mehr oder weniger Arbeitsplätze entstehen, ist umstritten und hängt von Branche und Land ab.</p></div>
+    <div class="note" style="--bc:var(--nord15)"><h3>💬 Zum Diskutieren</h3>
+      <ul style="margin:6px 0 0;padding-left:1.2em"><li>Welche Arbeiten sollten Roboter übernehmen, welche lieber nicht?</li><li>Warum lohnt sich ein Roboter in einem Land mit hohen Löhnen wie der Schweiz besonders?</li><li>Warum greifen Roboter Kartoffeln oder T-Shirts viel schlechter als Schrauben?</li></ul></div>
+  </div>
+
+</main>
+<footer class="wrap">Quellen: International Federation of Robotics (IFR), World Robotics 2025 (<a href="https://ifr.org/ifr-press-releases/news/global-robot-demand-in-factories-doubles-over-10-years">Installationen</a>, <a href="https://ifr.org/ifr-press-releases/news/robot-density-surges-in-europe-asia-and-americas">Roboterdichte</a>); Amazon-Meilenstein: Medienberichte 2025. Alle Zeichnungen sind vereinfachte Schemas.</footer>
+
+<script>
+/* ---------- Bauformen ---------- */
+const S='stroke="var(--nord9)" stroke-width="14" stroke-linecap="round"';
+const J=(x,y)=>`<circle cx="${x}" cy="${y}" r="9" fill="var(--nord1)" stroke="var(--nord8)" stroke-width="3"/>`;
+const AX=(x,y,t)=>`<text x="${x}" y="${y}" fill="var(--nord13)" font-family="Google Sans Code,monospace" font-size="12" font-weight="600">${t}</text>`;
+const BASE='<rect x="60" y="250" width="200" height="14" rx="3" fill="var(--nord3)"/>';
+const TYPES=[
+ {k:'knick',nm:'Knickarmroboter',ax:'6',
+  svg:`${BASE}<rect x="125" y="226" width="70" height="26" rx="4" fill="var(--nord2)" stroke="var(--nord9)" stroke-width="2"/><line x1="160" y1="226" x2="130" y2="130" ${S}/><line x1="130" y1="130" x2="230" y2="100" ${S}/><line x1="230" y1="100" x2="262" y2="128" stroke="var(--nord9)" stroke-width="10" stroke-linecap="round"/>${J(160,226)}${J(130,130)}${J(230,100)}<path d="M262 128 l10 16 M262 128 l-6 18" stroke="var(--nord4)" stroke-width="5" stroke-linecap="round"/>${AX(174,222,'1·2')}${AX(102,126,'3')}${AX(232,90,'4·5·6')}`,
+  form:'Arm mit Schulter, Ellbogen und Handgelenk, ähnlich wie ein menschlicher Arm.',
+  stark:'Sehr beweglich, erreicht fast jeden Punkt aus jeder Richtung.',
+  aufg:'Schweissen, Lackieren, Montieren, schwere Teile umsetzen.',
+  bsp:'Die Roboterstrassen in Autofabriken bestehen fast nur aus Knickarmrobotern.'},
+ {k:'scara',nm:'SCARA-Roboter',ax:'4',
+  svg:`${BASE}<rect x="70" y="120" width="30" height="132" rx="4" fill="var(--nord2)" stroke="var(--nord9)" stroke-width="2"/><line x1="85" y1="120" x2="175" y2="120" ${S}/><line x1="175" y1="120" x2="245" y2="150" ${S}/><line x1="245" y1="150" x2="245" y2="210" stroke="var(--nord4)" stroke-width="7" stroke-linecap="round"/>${J(85,120)}${J(175,120)}${J(245,150)}<rect x="225" y="226" width="40" height="22" rx="3" fill="var(--nord12)"/>${AX(60,110,'1')}${AX(168,108,'2')}${AX(254,146,'3·4')}`,
+  form:'Zwei Armteile drehen sich waagrecht, die Spitze fährt senkrecht auf und ab.',
+  stark:'Sehr schnell und genau in einer Ebene, günstig.',
+  aufg:'Kleinteile montieren, elektronische Bauteile auf Leiterplatten setzen, Schrauben eindrehen.',
+  bsp:'In der Elektronikindustrie, zum Beispiel bei der Herstellung von Handys.'},
+ {k:'delta',nm:'Delta- oder Parallelroboter',ax:'3–4',
+  svg:`<rect x="70" y="40" width="180" height="16" rx="3" fill="var(--nord3)"/><line x1="100" y1="56" x2="90" y2="120" ${S}/><line x1="160" y1="56" x2="160" y2="110" ${S}/><line x1="220" y1="56" x2="230" y2="120" ${S}/><line x1="90" y1="120" x2="150" y2="190" stroke="var(--nord4)" stroke-width="5"/><line x1="160" y1="110" x2="160" y2="190" stroke="var(--nord4)" stroke-width="5"/><line x1="230" y1="120" x2="170" y2="190" stroke="var(--nord4)" stroke-width="5"/>${J(90,120)}${J(160,110)}${J(230,120)}<rect x="140" y="186" width="40" height="10" rx="3" fill="var(--nord8)"/><rect x="40" y="230" width="240" height="12" rx="3" fill="var(--nord3)"/><rect x="70" y="214" width="22" height="16" rx="3" fill="var(--nord12)"/><rect x="190" y="214" width="22" height="16" rx="3" fill="var(--nord12)"/>${AX(30,92,'3 Arme')}`,
+  form:'Hängt von oben. Drei leichte Arme halten gemeinsam eine kleine Plattform.',
+  stark:'Extrem schnell, oft mehrere Griffe pro Sekunde.',
+  aufg:'«Pick and Place»: Produkte vom Fliessband greifen und in Schachteln legen.',
+  bsp:'Pralinen, Kekse oder Medikamente in Verpackungen sortieren.'},
+ {k:'portal',nm:'Portalroboter',ax:'3',
+  svg:`<line x1="50" y1="60" x2="50" y2="250" ${S}/><line x1="270" y1="60" x2="270" y2="250" ${S}/><line x1="50" y1="60" x2="270" y2="60" ${S}/><rect x="150" y="50" width="40" height="22" rx="3" fill="var(--nord2)" stroke="var(--nord8)" stroke-width="2"/><line x1="170" y1="72" x2="170" y2="180" stroke="var(--nord9)" stroke-width="10" stroke-linecap="round"/><path d="M170 180 l-10 14 M170 180 l10 14" stroke="var(--nord4)" stroke-width="5" stroke-linecap="round"/><rect x="155" y="214" width="30" height="24" rx="3" fill="var(--nord12)"/>${BASE}${AX(205,48,'x')}${AX(178,130,'z')}${AX(284,150,'y')}`,
+  form:'Fährt auf Schienen in drei geraden Richtungen x, y und z, wie ein Kran.',
+  stark:'Kann sehr grosse Flächen abdecken und schwere Lasten tragen; leicht zu programmieren.',
+  aufg:'Paletten beladen, Werkstücke in Maschinen einlegen, 3D-Druck und Fräsen.',
+  bsp:'Auch ein 3D-Drucker ist im Prinzip ein kleiner Portalroboter.'},
+ {k:'cobot',nm:'Cobot (kollaborativ)',ax:'6–7',
+  svg:`${BASE}<rect x="70" y="226" width="56" height="26" rx="4" fill="var(--nord2)" stroke="var(--nord14)" stroke-width="2"/><line x1="98" y1="226" x2="110" y2="150" stroke="var(--nord14)" stroke-width="12" stroke-linecap="round"/><line x1="110" y1="150" x2="180" y2="140" stroke="var(--nord14)" stroke-width="12" stroke-linecap="round"/><line x1="180" y1="140" x2="190" y2="176" stroke="var(--nord14)" stroke-width="9" stroke-linecap="round"/>${J(98,226)}${J(110,150)}${J(180,140)}<circle cx="250" cy="120" r="16" fill="var(--nord4)"/><line x1="250" y1="136" x2="250" y2="200" stroke="var(--nord4)" stroke-width="10" stroke-linecap="round"/><line x1="250" y1="160" x2="200" y2="176" stroke="var(--nord4)" stroke-width="8" stroke-linecap="round"/><line x1="250" y1="200" x2="236" y2="248" stroke="var(--nord4)" stroke-width="8" stroke-linecap="round"/><line x1="250" y1="200" x2="264" y2="248" stroke="var(--nord4)" stroke-width="8" stroke-linecap="round"/><text x="150" y="108" fill="var(--nord14)" font-size="13" font-weight="600" font-family="Open Sans">Kraftsensor ✓</text>`,
+  form:'Leichter Arm mit abgerundeten Formen, oft mit Sensoren in jedem Gelenk.',
+  stark:'Darf ohne Schutzzaun neben Menschen arbeiten; stoppt bei einer Berührung.',
+  aufg:'Gemeinsam mit Menschen montieren, Teile reichen, Qualität prüfen.',
+  bsp:'Man kann ihn oft programmieren, indem man den Arm einfach von Hand führt.'}
+];
+let tSel=0;
+function renderType(){
+  document.getElementById('typeNav').innerHTML=TYPES.map((t,i)=>`<button type="button" data-t="${i}" aria-pressed="${i===tSel}">${t.nm}</button>`).join('');
+  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tSel=+b.dataset.t;renderType();});
+  const t=TYPES[tSel];
+  document.getElementById('typeSvg').innerHTML=`<svg viewBox="0 0 320 270" role="img" aria-label="Schema ${t.nm}">${t.svg}</svg>`;
+  document.getElementById('typeInfo').innerHTML=`<h3 style="font-size:1.35rem;font-weight:700">${t.nm}</h3><span class="badge">${t.ax} Achsen</span>
+   <dl class="facts"><dt>Form</dt><dd>${t.form}</dd><dt>Stärke</dt><dd>${t.stark}</dd><dt>Aufgaben</dt><dd>${t.aufg}</dd><dt>Beispiel</dt><dd>${t.bsp}</dd></dl>`;
+}
+renderType();
+
+/* ---------- Greifarm (2D) ---------- */
+const L1=110,L2=90,L3=40,OX=170,OY=250;
+let target={x:0,y:0},anim=null;
+const rad=d=>d*Math.PI/180;
+function fk(a1,a2,a3){
+  const t1=rad(a1),t2=t1+rad(a2),t3=t2+rad(a3);
+  const p1={x:L1*Math.cos(t1),y:L1*Math.sin(t1)};
+  const p2={x:p1.x+L2*Math.cos(t2),y:p1.y+L2*Math.sin(t2)};
+  const p3={x:p2.x+L3*Math.cos(t3),y:p2.y+L3*Math.sin(t3)};
+  return [p1,p2,p3,t3];
+}
+function newTarget(){
+  for(let i=0;i<500;i++){const r=60+Math.random()*150,a=rad(15+Math.random()*150);target={x:Math.round(r*Math.cos(a)),y:Math.round(r*Math.sin(a))};
+    if(target.y<25)continue;const s=ik();if(s&&s[0]>=0&&s[0]<=180&&Math.abs(s[1])<=150&&Math.abs(s[2])<=150)return;}
+  target={x:120,y:60};
+}
+function armRender(){
+  const a=['a1','a2','a3'].map(id=>+document.getElementById(id).value);
+  ['a1','a2','a3'].forEach((id,i)=>document.getElementById(id+'v').textContent=a[i]+'°');
+  const [p1,p2,p3]=fk(...a);
+  const X=p=>OX+p.x,Y=p=>OY-p.y;
+  const d=Math.hypot(p3.x-target.x,p3.y-target.y),hit=d<12;
+  let s=`<svg viewBox="0 0 340 270" role="img" aria-label="Greifarm mit drei Gelenken und Zielpaket">`;
+  for(let r=100;r<=240;r+=70)s+=`<circle cx="${OX}" cy="${OY}" r="${r}" fill="none" stroke="var(--nord2)" stroke-dasharray="3 5"/>`;
+  s+=`<rect x="10" y="${OY}" width="320" height="12" fill="var(--nord3)"/>`;
+  s+=`<rect x="${OX+target.x-11}" y="${OY-target.y-11}" width="22" height="22" rx="3" fill="${hit?'var(--nord14)':'var(--nord13)'}"/>`;
+  s+=`<line x1="${OX}" y1="${OY}" x2="${X(p1)}" y2="${Y(p1)}" stroke="var(--nord9)" stroke-width="14" stroke-linecap="round"/><line x1="${X(p1)}" y1="${Y(p1)}" x2="${X(p2)}" y2="${Y(p2)}" stroke="var(--nord9)" stroke-width="11" stroke-linecap="round"/><line x1="${X(p2)}" y1="${Y(p2)}" x2="${X(p3)}" y2="${Y(p3)}" stroke="var(--nord4)" stroke-width="7" stroke-linecap="round"/>`;
+  s+=`<circle cx="${OX}" cy="${OY}" r="10" fill="var(--nord1)" stroke="var(--nord8)" stroke-width="3"/><circle cx="${X(p1)}" cy="${Y(p1)}" r="8" fill="var(--nord1)" stroke="var(--nord8)" stroke-width="3"/><circle cx="${X(p2)}" cy="${Y(p2)}" r="6" fill="var(--nord1)" stroke="var(--nord8)" stroke-width="3"/><circle cx="${X(p3)}" cy="${Y(p3)}" r="5" fill="var(--nord11)"/>`;
+  s+=`<text x="${OX+8}" y="${OY-6}" fill="var(--nord4)" font-family="Google Sans Code,monospace" font-size="11">(0|0)</text></svg>`;
+  document.getElementById('armSvg').innerHTML=s;
+  document.getElementById('armRead').innerHTML=`Greifer: x = <b>${Math.round(p3.x)}</b>, y = <b>${Math.round(p3.y)}</b><br>Paket: x = <b>${target.x}</b>, y = <b>${target.y}</b><br>Abstand: <b>${Math.round(d)}</b> ${hit?'<span class="ok">✓ Paket erreicht!</span>':''}`;
+}
+function ik(){
+  // Handgelenk zeigt senkrecht nach unten: Ziel für Punkt 2 liegt L3 über dem Paket
+  const wx=target.x,wy=target.y+L3,D=Math.hypot(wx,wy);
+  if(D>L1+L2-1)return null;
+  const c2=(wx*wx+wy*wy-L1*L1-L2*L2)/(2*L1*L2);
+  const t2=-Math.acos(Math.max(-1,Math.min(1,c2)));
+  const t1=Math.atan2(wy,wx)-Math.atan2(L2*Math.sin(t2),L1+L2*Math.cos(t2));
+  const a1=t1*180/Math.PI,a2=t2*180/Math.PI,a3=-90-a1-a2;
+  const n=v=>((v+180)%360+360)%360-180;
+  return [Math.round(a1),Math.round(n(a2)),Math.round(n(a3))];
+}
+document.getElementById('armIK').onclick=()=>{
+  const sol=ik();
+  if(!sol){document.getElementById('armRead').innerHTML+='<br><span style="color:var(--nord11)">⚠ Ziel ausser Reichweite.</span>';return;}
+  const start=['a1','a2','a3'].map(id=>+document.getElementById(id).value),goal=sol;
+  let k=0;clearInterval(anim);
+  anim=setInterval(()=>{k++;const f=k/30;['a1','a2','a3'].forEach((id,i)=>document.getElementById(id).value=Math.round(start[i]+(goal[i]-start[i])*f));armRender();if(k>=30)clearInterval(anim);},25);
+};
+document.getElementById('armNew').onclick=()=>{clearInterval(anim);newTarget();armRender();};
+['a1','a2','a3'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{clearInterval(anim);armRender();}));
+target={x:120,y:60};armRender();
+
+/* ---------- Lager-Simulation ---------- */
+const GW=13,GH=9,CELL=26,STATION={x:6,y:8};
+let order=[],mode='person',walkPath=[];
+const isShelf=(x,y)=>y>=1&&y<=6&&x>=1&&x<=11&&x%3!==0;
+function newOrder(){
+  const shelves=[];for(let y=1;y<=6;y++)for(let x=1;x<=11;x++)if(isShelf(x,y))shelves.push({x,y});
+  order=[];while(order.length<5){const s=shelves[Math.floor(Math.random()*shelves.length)];if(!order.some(o=>o.x===s.x&&o.y===s.y))order.push(s);}
+  lagerRender();
+}
+function aisleOf(s){return {x:(s.x%3===1?s.x-1:s.x+1),y:s.y};} // Feld im Gang neben dem Regal
+function route(a,b){ // Weg über Gänge: zuerst in die untere Querstrasse (y=7), dann zum Gang, dann hoch
+  const pts=[a];let cur={...a};
+  const go=(t)=>{while(cur.x!==t.x||cur.y!==t.y){if(cur.y!==t.y&&(cur.x%3===0||cur.y===7||cur.y===0||cur.y===8)){cur={x:cur.x,y:cur.y+Math.sign(t.y-cur.y)};}else if(cur.x!==t.x){cur={x:cur.x+Math.sign(t.x-cur.x),y:cur.y};}else{cur={x:cur.x,y:cur.y+Math.sign(t.y-cur.y)};}pts.push({...cur});}};
+  if(a.x!==b.x){go({x:a.x,y:7});}
+  go({x:b.x,y:a.x!==b.x?7:a.y});go(b);
+  return pts;
+}
+function personPlan(){
+  let cur={...STATION},rest=order.map(aisleOf),path=[cur];
+  while(rest.length){rest.sort((p,q)=>(Math.abs(p.x-cur.x)+Math.abs(p.y-cur.y))-(Math.abs(q.x-cur.x)+Math.abs(q.y-cur.y)));const n=rest.shift();path=path.concat(route(cur,n).slice(1));cur=n;}
+  path=path.concat(route(cur,STATION).slice(1));return path;
+}
+function robotTrips(){return order.map(s=>{const a=aisleOf(s);const p=route(STATION,a);return p.length-1;});}
+function lagerRender(){
+  const W=GW*CELL,H=GH*CELL;
+  let s=`<svg viewBox="0 0 ${W} ${H+4}" role="img" aria-label="Lagerplan mit Regalen, bestellten Artikeln und Packstation">`;
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){if(isShelf(x,y))s+=`<rect x="${x*CELL+2}" y="${y*CELL+2}" width="${CELL-4}" height="${CELL-4}" rx="3" fill="var(--nord2)"/>`;}
+  s+=`<rect x="${STATION.x*CELL-CELL}" y="${STATION.y*CELL+2}" width="${CELL*3}" height="${CELL-4}" rx="4" fill="var(--nord14)"/><text x="${STATION.x*CELL+CELL/2}" y="${STATION.y*CELL+18}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--nord0)" font-family="Open Sans">Packstation</text>`;
+  let walk=0,time=0;
+  if(mode==='person'&&order.length){
+    walkPath=personPlan();walk=walkPath.length-1;time=walk;
+    s+=`<polyline points="${walkPath.map(p=>`${p.x*CELL+CELL/2},${p.y*CELL+CELL/2}`).join(' ')}" fill="none" stroke="var(--nord13)" stroke-width="3" stroke-linejoin="round" opacity=".9"/>`;
+  }
+  if(mode==='robot'&&order.length){
+    const trips=robotTrips();time=Math.max(...trips)*2+order.length; walk=0;
+    order.forEach(o=>{const p=route(STATION,aisleOf(o));s+=`<polyline points="${p.map(q=>`${q.x*CELL+CELL/2},${q.y*CELL+CELL/2}`).join(' ')}" fill="none" stroke="var(--nord8)" stroke-width="2" stroke-dasharray="4 4"/>`;});
+  }
+  order.forEach((o,i)=>{s+=`<rect x="${o.x*CELL+2}" y="${o.y*CELL+2}" width="${CELL-4}" height="${CELL-4}" rx="3" fill="var(--nord12)"/><text x="${o.x*CELL+CELL/2}" y="${o.y*CELL+17}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--nord0)" font-family="Google Sans Code,monospace">${i+1}</text>`;});
+  if(mode==='robot')order.forEach(o=>{const a=aisleOf(o);s+=`<text x="${a.x*CELL+CELL/2}" y="${a.y*CELL+18}" text-anchor="middle" font-size="14">🤖</text>`;});
+  else s+=`<text x="${STATION.x*CELL+CELL/2}" y="${STATION.y*CELL-6}" text-anchor="middle" font-size="16">🚶</text>`;
+  document.getElementById('lagerSvg').innerHTML=s+'</svg>';
+  document.getElementById('walk').textContent=walk;document.getElementById('time').textContent=time;
+  document.getElementById('lagerInfo').textContent=mode==='person'?'Gelb: Laufweg der Person':'Gestrichelt: Fahrwege der Roboter (hin und zurück)';
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b));lagerRender();});
+document.getElementById('lagerNew').onclick=newOrder;
+newOrder();
+
+/* ---------- Roboterdichte ---------- */
+const DENS=[['Südkorea',1220],['Singapur',818],['Deutschland',449],['Japan',446],['USA',307],['Schweiz',294,1],['Westeuropa',267],['China',166],['Welt (Durchschnitt)',132]];
+const mx=1220;
+document.getElementById('bars').innerHTML=DENS.map(([n,v,ch])=>`<div class="bar${ch?' ch':''}"><span class="lbl">${ch?'🇨🇭 ':''}${n}</span><span class="t"><i style="width:${v/mx*100}%;--bcol:${ch?'var(--nord11)':n.startsWith('Welt')||n==='Westeuropa'?'var(--nord3)':'var(--nord9)'}"></i></span><span class="v">${v}</span></div>`).join('');
+
+</script>
+</body>
+</html>
