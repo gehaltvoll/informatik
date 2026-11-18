@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Tool für mich (auch im Informatikunterricht vorführbar)
+  Funktionen: Texteingabe, Live-Berechnung von 24 Hash-/Prüfsummen-Verfahren (UTF-8), Ausgabe nur hex (klein),
+              Vergleichsfeld (markiert passenden Hash), Kopierknopf je Zeile, Sicherheits-Kennzeichnung je Verfahren
+  Datenhaltung: localStorage (Eingabe), nur Komfort
+  Export: Zwischenablage (je Zeile)
+  Variante: «Karten» gewählt (folgt hell/dunkel); Terminal-Variante, HEX und Base64 entfernt
+  Bibliotheken: crypto-js 4.2.0, js-sha3 0.9.3, js-sha512 0.9.0, js-md4 0.3.2 (jsDelivr); BLAKE2, CRC-32, Adler-32, FNV-1a eigen
+-->
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hash-Rechner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;--nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;--nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --bg:var(--nord6);--surface:#fff;--surface-2:var(--nord5);--line:var(--nord4);--text:var(--nord0);--muted:var(--nord3);
+  --accent:var(--nord10);--accent-soft:var(--nord9);--ok:var(--nord14);--warn:var(--nord13);--bad:var(--nord11);--special:var(--nord15);--info:var(--nord8);
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  /* Layout: Kopf mit Eingabe, darunter Gruppen von Hash-Zeilen */
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--line:var(--nord2);--text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);color-scheme:dark;}}
+:root[data-theme="dark"]{--bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--line:var(--nord2);--text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);color-scheme:dark;}
+
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:400 17px/1.6 var(--font);}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:960px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+h1{margin:0;font-size:1.6rem;font-weight:700;text-wrap:balance}
+.sub{margin:2px 0 0;color:var(--muted);font-size:.92rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:6px 12px;cursor:pointer;font-size:.88rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--bg);font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+label.lbl{font-weight:600;font-size:.92rem}
+textarea{width:100%;min-height:120px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);font-family:var(--font-mono);font-size:.95rem;line-height:1.5}
+.cmp{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--bg);font-family:var(--font-mono);font-size:.9rem}
+.row-ctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.stats{font-family:var(--font-mono);font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.btn{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.88rem;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.cmp-msg{font-size:.88rem;min-height:1.4em}
+.cmp-msg.hit{color:var(--text)} .cmp-msg.hit::before{content:"✓ ";color:var(--ok);font-weight:700}
+.cmp-msg.miss::before{content:"✗ ";color:var(--bad);font-weight:700}
+
+.group h2{margin:0 0 8px;font-size:1.05rem;font-weight:600}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:start}
+.item.s-weak{border-left-color:var(--bad)} .item.s-ok{border-left-color:var(--ok)} .item.s-chk{border-left-color:var(--warn)}
+.item.match{outline:2px solid var(--ok);outline-offset:1px}
+.meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.name{font-weight:600}
+.bits{font-family:var(--font-mono);font-size:.78rem;color:var(--muted)}
+.badge{font-size:.72rem;font-weight:600;padding:1px 8px;border-radius:99px;color:var(--nord0)}
+.s-weak .badge{background:var(--bad)} .s-ok .badge{background:var(--ok)} .s-chk .badge{background:var(--warn)}
+.val{grid-column:1/-1;font-family:var(--font-mono);font-size:.86rem;line-height:1.45;word-break:break-all;color:var(--text);user-select:all}
+.item .copy{grid-row:1;grid-column:2;padding:3px 10px;font-size:.8rem}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.85rem;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.legend .l-ok::before{background:var(--ok)} .legend .l-weak::before{background:var(--bad)} .legend .l-chk::before{background:var(--warn)}
+.err{color:var(--text);background:color-mix(in srgb,var(--bad) 25%,transparent);border-radius:8px;padding:8px 12px;display:none}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Hash-Rechner</h1>
+      <p class="sub">Text eingeben, alle Hashes erscheinen sofort. Der Text wird als UTF-8 verarbeitet und verlässt den Browser nicht.</p>
+    </div>
+  </header>
+
+  <section class="panel">
+    <label class="lbl" for="input">Eingabetext</label>
+    <textarea id="input" spellcheck="false">Hallo KZU</textarea>
+    <div class="row-ctl">
+      <span class="stats" id="stats"></span>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+        <label style="display:flex;gap:6px;align-items:center;font-size:.88rem"><input type="checkbox" id="trim"> Zeilenumbruch am Ende ignorieren</label>
+      </div>
+    </div>
+    <label class="lbl" for="cmp">Hash vergleichen (optional)</label>
+    <input class="cmp" id="cmp" placeholder="Bekannten Hash einfügen: passende Zeile wird markiert" spellcheck="false" autocomplete="off">
+    <div class="cmp-msg" id="cmpMsg" aria-live="polite"></div>
+    <div class="err" id="err">Die Hash-Bibliotheken konnten nicht geladen werden. Nur CRC, Adler, FNV und BLAKE2 sind verfügbar. Seite neu laden.</div>
+  </section>
+
+  <div class="legend">
+    <span class="l-ok">sicher (kryptografisch)</span>
+    <span class="l-weak">gebrochen, nicht mehr für Sicherheit verwenden</span>
+    <span class="l-chk">Prüfsumme, nicht kryptografisch</span>
+  </div>
+
+  <div id="groups"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-sha3@0.9.3/build/sha3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-sha512@0.9.0/build/sha512.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-md4@0.3.2/build/md4.min.js"></script>
+<script>
+const Own = (() => {
+  const hex32 = n => (n >>> 0).toString(16).padStart(8, "0");
+  const CRC_T = (() => { const t = new Uint32Array(256); for (let i = 0; i < 256; i++) { let c = i; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[i] = c; } return t; })();
+  function crc32(b) { let c = 0xFFFFFFFF; for (const x of b) c = CRC_T[(c ^ x) & 255] ^ (c >>> 8); return hex32(c ^ 0xFFFFFFFF); }
+  function adler32(b) { let a = 1, s = 0; for (const x of b) { a = (a + x) % 65521; s = (s + a) % 65521; } return hex32((s << 16) | a); }
+  function fnv1a32(b) { let h = 0x811c9dc5; for (const x of b) { h ^= x; h = Math.imul(h, 0x01000193); } return hex32(h); }
+  function fnv1a64(b) { let h = 0xcbf29ce484222325n; const p = 0x100000001b3n, m = (1n << 64n) - 1n; for (const x of b) { h ^= BigInt(x); h = (h * p) & m; } return h.toString(16).padStart(16, "0"); }
+
+  const SIGMA = [
+    [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],[14,10,4,8,9,15,13,6,1,12,0,2,11,7,5,3],
+    [11,8,12,0,5,2,15,13,10,14,3,6,7,1,9,4],[7,9,3,1,13,12,11,14,2,6,5,10,4,0,15,8],
+    [9,0,5,7,2,4,10,15,14,1,11,12,6,8,3,13],[2,12,6,10,0,11,8,3,4,13,7,5,15,14,1,9],
+    [12,5,1,15,14,13,4,10,0,7,6,3,9,2,8,11],[13,11,7,14,12,1,3,9,5,0,15,4,8,6,2,10],
+    [6,15,14,9,11,3,0,8,12,2,13,7,1,4,10,5],[10,2,8,4,7,6,1,5,15,11,9,14,3,12,13,0]];
+
+  // BLAKE2s (32-bit words)
+  const IV32 = [0x6A09E667,0xBB67AE85,0x3C6EF372,0xA54FF53A,0x510E527F,0x9B05688C,0x1F83D9AB,0x5BE0CD19];
+  function blake2s(bytes, outLen = 32) {
+    const h = IV32.slice(); h[0] ^= 0x01010000 ^ outLen;
+    const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+    let t = 0;
+    const compress = (block, last) => {
+      const m = new Array(16); for (let i = 0; i < 16; i++) m[i] = block[i*4] | block[i*4+1] << 8 | block[i*4+2] << 16 | block[i*4+3] << 24;
+      const v = h.concat(IV32); v[12] ^= t; v[13] ^= Math.floor(t / 4294967296); if (last) v[14] = ~v[14];
+      const G = (a, b, c, d, x, y) => {
+        v[a] = (v[a] + v[b] + x) | 0; v[d] = rotr(v[d] ^ v[a], 16); v[c] = (v[c] + v[d]) | 0; v[b] = rotr(v[b] ^ v[c], 12);
+        v[a] = (v[a] + v[b] + y) | 0; v[d] = rotr(v[d] ^ v[a], 8);  v[c] = (v[c] + v[d]) | 0; v[b] = rotr(v[b] ^ v[c], 7);
+      };
+      for (let r = 0; r < 10; r++) { const s = SIGMA[r];
+        G(0,4,8,12,m[s[0]],m[s[1]]); G(1,5,9,13,m[s[2]],m[s[3]]); G(2,6,10,14,m[s[4]],m[s[5]]); G(3,7,11,15,m[s[6]],m[s[7]]);
+        G(0,5,10,15,m[s[8]],m[s[9]]); G(1,6,11,12,m[s[10]],m[s[11]]); G(2,7,8,13,m[s[12]],m[s[13]]); G(3,4,9,14,m[s[14]],m[s[15]]); }
+      for (let i = 0; i < 8; i++) h[i] ^= v[i] ^ v[i + 8];
+    };
+    let off = 0;
+    while (bytes.length - off > 64) { t += 64; compress(bytes.subarray(off, off + 64), false); off += 64; }
+    const last = new Uint8Array(64); last.set(bytes.subarray(off)); t += bytes.length - off; compress(last, true);
+    let out = ""; for (let i = 0; i < outLen; i++) out += ((h[i >> 2] >>> (8 * (i & 3))) & 255).toString(16).padStart(2, "0");
+    return out;
+  }
+
+  // BLAKE2b (64-bit words via BigInt)
+  const IV64 = ["6a09e667f3bcc908","bb67ae8584caa73b","3c6ef372fe94f82b","a54ff53a5f1d36f1","510e527fade682d1","9b05688c2b3e6c1f","1f83d9abfb41bd6b","5be0cd19137e2179"].map(x => BigInt("0x" + x));
+  function blake2b(bytes, outLen = 64) {
+    const M = (1n << 64n) - 1n;
+    const rotr = (x, n) => ((x >> n) | (x << (64n - n))) & M;
+    const h = IV64.slice(); h[0] ^= BigInt(0x01010000 ^ outLen);
+    let t = 0n;
+    const compress = (block, last) => {
+      const m = new Array(16); for (let i = 0; i < 16; i++) { let w = 0n; for (let j = 7; j >= 0; j--) w = (w << 8n) | BigInt(block[i*8+j]); m[i] = w; }
+      const v = h.concat(IV64); v[12] ^= t & M; v[13] ^= t >> 64n; if (last) v[14] ^= M;
+      const G = (a, b, c, d, x, y) => {
+        v[a] = (v[a] + v[b] + x) & M; v[d] = rotr(v[d] ^ v[a], 32n); v[c] = (v[c] + v[d]) & M; v[b] = rotr(v[b] ^ v[c], 24n);
+        v[a] = (v[a] + v[b] + y) & M; v[d] = rotr(v[d] ^ v[a], 16n); v[c] = (v[c] + v[d]) & M; v[b] = rotr(v[b] ^ v[c], 63n);
+      };
+      for (let r = 0; r < 12; r++) { const s = SIGMA[r % 10];
+        G(0,4,8,12,m[s[0]],m[s[1]]); G(1,5,9,13,m[s[2]],m[s[3]]); G(2,6,10,14,m[s[4]],m[s[5]]); G(3,7,11,15,m[s[6]],m[s[7]]);
+        G(0,5,10,15,m[s[8]],m[s[9]]); G(1,6,11,12,m[s[10]],m[s[11]]); G(2,7,8,13,m[s[12]],m[s[13]]); G(3,4,9,14,m[s[14]],m[s[15]]); }
+      for (let i = 0; i < 8; i++) h[i] ^= v[i] ^ v[i + 8];
+    };
+    let off = 0;
+    while (bytes.length - off > 128) { t += 128n; compress(bytes.subarray(off, off + 128), false); off += 128; }
+    const last = new Uint8Array(128); last.set(bytes.subarray(off)); t += BigInt(bytes.length - off); compress(last, true);
+    let out = ""; for (let i = 0; i < outLen; i++) out += Number((h[i >> 3] >> BigInt(8 * (i & 7))) & 255n).toString(16).padStart(2, "0");
+    return out;
+  }
+  return { crc32, adler32, fnv1a32, fnv1a64, blake2s, blake2b };
+})();
+
+const has = n => typeof window[n] !== "undefined";
+const cj = (fn) => b => { const w = CryptoJS.lib.WordArray.create(b); return CryptoJS[fn](w).toString(CryptoJS.enc.Hex); };
+
+const GROUPS = [
+  { title: "SHA-2", items: [
+    ["SHA-224", 224, "ok", () => has("CryptoJS") && cj("SHA224")],
+    ["SHA-256", 256, "ok", () => has("CryptoJS") && cj("SHA256")],
+    ["SHA-384", 384, "ok", () => has("CryptoJS") && cj("SHA384")],
+    ["SHA-512", 512, "ok", () => has("CryptoJS") && cj("SHA512")],
+    ["SHA-512/224", 224, "ok", () => has("sha512_224") && (b => sha512_224(b))],
+    ["SHA-512/256", 256, "ok", () => has("sha512_256") && (b => sha512_256(b))],
+  ]},
+  { title: "SHA-3 und Keccak", items: [
+    ["SHA3-224", 224, "ok", () => has("sha3_224") && (b => sha3_224(b))],
+    ["SHA3-256", 256, "ok", () => has("sha3_256") && (b => sha3_256(b))],
+    ["SHA3-384", 384, "ok", () => has("sha3_384") && (b => sha3_384(b))],
+    ["SHA3-512", 512, "ok", () => has("sha3_512") && (b => sha3_512(b))],
+    ["Keccak-256 (Ethereum)", 256, "ok", () => has("keccak256") && (b => keccak256(b))],
+    ["SHAKE128", 256, "ok", () => has("shake128") && (b => shake128(b, 256))],
+    ["SHAKE256", 512, "ok", () => has("shake256") && (b => shake256(b, 512))],
+  ]},
+  { title: "BLAKE2", items: [
+    ["BLAKE2b-512", 512, "ok", () => b => Own.blake2b(b, 64)],
+    ["BLAKE2b-256", 256, "ok", () => b => Own.blake2b(b, 32)],
+    ["BLAKE2s-256", 256, "ok", () => b => Own.blake2s(b, 32)],
+  ]},
+  { title: "Ältere Verfahren", items: [
+    ["MD5", 128, "weak", () => has("CryptoJS") && cj("MD5")],
+    ["SHA-1", 160, "weak", () => has("CryptoJS") && cj("SHA1")],
+    ["MD4", 128, "weak", () => has("md4") && (b => md4(b))],
+    ["RIPEMD-160", 160, "ok", () => has("CryptoJS") && cj("RIPEMD160")],
+  ]},
+  { title: "Prüfsummen", items: [
+    ["CRC-32", 32, "chk", () => Own.crc32],
+    ["Adler-32", 32, "chk", () => Own.adler32],
+    ["FNV-1a 32", 32, "chk", () => Own.fnv1a32],
+    ["FNV-1a 64", 64, "chk", () => Own.fnv1a64],
+  ]},
+];
+const LABEL = { ok: "sicher", weak: "gebrochen", chk: "Prüfsumme" };
+
+const $ = id => document.getElementById(id);
+const store = { get(k, d) { try { const v = localStorage.getItem("hashrechner:" + k); return v === null ? d : v; } catch { return d; } },
+                set(k, v) { try { localStorage.setItem("hashrechner:" + k, v); } catch {} } };
+
+const rows = [];
+
+function build() {
+  const root = $("groups");
+  let missing = false;
+  for (const g of GROUPS) {
+    const sec = document.createElement("section"); sec.className = "group";
+    sec.innerHTML = `<h2>${g.title}</h2>`;
+    const list = document.createElement("div"); list.className = "list";
+    for (const [name, bits, sec_, getFn] of g.items) {
+      const fn = getFn();
+      if (!fn) { missing = true; continue; }
+      const el = document.createElement("div"); el.className = "item s-" + sec_;
+      el.innerHTML = `<div class="meta"><span class="name"></span><span class="bits">${bits} Bit</span><span class="badge">${LABEL[sec_]}</span></div>
+        <button type="button" class="btn copy">Kopieren</button><div class="val"></div>`;
+      el.querySelector(".name").textContent = name;
+      const btn = el.querySelector(".copy");
+      btn.setAttribute("aria-label", name + " kopieren");
+      const row = { name, fn, el, val: el.querySelector(".val"), out: "" };
+      btn.addEventListener("click", () => copy(row.out, btn));
+      rows.push(row); list.appendChild(el);
+    }
+    sec.appendChild(list); root.appendChild(sec);
+  }
+  if (missing) $("err").style.display = "block";
+}
+
+function format(h) { return h; }
+
+function norm(s) { s = s.trim(); return /^[0-9a-fA-F]+$/.test(s) ? s.toLowerCase() : s; }
+
+function compute() {
+  let text = $("input").value;
+  if ($("trim").checked) text = text.replace(/\r?\n$/, "");
+  const bytes = new TextEncoder().encode(text);
+  $("stats").textContent = `${[...text].length} Zeichen · ${bytes.length} Byte (UTF-8)`;
+  for (const r of rows) {
+    try { r.hex = r.fn(bytes); r.out = format(r.hex); } catch (e) { r.hex = ""; r.out = "Fehler: " + e.message; }
+    r.val.textContent = r.out;
+  }
+  compare();
+  store.set("text", $("input").value);
+}
+
+function compare() {
+  const q = norm($("cmp").value), msg = $("cmpMsg");
+  let hits = [];
+  for (const r of rows) {
+    const m = q && r.hex && q === r.hex;
+    r.el.classList.toggle("match", !!m); if (m) hits.push(r.name);
+  }
+  msg.className = "cmp-msg" + (q ? (hits.length ? " hit" : " miss") : "");
+  msg.textContent = !q ? "" : hits.length ? "Stimmt überein mit " + hits.join(", ") : "Kein Verfahren ergibt diesen Hash für den eingegebenen Text";
+  if (hits.length) rows.find(r => r.name === hits[0]).el.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+
+async function copy(text, btn) {
+  const old = btn.textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = "✓ Kopiert"; }
+  catch { btn.textContent = "Kopieren nicht erlaubt"; }
+  setTimeout(() => btn.textContent = old, 1400);
+}
+
+
+build();
+$("input").value = store.get("text", $("input").value);
+let t; $("input").addEventListener("input", () => { clearTimeout(t); t = setTimeout(compute, 60); });
+$("trim").addEventListener("change", compute);
+$("cmp").addEventListener("input", compare);
+compute();
+</script>
+</body>
+</html>
