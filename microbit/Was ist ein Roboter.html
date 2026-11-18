@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik · Zielgruppe: Schüler:innen · Anrede: du · Gerät: gemischt
+  Inhalt: Wortherkunft, Definition (Wahrnehmen, Entscheiden, Handeln, Autonomie), Sense-Think-Act-Modell,
+    Arten von Robotern, beteiligte Wissenschaften, Quiz «Ist das ein Roboter?», Bezug zum micro:bit
+  Interaktivität: Sense-Think-Act-Schaubild mit Beispielwahl und Durchlauf, aufklappbare Wissenschafts-Karten,
+    Quiz mit sofortiger Rückmeldung und Begründung, Punktestand
+  Datenhaltung: keine · Export: keiner
+  Design: nur Variante «Technik», nur Dunkelmodus (wie die micro:bit-Seiten); keine langen Gedankenstriche
+-->
+<html lang="de-CH" style="color-scheme:dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robotik – Was ist ein Roboter?</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);--r:6px;
+  --c-sense:var(--nord15);--c-think:var(--nord8);--c-act:var(--nord12);--c-env:var(--nord14);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:400 17px/1.6 var(--font)}
+button{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+p{max-width:70ch}
+header.top{border-bottom:1px solid var(--nord2);padding:26px 0 22px}
+.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:24px;align-items:center}
+.kicker{margin:0;font:400 .8rem var(--font-mono);color:var(--nord8);text-transform:uppercase;letter-spacing:.06em}
+h1{margin:2px 0 6px;font-size:2.2rem;font-weight:700;line-height:1.15}
+.lead{margin:0;color:var(--muted);max-width:60ch}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.toc a{font:600 .8rem var(--font-mono);text-decoration:none;color:var(--nord4);border:1px solid var(--nord3);border-radius:999px;padding:3px 12px}
+.toc a:hover{border-color:var(--nord8);color:var(--nord8)}
+.hero svg{width:100%;max-width:340px;justify-self:center;height:auto}
+main{padding:10px 0 40px}
+h2.sec{font-size:1.5rem;font-weight:700;margin:40px 0 10px;scroll-margin-top:12px}
+.sec-no{font:600 .8em var(--font-mono);color:var(--accent);margin-right:10px}
+h3{font-size:1.1rem;font-weight:600;margin:0 0 6px}
+.panel{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--r);padding:16px 18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.note{background:var(--surface);border:1px solid var(--surface-2);border-left:5px solid var(--bc,var(--nord8));border-radius:var(--r);padding:12px 16px}
+.note p{margin:4px 0 0}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:999px;background:var(--bc,var(--nord8));color:var(--nord0);font:600 .72rem var(--font-mono);text-transform:uppercase;letter-spacing:.04em}
+.muted{color:var(--muted);font-size:.9rem}
+
+/* Kriterien */
+.crit{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px}
+.crit div{background:var(--surface);border:1px solid var(--surface-2);border-top:4px solid var(--cc);border-radius:var(--r);padding:12px 14px}
+.crit .ic{font-size:1.5rem;line-height:1}
+.crit b{display:block;margin-top:4px}
+.crit span{font-size:.92rem;color:var(--muted)}
+
+/* Sense-Think-Act */
+.sta-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.sta-tabs button{background:var(--surface);border:1px solid var(--surface-2);border-radius:999px;padding:4px 14px;cursor:pointer;font-weight:600;font-size:.92rem}
+.sta-tabs button[aria-pressed=true]{background:var(--nord8);color:var(--nord0);border-color:var(--nord8)}
+.sta{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+.sta-svg{background-color:var(--nord0);background-image:linear-gradient(rgba(76,86,106,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(76,86,106,.35) 1px,transparent 1px);background-size:24px 24px;border:1px solid var(--nord2);border-radius:var(--r);padding:10px}
+.sta-svg svg{width:100%;height:auto;display:block}
+.node rect{fill:var(--nord1);stroke:var(--nc);stroke-width:2.5;transition:fill .2s,stroke-width .2s}
+.node text{fill:var(--nord6);font:600 17px var(--font);text-anchor:middle}
+.node text.sub{font:400 12px var(--font-mono);fill:var(--nord4)}
+.node text.ic{font-size:24px}
+.node{cursor:pointer}
+.node:hover rect,.node:focus rect{stroke-width:4}
+.node:focus{outline:none}
+.node.on rect{fill:var(--nc);stroke-width:4}
+.node.on text,.node.on text.sub{fill:var(--nord0)}
+.flow{fill:none;stroke:var(--nord3);stroke-width:3}
+.flow.on{stroke:var(--nord13)}
+.ah{fill:var(--nord3)}
+.sta-detail{min-height:220px}
+.sta-detail .ex{font-weight:600}
+.sta-ctrl{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.cbtn{background:var(--nord2);border:1px solid var(--nord3);border-radius:var(--r);padding:6px 14px;cursor:pointer;font-weight:600}
+.cbtn.primary{background:var(--nord8);color:var(--nord0);border-color:var(--nord8)}
+.cbtn:disabled{opacity:.4;cursor:default}
+
+/* Arten */
+.types{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.type{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--r);padding:14px;display:flex;gap:12px}
+.type .ic{flex:none;width:44px;height:44px;border-radius:50%;background:var(--nord2);display:grid;place-items:center;font-size:1.4rem}
+.type b{display:block}
+.type span{font-size:.92rem;color:var(--muted)}
+
+/* Wissenschaften */
+.sci-intro{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.venn{flex:0 0 260px;max-width:100%}
+.venn svg{width:100%;height:auto}
+.venn circle{fill-opacity:.22;stroke-width:2}
+.venn text{font:600 13px var(--font);fill:var(--nord6);text-anchor:middle}
+.venn text.c{font:700 14px var(--font);fill:var(--nord13)}
+.sci-filter{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 12px}
+.chip{border:2px solid var(--surface-2);background:var(--surface);border-radius:999px;padding:3px 13px;cursor:pointer;font-weight:600;font-size:.9rem;display:inline-flex;gap:6px;align-items:center}
+.chip .dot{width:11px;height:11px;border-radius:50%;background:var(--cc,var(--nord8))}
+.chip[aria-pressed=true]{border-color:var(--cc,var(--nord8));background:var(--nord2)}
+.sci{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
+details.card{background:var(--surface);border:1px solid var(--surface-2);border-top:4px solid var(--cc);border-radius:var(--r);padding:0}
+details.card summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;gap:12px;align-items:center}
+details.card summary::-webkit-details-marker{display:none}
+details.card .ic{flex:none;width:40px;height:40px;border-radius:50%;background:var(--cc);color:var(--nord0);display:grid;place-items:center;font-size:1.2rem}
+details.card summary b{display:block;line-height:1.3}
+details.card summary span{font-size:.88rem;color:var(--muted)}
+details.card summary::after{content:"＋";margin-left:auto;color:var(--muted);font-weight:700}
+details.card[open] summary::after{content:"－"}
+details.card .body{padding:0 14px 14px;font-size:.95rem}
+details.card .body p{margin:6px 0}
+details.card .q{font:600 .8rem var(--font-mono);color:var(--cc)}
+details.card ul{margin:6px 0;padding-left:1.2em}
+
+/* Quiz */
+.quiz{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.qcard{background:var(--surface);border:1px solid var(--surface-2);border-left:5px solid var(--qc,var(--nord3));border-radius:var(--r);padding:14px}
+.qcard .ic{font-size:1.8rem;line-height:1}
+.qcard b{display:block;margin:4px 0 2px;font-size:1.05rem}
+.qcard .desc{font-size:.92rem;color:var(--muted);margin:0 0 10px}
+.qbtns{display:flex;gap:6px;flex-wrap:wrap}
+.qbtns button{background:var(--nord2);border:1px solid var(--nord3);border-radius:var(--r);padding:4px 12px;cursor:pointer;font-weight:600;font-size:.9rem}
+.qbtns button:disabled{cursor:default;opacity:.55}
+.qbtns button.pick{opacity:1;outline:2px solid var(--nord6)}
+.qbtns button.right{opacity:1;background:var(--nord14);color:var(--nord0);border-color:var(--nord14)}
+.fb{margin-top:10px;font-size:.92rem;background:var(--nord0);border-radius:var(--r);padding:8px 10px}
+.fb strong{display:block}
+.score{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:0 0 12px}
+.score .val{font:600 1rem var(--font-mono);color:var(--nord13)}
+
+/* micro:bit */
+.mbrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.mbrow div{background:var(--surface);border:1px solid var(--surface-2);border-top:4px solid var(--cc);border-radius:var(--r);padding:12px 14px;font-size:.95rem}
+.mbrow ul{margin:6px 0 0;padding-left:1.2em}
+.pseudo{background:var(--nord0);border:1px solid var(--nord3);border-radius:var(--r);padding:12px 14px;font:400 .9rem/1.6 var(--font-mono);overflow-x:auto;white-space:pre;margin-top:12px}
+.pseudo .k{color:var(--nord9)}.pseudo .s{color:var(--nord15)}.pseudo .a{color:var(--nord12)}.pseudo .c{color:var(--nord4);font-style:italic;opacity:.8}
+footer{padding:10px 0 40px;font-size:.85rem;color:var(--muted)}
+@media (max-width:860px){.hero,.sta{grid-template-columns:1fr}h1{font-size:1.8rem}.hero svg{max-width:240px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap hero">
+    <div>
+      <p class="kicker">Informatik // Robotik</p>
+      <h1>Was ist ein Roboter?</h1>
+      <p class="lead">Roboter saugen Staub, bauen Autos und erkunden den Mars. Hier erfährst du, was eine Maschine zum Roboter macht, wie Roboter «denken» und welche Wissenschaften zusammenarbeiten müssen, damit einer funktioniert.</p>
+      <nav class="toc" aria-label="Inhalt">
+        <a href="#begriff">01 Begriff</a><a href="#modell">02 Sense–Think–Act</a><a href="#arten">03 Arten</a><a href="#wissenschaften">04 Wissenschaften</a><a href="#quiz">05 Quiz</a><a href="#microbit">06 micro:bit</a>
+      </nav>
+    </div>
+    <svg viewBox="0 0 300 260" role="img" aria-label="Illustration eines Roboterarms">
+      <rect x="40" y="226" width="140" height="20" rx="4" fill="var(--nord3)"/>
+      <rect x="80" y="196" width="60" height="32" rx="6" fill="var(--nord2)" stroke="var(--nord9)" stroke-width="2"/>
+      <line x1="110" y1="190" x2="150" y2="100" stroke="var(--nord9)" stroke-width="20" stroke-linecap="round"/>
+      <line x1="150" y1="100" x2="232" y2="122" stroke="var(--nord9)" stroke-width="16" stroke-linecap="round"/>
+      <circle cx="110" cy="190" r="16" fill="var(--nord1)" stroke="var(--nord8)" stroke-width="3"/>
+      <circle cx="150" cy="100" r="14" fill="var(--nord1)" stroke="var(--nord8)" stroke-width="3"/>
+      <circle cx="232" cy="122" r="11" fill="var(--nord1)" stroke="var(--nord8)" stroke-width="3"/>
+      <path d="M238 130 l14 26 M226 132 l2 26" stroke="var(--nord4)" stroke-width="6" stroke-linecap="round"/>
+      <rect x="226" y="168" width="34" height="26" rx="4" fill="var(--nord12)"/>
+      <rect x="212" y="194" width="62" height="10" rx="3" fill="var(--nord3)"/>
+      <circle cx="150" cy="100" r="4" fill="var(--nord13)"/><circle cx="110" cy="190" r="4" fill="var(--nord13)"/><circle cx="232" cy="122" r="3" fill="var(--nord13)"/>
+      <path d="M40 60 q20 -30 40 0 t40 0" stroke="var(--nord15)" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+      <text x="16" y="40" fill="var(--nord4)" font-family="Google Sans Code, monospace" font-size="12">sense · think · act</text>
+    </svg>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- 01 -->
+  <h2 class="sec" id="begriff"><span class="sec-no">01</span>Woher kommt das Wort, und was ist gemeint?</h2>
+  <div class="grid2">
+    <div class="note" style="--bc:var(--nord15)"><span class="badge" style="--bc:var(--nord15)">Wortherkunft</span>
+      <p>Das Wort «Roboter» stammt aus dem Theaterstück <i>R.U.R.</i> (1920) des tschechischen Schriftstellers <b>Karel Čapek</b>. Es kommt vom tschechischen <b>«robota»</b>, was so viel wie <b>Fronarbeit</b> oder Zwangsarbeit bedeutet. Im Stück sind die Roboter künstliche Arbeiter, die den Menschen die Arbeit abnehmen.</p></div>
+    <div class="note" style="--bc:var(--nord8)"><span class="badge">Definition</span>
+      <p>Ein <b>Roboter</b> ist eine programmierbare Maschine, die ihre Umgebung mit <b>Sensoren</b> wahrnimmt, mit einer <b>Steuerung</b> (einem Computer) entscheidet und mit <b>Aktoren</b> etwas in der Welt bewirkt, und zwar mindestens teilweise <b>selbständig</b>.</p>
+      <p class="muted">Die internationale Norm ISO 8373 beschreibt einen Roboter ähnlich: als programmierbaren, angetriebenen Mechanismus mit einem gewissen Grad an Autonomie, der sich bewegt, um Aufgaben zu erledigen.</p></div>
+  </div>
+  <div class="crit">
+    <div style="--cc:var(--c-sense)"><span class="ic" aria-hidden="true">👁</span><b>1 · Wahrnehmen</b><span>Sensoren messen die Umgebung: Abstand, Licht, Berührung, Bilder.</span></div>
+    <div style="--cc:var(--c-think)"><span class="ic" aria-hidden="true">🧠</span><b>2 · Entscheiden</b><span>Ein Programm wertet die Messungen aus und wählt, was zu tun ist.</span></div>
+    <div style="--cc:var(--c-act)"><span class="ic" aria-hidden="true">⚙</span><b>3 · Handeln</b><span>Aktoren wie Motoren bewegen den Roboter oder greifen etwas.</span></div>
+    <div style="--cc:var(--nord13)"><span class="ic" aria-hidden="true">🔁</span><b>4 · Selbständig</b><span>Kein Mensch muss jeden einzelnen Schritt steuern.</span></div>
+  </div>
+  <p class="muted" style="margin-top:12px">Die Grenze ist nicht immer scharf. Ob etwas «schon» ein Roboter ist, hängt davon ab, wie viel davon eine Maschine erfüllt. Im Quiz (Abschnitt 05) kannst du das selbst ausprobieren.</p>
+
+  <!-- 02 -->
+  <h2 class="sec" id="modell"><span class="sec-no">02</span>Das Grundmodell: Sense – Think – Act</h2>
+  <p>Fast jeder Roboter arbeitet in einem Kreislauf: <b>wahrnehmen</b>, <b>entscheiden</b>, <b>handeln</b>. Durch das Handeln verändert sich die Umwelt, und das nimmt der Roboter wieder wahr. Wähle ein Beispiel und klicke auf eine Station oder starte den Durchlauf.</p>
+  <div class="sta-tabs" role="group" aria-label="Beispiel wählen" id="staTabs"></div>
+  <div class="sta">
+    <div class="sta-svg" id="staSvg"></div>
+    <div class="panel sta-detail" aria-live="polite">
+      <div id="staDetail"></div>
+      <div class="sta-ctrl"><button type="button" class="cbtn primary" id="staRun">▶ Durchlauf starten</button><button type="button" class="cbtn" id="staNext">Nächste Station →</button></div>
+    </div>
+  </div>
+
+  <!-- 03 -->
+  <h2 class="sec" id="arten"><span class="sec-no">03</span>Arten von Robotern</h2>
+  <div class="types">
+    <div class="type"><span class="ic" aria-hidden="true">🏭</span><div><b>Industrieroboter</b><span>Roboterarme, die in Fabriken schweissen, lackieren oder Teile montieren: schnell, genau und ohne Pause.</span></div></div>
+    <div class="type"><span class="ic" aria-hidden="true">🧹</span><div><b>Serviceroboter</b><span>Helfen im Alltag: Staubsauger-, Rasenmäher- oder Lieferroboter.</span></div></div>
+    <div class="type"><span class="ic" aria-hidden="true">🚀</span><div><b>Erkundungsroboter</b><span>Fahren dorthin, wo Menschen schlecht hinkommen: auf den Mars, in die Tiefsee, in Trümmer.</span></div></div>
+    <div class="type"><span class="ic" aria-hidden="true">🩺</span><div><b>Medizinroboter</b><span>Unterstützen Chirurg:innen bei sehr feinen Operationen oder helfen in der Reha.</span></div></div>
+    <div class="type"><span class="ic" aria-hidden="true">🚗</span><div><b>Autonome Fahrzeuge</b><span>Selbstfahrende Autos, Drohnen und Transportsysteme in Lagerhallen.</span></div></div>
+    <div class="type"><span class="ic" aria-hidden="true">🤖</span><div><b>Humanoide Roboter</b><span>Sind dem Menschen nachempfunden, mit Kopf, Armen und Beinen. Das Gehen auf zwei Beinen ist technisch besonders schwierig.</span></div></div>
+  </div>
+
+  <!-- 04 -->
+  <h2 class="sec" id="wissenschaften"><span class="sec-no">04</span>Welche Wissenschaften stecken in einem Roboter?</h2>
+  <div class="sci-intro">
+    <div class="venn" aria-hidden="true">
+      <svg viewBox="0 0 260 230">
+        <circle cx="95" cy="85" r="68" fill="var(--nord9)" stroke="var(--nord9)"/>
+        <circle cx="165" cy="85" r="68" fill="var(--nord13)" stroke="var(--nord13)"/>
+        <circle cx="130" cy="145" r="68" fill="var(--nord8)" stroke="var(--nord8)"/>
+        <text x="72" y="62">Mechanik</text><text x="190" y="62">Elektronik</text><text x="130" y="200">Informatik</text>
+        <text x="130" y="108" class="c">Mecha-</text><text x="130" y="124" class="c">tronik</text>
+      </svg>
+    </div>
+    <p style="flex:1 1 320px;margin:0">Ein Roboter ist <b>Teamarbeit</b>: Niemand kann ihn allein mit dem Wissen aus nur einem Fach bauen. Im Kern verbinden sich <b>Mechanik</b> (der Körper), <b>Elektronik</b> (Nerven und Muskeln) und <b>Informatik</b> (das Gehirn). Diese Verbindung heisst <b>Mechatronik</b>. Dazu kommen Mathematik, Physik, künstliche Intelligenz und viele weitere Fächer. Klicke auf eine Karte, um mehr zu erfahren, oder filtere nach der Frage, um die es geht.</p>
+  </div>
+  <div class="sci-filter" role="group" aria-label="Wissenschaften filtern" id="sciFilter"></div>
+  <div class="sci" id="sci"></div>
+
+  <!-- 05 -->
+  <h2 class="sec" id="quiz"><span class="sec-no">05</span>Quiz: Ist das ein Roboter?</h2>
+  <p>Entscheide bei jedem Gerät: <b>Roboter</b>, <b>Grenzfall</b> oder <b>kein Roboter</b>? Denk an die vier Merkmale aus Abschnitt 01. Nach jeder Antwort siehst du eine Begründung.</p>
+  <div class="score"><span>Punkte: <span class="val" id="score">0 / 0</span></span><button type="button" class="cbtn" id="qreset">↺ Neu beginnen</button></div>
+  <div class="quiz" id="quizBox"></div>
+
+  <!-- 06 -->
+  <h2 class="sec" id="microbit"><span class="sec-no">06</span>Vom micro:bit zum Roboter</h2>
+  <p>Der micro:bit kann schon <b>wahrnehmen</b> (Sensoren) und <b>entscheiden</b> (dein Programm). Was ihm fehlt, ist der Körper: Er kann sich nicht bewegen. Steckst du ihn auf ein Fahrgestell mit Motoren, Rädern und zusätzlichen Sensoren, wird daraus ein echter kleiner Roboter, zum Beispiel ein <b>Linienfolger</b>, der einer schwarzen Linie auf dem Boden nachfährt.</p>
+  <div class="mbrow">
+    <div style="--cc:var(--c-sense)"><span class="badge" style="--bc:var(--c-sense)">Sense</span><ul><li>zwei Liniensensoren unten (hell/dunkel)</li><li>Abstandssensor vorne (Ultraschall)</li><li>eingebaut: Beschleunigung, Licht, Mikrofon</li></ul></div>
+    <div style="--cc:var(--c-think)"><span class="badge" style="--bc:var(--c-think)">Think</span><ul><li>der micro:bit mit deinem MakeCode-Programm</li><li>vergleicht Messwerte und entscheidet: geradeaus, links oder rechts?</li></ul></div>
+    <div style="--cc:var(--c-act)"><span class="badge" style="--bc:var(--c-act)">Act</span><ul><li>zwei Motoren mit Rädern (über ein Motorboard)</li><li>LED-Anzeige und Lautsprecher für Rückmeldungen</li></ul></div>
+  </div>
+  <div class="pseudo" aria-label="Ablauf eines Linienfolgers in Pseudocode"><span class="c"># Linienfolger, in Worten statt Blöcken</span>
+<span class="k">dauerhaft</span>:
+    <span class="k">wenn</span> <span class="s">linker Sensor sieht Linie</span> <span class="k">und</span> <span class="s">rechter Sensor sieht Linie</span>:
+        <span class="a">beide Motoren vorwärts</span>          <span class="c"># auf der Linie: geradeaus</span>
+    <span class="k">sonst wenn</span> <span class="s">nur linker Sensor sieht Linie</span>:
+        <span class="a">nur rechter Motor vorwärts</span>      <span class="c"># Linie liegt links: nach links drehen</span>
+    <span class="k">sonst wenn</span> <span class="s">nur rechter Sensor sieht Linie</span>:
+        <span class="a">nur linker Motor vorwärts</span>       <span class="c"># Linie liegt rechts: nach rechts drehen</span>
+    <span class="k">sonst</span>:
+        <span class="a">anhalten</span>                        <span class="c"># Linie verloren</span></div>
+  <p class="muted">Farben: <span style="color:var(--nord15)">Sense</span> · <span style="color:var(--nord9)">Entscheidung</span> · <span style="color:var(--nord12)">Act</span>. Die genauen Blöcke hängen vom verwendeten Roboter-Bausatz ab; dafür gibt es in MakeCode jeweils eine Erweiterung.</p>
+</main>
+<footer class="wrap">Robotik · Einführung für den Informatikunterricht</footer>
+
+<script>
+/* ---------- Sense-Think-Act ---------- */
+const STA={
+  saug:{nm:'🧹 Saugroboter',
+    env:'Ein Zimmer mit Möbeln, Wänden und Staub.',
+    sense:'Stossfänger merken, wenn er anstösst. Infrarotsensoren unten erkennen Treppenstufen. Viele Modelle tasten den Raum mit einem Laser ab.',
+    think:'Das Programm erstellt eine Karte des Zimmers und plant eine Bahn, damit keine Stelle vergessen geht. Bei einer Treppe: sofort stoppen!',
+    act:'Zwei Radmotoren fahren und drehen, Bürsten und ein Gebläse saugen den Staub ein.'},
+  mars:{nm:'🚀 Mars-Rover',
+    env:'Steiniger Boden, Krater und Sand auf dem Mars, über 50 Millionen Kilometer von der Erde entfernt.',
+    sense:'Kameras machen Stereo-Bilder vom Gelände, Neigungssensoren messen die Schräglage der Räder.',
+    think:'Funksignale brauchen viele Minuten bis zur Erde. Darum plant der Rover kurze Wegstücke selbst und weicht Steinen aus, ohne auf Befehle zu warten.',
+    act:'Sechs Räder mit eigenen Motoren fahren, ein Roboterarm bohrt und nimmt Proben.'},
+  linie:{nm:'🧩 micro:bit-Linienfolger',
+    env:'Ein weisser Boden mit einer schwarzen Linie.',
+    sense:'Zwei Liniensensoren unten messen, ob sie Weiss oder Schwarz sehen.',
+    think:'Das MakeCode-Programm vergleicht die beiden Werte: Liegt die Linie links, rechts oder in der Mitte?',
+    act:'Die zwei Motoren drehen unterschiedlich schnell, sodass der Roboter zurück auf die Linie lenkt.'},
+  mensch:{nm:'🙂 Zum Vergleich: du',
+    env:'Du stehst an einer Strasse und willst sie überqueren.',
+    sense:'Deine Augen sehen ein Auto, deine Ohren hören es kommen.',
+    think:'Dein Gehirn schätzt ab: Wie schnell ist das Auto? Reicht die Zeit?',
+    act:'Deine Muskeln lassen dich warten oder losgehen. Danach siehst du wieder neu, wo das Auto ist.'}
+};
+const STAGES=[
+  {k:'sense',t:'Sense · Wahrnehmen',sub:'Sensoren',ic:'👁',c:'var(--c-sense)',x:40,y:30},
+  {k:'think',t:'Think · Entscheiden',sub:'Steuerung',ic:'🧠',c:'var(--c-think)',x:330,y:30},
+  {k:'act',t:'Act · Handeln',sub:'Aktoren',ic:'⚙',c:'var(--c-act)',x:330,y:210},
+  {k:'env',t:'Umwelt',sub:'verändert sich',ic:'🌍',c:'var(--c-env)',x:40,y:210}
+];
+let staEx='saug',staSel=0,staTimer=null;
+function staSVG(){
+  const W=200,H=110;
+  let s=`<svg viewBox="0 0 570 350" role="group" aria-label="Kreislauf Sense, Think, Act, Umwelt"><defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="var(--nord13)"/></marker><marker id="ahg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="var(--nord3)"/></marker></defs>`;
+  const fl=[[`M${40+W} ${30+H/2} H330`],[`M${330+W/2} ${30+H} V210`],[`M330 ${210+H/2} H${40+W}`],[`M${40+W/2} 210 V${30+H}`]];
+  fl.forEach((d,i)=>{const on=i===(staSel+3)%4;s+=`<path d="${d}" class="flow${on?' on':''}" marker-end="url(#${on?'ah':'ahg'})"/>`;});
+  STAGES.forEach((st,i)=>{
+    s+=`<g class="node${i===staSel?' on':''}" style="--nc:${st.c}" data-st="${i}" tabindex="0" role="button" aria-label="${st.t}"><rect x="${st.x}" y="${st.y}" width="${W}" height="${H}" rx="10"/><text x="${st.x+W/2}" y="${st.y+36}" class="ic">${st.ic}</text><text x="${st.x+W/2}" y="${st.y+66}">${st.t}</text><text x="${st.x+W/2}" y="${st.y+88}" class="sub">${st.sub}</text></g>`;
+  });
+  return s+'</svg>';
+}
+function staRender(){
+  document.getElementById('staTabs').innerHTML=Object.entries(STA).map(([k,v])=>`<button type="button" data-ex="${k}" aria-pressed="${k===staEx}">${v.nm}</button>`).join('');
+  document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{staStop();staEx=b.dataset.ex;staSel=0;staRender();});
+  document.getElementById('staSvg').innerHTML=staSVG();
+  document.querySelectorAll('[data-st]').forEach(g=>{const f=()=>{staStop();staSel=+g.dataset.st;staRender();};g.addEventListener('click',f);g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f();}});});
+  const st=STAGES[staSel],ex=STA[staEx];
+  document.getElementById('staDetail').innerHTML=`<span class="badge" style="--bc:${st.c}">${st.ic} ${st.t}</span><p class="ex" style="margin:10px 0 4px">${ex.nm}</p><p style="margin:0">${ex[st.k]}</p>`;
+}
+function staStop(){if(staTimer){clearInterval(staTimer);staTimer=null;document.getElementById('staRun').textContent='▶ Durchlauf starten';}}
+document.getElementById('staRun').onclick=()=>{
+  if(staTimer){staStop();return;}
+  staSel=3;staRender();let n=0;
+  document.getElementById('staRun').textContent='■ Anhalten';
+  staTimer=setInterval(()=>{staSel=(staSel+1)%4;staRender();if(++n>=8)staStop();},2600);
+};
+document.getElementById('staNext').onclick=()=>{staStop();staSel=(staSel+1)%4;staRender();};
+staRender();
+
+/* ---------- Wissenschaften ---------- */
+const GROUPS={all:{nm:'Alle'},body:{nm:'⚙ Körper & Bewegung',c:'var(--nord9)'},brain:{nm:'🧠 Gehirn & Steuerung',c:'var(--nord8)'},human:{nm:'🧑 Mensch & Gesellschaft',c:'var(--nord15)'}};
+const SCI=[
+ {g:'body',ic:'⚙',nm:'Maschinenbau',sh:'Der Körper des Roboters',q:'Wie ist der Roboter gebaut, und wie bewegen sich seine Teile?',
+  t:'Ingenieur:innen konstruieren Gelenke, Getriebe, Räder und Greifer. Sie wählen Materialien, die leicht und trotzdem stabil sind.',ex:['Wie viele Gelenke braucht ein Arm, um jeden Punkt zu erreichen?','Wie stark muss ein Greifer zupacken, ohne ein Ei zu zerdrücken?']},
+ {g:'body',ic:'⚡',nm:'Elektrotechnik',sh:'Nerven, Muskeln und Energie',q:'Wie kommt der Strom zu Motoren und Sensoren?',
+  t:'Elektromotoren sind die Muskeln, Kabel und Schaltungen die Nerven. Akkus liefern die Energie. Auch die Sensoren selbst sind elektronische Bauteile.',ex:['Wie lange hält der Akku eines Saugroboters?','Wie steuert man die Drehzahl eines Motors?']},
+ {g:'body',ic:'🍎',nm:'Physik',sh:'Kräfte, Energie und Signale',q:'Welche Kräfte wirken auf den Roboter?',
+  t:'Schwerkraft, Reibung und Trägheit bestimmen, wie sich ein Roboter bewegt. Sensoren nutzen physikalische Effekte wie Licht, Schall oder Magnetismus.',ex:['Warum kippt ein Roboter beim schnellen Bremsen?','Wie misst ein Ultraschallsensor einen Abstand? (Echo-Laufzeit)']},
+ {g:'body',ic:'🦎',nm:'Biologie & Bionik',sh:'Lernen von der Natur',q:'Wie lösen Tiere und Menschen dasselbe Problem?',
+  t:'Die Bionik überträgt Ideen aus der Natur auf die Technik: Laufroboter mit Insektenbeinen, Greifer nach dem Vorbild einer Hand oder Kletterroboter mit Gecko-Füssen.',ex:['Warum fallen sechsbeinige Roboter seltener um?','Wie hält sich ein Gecko an einer Glasscheibe?']},
+ {g:'brain',ic:'💻',nm:'Informatik',sh:'Das Gehirn: Programme und Algorithmen',q:'Wie entscheidet der Roboter, was er als Nächstes tut?',
+  t:'Programme verarbeiten die Sensordaten und steuern die Aktoren, oft viele Male pro Sekunde. Algorithmen berechnen zum Beispiel den kürzesten Weg durch einen Raum.',ex:['Wie findet ein Roboter den Weg aus einem Labyrinth?','Was passiert, wenn das Programm einen Fehler hat?']},
+ {g:'brain',ic:'✨',nm:'Künstliche Intelligenz',sh:'Erkennen und Dazulernen',q:'Wie erkennt der Roboter, was er sieht?',
+  t:'Mit maschinellem Lernen lernen Roboter aus vielen Beispielen, Gegenstände, Menschen oder Hindernisse auf Kamerabildern zu erkennen. Manche Roboter lernen Bewegungen durch Ausprobieren.',ex:['Ist auf dem Bild ein Fussgänger oder ein Schild?','Wie lernt ein Roboter, einen Ball zu fangen?']},
+ {g:'brain',ic:'📐',nm:'Mathematik',sh:'Koordinaten, Winkel und Wahrscheinlichkeiten',q:'Wo genau ist der Roboter, und wohin muss sich der Arm drehen?',
+  t:'Mit Koordinaten, Trigonometrie und Vektoren wird berechnet, welche Gelenkwinkel zu welcher Position führen. Mit Wahrscheinlichkeiten schätzt ein Roboter, wo er sich gerade befindet.',ex:['Welche Winkel braucht der Arm, um den Becher zu erreichen?','Wie sicher ist sich der Roboter über seine Position?']},
+ {g:'brain',ic:'🎯',nm:'Regelungstechnik',sh:'Soll und Ist vergleichen',q:'Wie bleibt der Roboter auf Kurs?',
+  t:'Ein Regler vergleicht ständig den gewünschten Zustand (Soll) mit dem gemessenen (Ist) und korrigiert die Abweichung. So hält ein Roboter das Gleichgewicht oder fährt genau auf einer Linie.',ex:['Wie balanciert ein Roboter auf zwei Rädern?','Warum schlingert ein Linienfolger, wenn er zu stark korrigiert?']},
+ {g:'human',ic:'🤝',nm:'Psychologie & Design',sh:'Zusammenarbeit von Mensch und Roboter',q:'Wie arbeiten Menschen gut und sicher mit Robotern zusammen?',
+  t:'Roboter sollen verständlich und vertrauenswürdig wirken. Die Forschung zur Mensch-Roboter-Interaktion untersucht zum Beispiel, wie ein Roboter zeigt, was er als Nächstes vorhat.',ex:['Soll ein Pflegeroboter ein Gesicht haben?','Woran erkennt man, wohin ein Roboter gleich fährt?']},
+ {g:'human',ic:'⚖',nm:'Ethik & Recht',sh:'Verantwortung und Regeln',q:'Was dürfen Roboter, und wer ist verantwortlich?',
+  t:'Wer haftet, wenn ein selbstfahrendes Auto einen Unfall verursacht? Welche Arbeiten sollen Roboter übernehmen, und was bedeutet das für Arbeitsplätze? Solche Fragen beantworten Ethik, Recht und Politik gemeinsam.',ex:['Darf ein Roboter allein über Menschen entscheiden?','Wie verändern Roboter die Arbeitswelt?']}
+];
+let sciF='all';
+function sciRender(){
+  document.getElementById('sciFilter').innerHTML=Object.entries(GROUPS).map(([k,v])=>`<button type="button" class="chip" data-f="${k}" aria-pressed="${k===sciF}"${v.c?` style="--cc:${v.c}"`:''}>${v.c?'<span class="dot"></span>':''}${v.nm}</button>`).join('');
+  document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{sciF=b.dataset.f;sciRender();});
+  document.getElementById('sci').innerHTML=SCI.filter(s=>sciF==='all'||s.g===sciF).map(s=>`<details class="card" style="--cc:${GROUPS[s.g].c}"><summary><span class="ic" aria-hidden="true">${s.ic}</span><span><b>${s.nm}</b><span>${s.sh}</span></span></summary><div class="body"><p class="q">${s.q}</p><p>${s.t}</p><p style="margin-bottom:0"><b>Typische Fragen:</b></p><ul>${s.ex.map(e=>`<li>${e}</li>`).join('')}</ul></div></details>`).join('');
+}
+sciRender();
+
+/* ---------- Quiz ---------- */
+const ANS={ja:'🤖 Roboter',grenz:'❓ Grenzfall',nein:'✗ kein Roboter'};
+const QUIZ=[
+ {ic:'🧹',nm:'Saugroboter',d:'Fährt durch die Wohnung und saugt Staub.',a:'ja',w:'Er nimmt wahr (Stossfänger, Abgrundsensoren), entscheidet selbst, wohin er fährt, und bewegt sich mit Motoren. Alle vier Merkmale sind erfüllt.'},
+ {ic:'🏎',nm:'Ferngesteuertes Auto',d:'Ein Spielzeugauto, das du mit einer Fernbedienung lenkst.',a:'nein',w:'Es bewegt sich zwar mit Motoren, aber jede Entscheidung triffst du. Es nimmt nichts wahr und handelt nicht selbständig.'},
+ {ic:'🏭',nm:'Schweissroboter in einer Autofabrik',d:'Ein Arm, der Karosserieteile zusammenschweisst.',a:'ja',w:'Das ist der klassische Industrieroboter: programmierbar, mit mehreren Gelenken, und er arbeitet selbständig den programmierten Ablauf ab.'},
+ {ic:'🚪',nm:'Automatische Schiebetür',d:'Öffnet sich, wenn jemand davorsteht.',a:'grenz',w:'Sie hat einen Sensor und einen Motor und reagiert selbständig. Sie kann aber nur genau diese eine fest eingebaute Aufgabe erledigen und lässt sich nicht für Neues programmieren. Meist nennt man so etwas einen Automaten.'},
+ {ic:'💬',nm:'Chatbot',d:'Ein Programm, das im Internet Fragen beantwortet.',a:'nein',w:'Trotz «Bot» im Namen: Er hat keinen Körper, keine Sensoren für die Umwelt und keine Aktoren. Er ist reine Software und bewirkt nichts in der physischen Welt.'},
+ {ic:'🚀',nm:'Mars-Rover',d:'Ein Fahrzeug, das auf dem Mars Gesteinsproben untersucht.',a:'ja',w:'Er nimmt das Gelände mit Kameras wahr, plant kurze Wege selbst, weil Befehle von der Erde Minuten brauchen, und fährt und bohrt mit Motoren.'},
+ {ic:'🧩',nm:'micro:bit allein',d:'Ein micro:bit mit Programm, ohne Motoren.',a:'grenz',w:'Er kann wahrnehmen und entscheiden, aber nur mit LEDs und Ton reagieren, nicht sich bewegen. Erst mit Motoren und Rädern wird er zum Roboter (siehe Abschnitt 06).'},
+ {ic:'🌡',nm:'Thermostat der Heizung',d:'Hält die Zimmertemperatur auf 21 °C.',a:'nein',w:'Er misst und regelt selbständig. Er bewegt aber nichts im Raum und kann nur diese eine Aufgabe. Das ist eine Regelung, kein Roboter.'},
+ {ic:'🚗',nm:'Selbstfahrendes Auto',d:'Ein Auto, das ohne Fahrerin lenkt, bremst und Gas gibt.',a:'ja',w:'Kameras, Radar und weitere Sensoren nehmen den Verkehr wahr, ein Computer entscheidet, Motoren lenken und bremsen. Es ist ein mobiler Roboter auf Rädern.'}
+];
+let picks={};
+function quizRender(){
+  const done=Object.keys(picks).length,right=Object.entries(picks).filter(([i,a])=>QUIZ[i].a===a).length;
+  document.getElementById('score').textContent=`${right} / ${done}`+(done===QUIZ.length?`  ·  fertig!`:'');
+  document.getElementById('quizBox').innerHTML=QUIZ.map((q,i)=>{
+    const p=picks[i],ok=p&&p===q.a;
+    const col=!p?'var(--nord3)':ok?'var(--nord14)':'var(--nord11)';
+    return `<div class="qcard" style="--qc:${col}"><span class="ic" aria-hidden="true">${q.ic}</span><b>${q.nm}</b><p class="desc">${q.d}</p>
+      <div class="qbtns" role="group" aria-label="Antwort zu ${q.nm}">${Object.entries(ANS).map(([k,v])=>`<button type="button" data-q="${i}" data-a="${k}" ${p?'disabled':''} class="${p&&k===q.a?'right':''}${p&&k===p&&!ok?' pick':''}">${v}</button>`).join('')}</div>
+      ${p?`<div class="fb"><strong style="color:${ok?'var(--nord14)':'var(--nord11)'}">${ok?'✓ Richtig':'✗ Nicht ganz'}: ${ANS[q.a]}</strong>${q.w}</div>`:''}</div>`;
+  }).join('');
+  document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{picks[b.dataset.q]=b.dataset.a;quizRender();});
+}
+document.getElementById('qreset').onclick=()=>{picks={};quizRender();};
+quizRender();
+</script>
+</body>
+</html>
