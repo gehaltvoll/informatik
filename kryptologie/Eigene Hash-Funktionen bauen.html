@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik als App im Stil eines Labors (selbsterklärend, auch beamertauglich)
+  Kernfunktion: Whiteboard mit Modulen, die per Kabel verbunden werden; Werte fliessen live durch die Schaltung
+  Bitbreite: wählbar 8/16/32 Bit, alle Rechnungen modulo 2^n
+  Text: nur Grossbuchstaben A–Z (Kleinbuchstaben werden gross, Ä/Ö/Ü → AE/OE/UE, alles andere entfällt)
+  Kodierung umschaltbar: A=1 … Z=26 (Standard) oder ASCII (A=65 … Z=90); Taktgeber schickt Buchstabe für Buchstabe durch, Register führen den Zwischenwert zurück
+  Buchstaben als Zahlen: Anzeige «ABC» = Zahl in Buchstaben (A=1 … Z=26, AA=27 … wie Tabellenspalten); Buchstaben auch als Eingabe für Werte erlaubt
+  Text-Analyse-Module: «Vokale zählen» (zählt mit, Takt für Takt) und «Erster Buchstabe» (merkt sich das erste Zeichen); Hash-Ausgabe pro Modul als Zahl oder Buchstaben
+  Ausschnitt-Modul: lässt nur ausgewählte Buchstaben durch (erste n, letzte n, von–bis); sonst 0, dazu Signal «aktiv»
+  Register mit optionalem Eingang «an» (Takt-Freigabe): verbunden und 0 → Register behält seinen Wert
+  Buchstabenkette: startet leer, eigener Knopf «Zurücksetzen» (leert ab aktuellem Takt), hängt bei jedem Takt einen Buchstaben an (Wert mod 26, 1=A … 26/0=Z) → Hash als Buchstabenkette
+  Protokoll: am Register «Wert danach» (Start + Zeile pro Buchstabe), direkt am Text «Wert» während des Buchstabens
+  Taktgeber: «Takt» nach dem letzten Buchstaben springt zurück zum 1. Schritt (Beschriftung «Takt ↺»)
+  Zufallszahl-Modul: fest während eines Durchlaufs, neu bei ⏮, «Takt ↺», neuem Wort oder «Neu würfeln»
+  Hash-Werkstatt: Funktionen 1–14 der Arbeitsblätter als Beispiele (Regel, Beispiel und Rückwärts-Ziel als Notiz)
+  Analyse-Module (rechnen die Schaltung für viele Wörter durch): Doppelgänger, Rückwärts-Suche (Wortliste, dann A, B … ZZZ, max. 100 000 Versuche), Verteilung, Login-Prüfer (speichert nur H(Passwort))
+  Salt-Modul: wird über den Eingang «Salt» des Text-Eingangs vorne oder hinten an das Wort gehängt
+  Weitere Module: Letzter Buchstabe, Bedingung (=, ≠, <, >, ≤, ≥), Weiche (wenn/dann/sonst); Hash-Ausgabe mit Mindeststellen; Bit-Anzeige mit 5/8/16/32 Bit
+  Werkstatt-Beispiele enthalten Doppelgänger, Rückwärts-Suche (Zielwert vom Blatt) und Verteilung; Nr. 1–4 zusätzlich den Login-Prüfer
+  Werkstatt-Beispiele Nr. 1–14 sind versteckt; dreimal (innert 1,5 s) auf «Taktgeber» klicken blendet sie ein bzw. aus (nicht gespeichert)
+  Datenhaltung: automatisch im Browser (localStorage, nur Komfort) + Export/Import als JSON (Kopieren, Datei)
+  Extras: Beispiel-Schaltungen (Summe mod 101, Anfangsbuchstabe & Vokale, Erste & letzte zwei, Buchstabenkette, djb2, FNV-1a, Rotieren & XOR, Lawineneffekt), Rückgängig, Kabelwerte, Tastatursteuerung
+  Design-Varianten (umschaltbar): A «Nachtlabor» (Polar Night, Messgeräte-Look, Google Sans Code für Labels) · B «Tageslabor» (hell, runder, farbige Modulköpfe)
+-->
+<html lang="de-CH" data-variant="nacht">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eigene Hash-Funktionen bauen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* VOICE: präzise Laborsoftware – ruhig, technisch, mit klaren Messwerten
+   IDEA: ein Steckbrett im Elektroniklabor: Module wie Messgeräte, Kabel wie Patchkabel, ein Taktgeber unten
+   PICTURE: die Arbeitsfläche selbst – Rasterpapier mit verkabelten Modulen und Werten auf den Kabeln
+   COLOUR and TYPE: Nord-Palette; Open Sans für Text, Google Sans Code für Werte und Labels
+   LAYOUT: App-Rahmen – Kopfleiste, Modul-Regal links, Arbeitsfläche, Taktgeber unten */
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --g-in:var(--nord14);--g-ar:var(--nord12);--g-bit:var(--nord15);--g-mem:var(--nord9);--g-out:var(--nord8);--g-misc:var(--nord13);--g-txt:var(--nord7);--g-ana:var(--nord10);
+}
+/* Variante A: Nachtlabor */
+html[data-variant="nacht"]{
+  color-scheme:dark;
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);--line:var(--nord3);
+  --text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8);
+  --board:var(--nord0);--grid-minor:rgba(76,86,106,.28);--grid-major:rgba(76,86,106,.55);
+  --mod-bg:var(--nord1);--mod-border:var(--nord2);--mod-head:var(--nord2);--mod-head-text:var(--nord6);
+  --wire:var(--nord8);--wire-tag-bg:var(--nord1);--wire-tag-text:var(--nord8);
+  --bit-on:var(--nord14);--bit-off:var(--nord2);--bit-on-text:var(--nord0);--bit-off-text:var(--nord4);
+  --signal:var(--nord14);
+  --radius:4px;--radius-lg:6px;
+  --label-font:var(--font-mono);
+  --shadow:0 6px 18px rgba(0,0,0,.35);
+}
+/* Variante B: Tageslabor */
+html[data-variant="tag"]{
+  color-scheme:light;
+  --bg:var(--nord6);--surface:var(--nord6);--surface-2:var(--nord5);--line:var(--nord4);
+  --text:var(--nord0);--muted:var(--nord3);--accent:var(--nord10);
+  --board:var(--nord5);--grid-minor:rgba(129,161,193,.22);--grid-major:rgba(129,161,193,.45);
+  --mod-bg:var(--nord6);--mod-border:var(--nord4);--mod-head:var(--nord5);--mod-head-text:var(--nord0);
+  --wire:var(--nord10);--wire-tag-bg:var(--nord6);--wire-tag-text:var(--nord0);
+  --bit-on:var(--nord8);--bit-off:var(--nord5);--bit-on-text:var(--nord0);--bit-off-text:var(--nord3);
+  --signal:var(--nord0);
+  --radius:10px;--radius-lg:14px;
+  --label-font:var(--font);
+  --shadow:0 4px 14px rgba(46,52,64,.12);
+}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--font);overflow:hidden;
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100dvh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code,.mono{font-family:var(--font-mono)}
+
+/* Kopfleiste */
+.top{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+html[data-variant="nacht"] .top{background:var(--nord1)}
+.brand{display:flex;align-items:center;gap:10px;flex:none;margin-right:6px}
+.brand svg{width:30px;height:30px;flex:none}
+.brand b{font-size:18px;font-weight:700;letter-spacing:.01em;white-space:nowrap}
+.brand small{display:block;font-size:12px;color:var(--muted);font-weight:400;line-height:1.2;white-space:nowrap}
+.sep{width:1px;height:28px;background:var(--line);flex:none}
+.ctl{display:flex;align-items:center;gap:6px;flex:none}
+.ctl>span{font-size:12px;color:var(--muted);white-space:nowrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;flex:none}
+.seg button{border:0;background:transparent;padding:5px 10px;font-family:var(--font-mono);font-size:13px;min-height:32px;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--nord0);font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);border-radius:var(--radius);padding:5px 11px;min-height:34px;font-size:13.5px;white-space:nowrap;flex:none}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--nord0);font-weight:600}
+.btn svg{width:16px;height:16px}
+select.btn{padding-right:8px}
+.spacer{flex:1 0 8px}
+#bDrawer{display:none}
+
+/* Hauptbereich */
+.main{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:0;position:relative}
+.side{background:var(--surface);border-right:1px solid var(--line);overflow-y:auto;padding:12px 12px 16px;display:flex;flex-direction:column;gap:12px}
+.side h2{font-size:12px;font-weight:600;color:var(--muted);margin:4px 2px 6px;font-family:var(--label-font)}
+.pal{display:grid;gap:5px}
+.pi{display:flex;align-items:center;gap:9px;padding:6px 8px;border:1px solid var(--mod-border);background:var(--mod-bg);border-radius:var(--radius);text-align:left;font-size:14px;touch-action:none;min-height:38px}
+.pi:hover,.pi:focus-visible{border-color:var(--accent)}
+.ic{display:inline-grid;place-items:center;min-width:24px;padding:0 3px;height:24px;border-radius:calc(var(--radius) - 1px);background:var(--gc);color:var(--nord0);font-family:var(--font-mono);font-weight:600;font-size:14px;flex:none;line-height:1}
+.g-in{--gc:var(--g-in)}.g-ar{--gc:var(--g-ar)}.g-bit{--gc:var(--g-bit)}.g-mem{--gc:var(--g-mem)}.g-out{--gc:var(--g-out)}.g-misc{--gc:var(--g-misc)}.g-txt{--gc:var(--g-txt)}.g-ana{--gc:var(--g-ana)}.g-ana .ic{color:var(--nord6)}
+html[data-variant="tag"] .g-ana .mh{color:var(--nord6)}
+.info{margin-top:auto;border:1px solid var(--line);border-radius:var(--radius);padding:10px 11px;font-size:13.5px;line-height:1.5;background:var(--surface-2)}
+.info b{display:block;margin-bottom:3px}
+
+/* Arbeitsfläche */
+.board{position:relative;overflow:hidden;background-color:var(--board);touch-action:none;cursor:grab;
+  background-image:linear-gradient(var(--grid-major) 1px,transparent 1px),linear-gradient(90deg,var(--grid-major) 1px,transparent 1px),
+  linear-gradient(var(--grid-minor) 1px,transparent 1px),linear-gradient(90deg,var(--grid-minor) 1px,transparent 1px);
+  background-size:100px 100px,100px 100px,20px 20px,20px 20px}
+.board.panning{cursor:grabbing}
+.board.connecting{cursor:crosshair}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;width:1px;height:1px}
+#wires{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+#wires .hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
+#wires .ln{fill:none;stroke:var(--wire);stroke-width:3;stroke-linecap:round;pointer-events:none}
+#wires .wire:hover .ln{stroke-width:4.5}
+#wires .wire.sel .ln{stroke:var(--nord13);stroke-width:4.5}
+#wires .tmp{fill:none;stroke:var(--nord13);stroke-width:3;stroke-dasharray:7 6}
+#wires .tag rect{fill:var(--wire-tag-bg);stroke:var(--wire);stroke-width:1}
+#wires .tag text{fill:var(--wire-tag-text);font:11.5px var(--font-mono);dominant-baseline:central;text-anchor:middle}
+#wires .wdel{pointer-events:all;cursor:pointer}
+#wires .wdel circle{fill:var(--nord11)}
+#wires .wdel text{fill:var(--nord6);font:700 15px var(--font);text-anchor:middle;dominant-baseline:central}
+#wires.pulse .ln{stroke-dasharray:9 7;animation:flow .7s linear}
+@keyframes flow{from{stroke-dashoffset:32}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){#wires.pulse .ln{animation:none;stroke-dasharray:none}}
+
+.empty[hidden]{display:none}
+.empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:var(--muted);text-align:center;padding:24px}
+.empty div{max-width:360px;border:1px dashed var(--line);border-radius:var(--radius-lg);padding:20px;background:color-mix(in srgb,var(--board) 85%,transparent)}
+.empty b{display:block;color:var(--text);font-size:17px;margin-bottom:4px}
+
+.zoom{position:absolute;right:12px;bottom:12px;display:flex;gap:4px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:3px;box-shadow:var(--shadow)}
+.zoom button{border:0;background:transparent;min-width:32px;height:32px;border-radius:calc(var(--radius) - 1px);font-size:16px}
+.zoom button:hover{background:var(--surface-2)}
+.zoom span{font:12px var(--font-mono);color:var(--muted);min-width:42px;text-align:center}
+
+/* Module */
+.mod{position:absolute;width:max-content;min-width:200px;background:var(--mod-bg);border:1px solid var(--mod-border);border-radius:var(--radius-lg);box-shadow:var(--shadow);cursor:default;user-select:none}
+.mod.sel{border-color:var(--nord13);box-shadow:0 0 0 2px var(--nord13),var(--shadow)}
+.mod.err{border-color:var(--nord11)}
+.mh{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 8px;background:var(--mod-head);border-radius:calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;cursor:move;color:var(--mod-head-text)}
+html[data-variant="nacht"] .mh{border-bottom:2px solid var(--gc)}
+html[data-variant="tag"] .mh{background:var(--gc);color:var(--nord0)}
+html[data-variant="tag"] .mh .ic{background:var(--nord6);color:var(--nord0)}
+.mt{flex:1;font-family:var(--label-font);font-weight:600;font-size:13.5px;white-space:nowrap}
+.mx{border:0;background:transparent;width:26px;height:26px;border-radius:var(--radius);font-size:17px;line-height:1;color:inherit;opacity:.65}
+.mx:hover{opacity:1;background:rgba(191,97,106,.25)}
+.mp{display:grid;grid-template-columns:auto 1fr auto;gap:6px;padding:9px 10px;align-items:center}
+.col{display:grid;gap:5px}
+.op{text-align:center;font:600 26px var(--font-mono);color:var(--gc);padding:0 4px;white-space:nowrap}
+html[data-variant="tag"] .op{color:var(--nord3)}
+.port{position:relative;display:flex;align-items:center;gap:6px;min-height:26px;cursor:crosshair;font-size:13px}
+.port .dot{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--mod-bg);border:3px solid var(--wire);top:50%;transform:translateY(-50%)}
+.port.in .dot{left:-17px}
+.port.out .dot{right:-17px}
+.port.out{justify-content:flex-end}
+.port:hover .dot,.port.pending .dot{background:var(--nord13);border-color:var(--nord13)}
+.board.connecting .port .dot{box-shadow:0 0 0 4px rgba(235,203,139,.3)}
+.pn{font-family:var(--font-mono);font-weight:600;color:var(--muted);white-space:nowrap}
+.pv{font-family:var(--font-mono);font-size:12.5px;color:var(--signal);white-space:nowrap}
+.def{width:9ch;min-width:7ch;font:13px var(--font-mono);padding:2px 6px;height:24px;border:1px dashed var(--line);border-radius:var(--radius);background:var(--surface-2);cursor:text}
+.port.wired .def{display:none}
+.mbody{padding:0 10px 10px;display:grid;gap:7px}
+.mp+.mbody{padding-top:0}
+.mh+.mbody{padding-top:9px}
+.fld{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+.fld input,.mbody textarea{width:100%;font:14px var(--font-mono);padding:5px 8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);color:var(--text);cursor:text}
+.mbody textarea{font:14px/1.45 var(--font);resize:vertical;min-height:70px}
+.mod[data-type="note"]{background:var(--nord13);border-color:var(--nord13);color:var(--nord0);max-width:250px}
+.mod[data-type="note"] .mh{background:transparent;color:var(--nord0);border-bottom:1px solid rgba(46,52,64,.2)}
+.mod[data-type="note"] textarea{background:rgba(236,239,244,.55);color:var(--nord0);border-color:rgba(46,52,64,.25);width:228px}
+.bytes{display:flex;flex-wrap:wrap;gap:3px;max-width:240px}
+.bytes span{display:grid;place-items:center;min-width:30px;padding:2px 3px;border:1px solid var(--line);border-radius:var(--radius);font-family:var(--font-mono);line-height:1.15}
+.bytes span b{font-size:13px;font-weight:600}
+.bytes span i{font-style:normal;font-size:10.5px;color:var(--muted)}
+.bytes span.done{opacity:.45}
+.bytes span.cur{background:var(--bit-on);border-color:var(--bit-on);color:var(--nord0)}
+.bytes span.cur i{color:var(--nord0)}
+.bits{display:grid;grid-template-columns:repeat(var(--nibs,2),auto);gap:3px 7px;justify-content:start}
+.nib{display:flex;gap:2px}
+.nib i{display:grid;place-items:center;height:20px;width:15px;font:normal 12px var(--font-mono);background:var(--bit-off);color:var(--bit-off-text);border-radius:2px}
+.nib i.on{background:var(--bit-on);color:var(--bit-on-text);font-weight:600}
+.nib i.diff{background:var(--nord11);color:var(--nord6);font-weight:600}
+.mod[data-type="probe"] .port .pv,.mod[data-type="hash"] .port .pv,.mod[data-type="log"] .port .pv,.mod[data-type="cmp"] .port.in .pv{display:none}
+.num{font:12.5px/1.5 var(--font-mono);color:var(--muted)}
+.num b{color:var(--text);font-weight:600}
+.big{font:600 24px var(--font-mono);color:var(--signal);letter-spacing:.03em;padding:4px 0;white-space:nowrap}
+html[data-variant="nacht"] .big{text-shadow:0 0 12px rgba(163,190,140,.35)}
+.hs{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;width:max-content}
+.hs button{border:0;background:transparent;padding:2px 10px;font:12.5px var(--font-mono);min-height:26px}
+.hd input{font:13px var(--font-mono);padding:2px 5px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);color:var(--text);min-height:26px}
+.hs button+button{border-left:1px solid var(--line)}
+.hs button[aria-pressed="true"]{background:var(--accent);color:var(--nord0);font-weight:600}
+.pickf{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.pickf select,.pickf input{font:13.5px var(--font-mono);padding:3px 6px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);color:var(--text);min-height:28px}
+.pickf input{width:5ch;cursor:text}
+.pickf [hidden]{display:none}
+.bytes span.pk{border-color:var(--nord7);box-shadow:inset 0 -3px 0 var(--nord7)}
+.bytes span.cur.pk{box-shadow:none}
+.chain{font:600 24px/1.25 var(--font-mono);color:var(--signal);letter-spacing:.08em;max-width:290px;overflow-wrap:anywhere;min-height:30px}
+.crow{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.crst{min-height:30px;padding:3px 10px;font-size:12.5px}
+.crst:disabled{opacity:.45;cursor:default}
+html[data-variant="nacht"] .chain{text-shadow:0 0 12px rgba(163,190,140,.35)}
+.ana{display:grid;gap:7px;width:310px}
+.ana select,.ana .row2 input{font:13.5px var(--font-mono);padding:3px 6px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);color:var(--text);min-height:28px}
+.ana textarea{min-height:54px;font:13px/1.4 var(--font-mono)}
+.row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.row2 input{width:9ch}
+.dl{max-height:190px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius);font:12.5px/1.45 var(--font-mono)}
+.dl div{padding:3px 8px;border-top:1px solid var(--line)}
+.dl div:first-child{border-top:0}
+.dl b{color:var(--signal);margin-right:6px}
+.dl .me{background:color-mix(in srgb,var(--bit-on) 25%,transparent)}
+.hist{width:100%;height:120px;display:block}
+.hist rect.b{fill:var(--accent)}
+.hist rect.hi{fill:var(--nord13)}
+.hist line{stroke:var(--line)}
+.hist text{fill:var(--muted);font:11px var(--font-mono)}
+.okk{font-weight:600;padding:6px 9px;border-radius:var(--radius);font-size:14px}
+.okk.ok{background:var(--nord14);color:var(--nord0)}
+.okk.no{background:var(--nord11);color:var(--nord6)}
+.okk.wait{background:var(--surface-2);color:var(--muted);font-weight:400}
+.bytes span.salt{border-style:dashed;opacity:.75}
+.bytes span.salt b{color:var(--muted)}
+.regv{font:12.5px/1.6 var(--font-mono);color:var(--muted)}
+.regv b{color:var(--signal);font-weight:600}
+.logt{max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius)}
+.logt table{border-collapse:collapse;width:100%;font:12.5px var(--font-mono)}
+.logt th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-weight:600;color:var(--muted);padding:3px 7px}
+.logt td{padding:2px 7px;border-top:1px solid var(--line);white-space:nowrap}
+.logt td:last-child{text-align:right}
+.logt tr.cur td{background:color-mix(in srgb,var(--bit-on) 30%,transparent)}
+.merr{font-size:12.5px;color:var(--nord11);padding:0 10px 8px;font-weight:600}
+html[data-variant="tag"] .merr{color:var(--nord0)}
+html[data-variant="tag"] .merr::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--nord11);margin-right:6px}
+
+/* Taktgeber */
+.clock{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--surface);border-top:1px solid var(--line);flex-wrap:wrap}
+.clock .grp{display:flex;gap:4px;flex:none}
+.clock .grp .btn{min-width:40px;justify-content:center}
+.tape{flex:1 1 280px;display:grid;gap:4px}
+.tape .st{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tape .st code{font-size:13px;color:var(--signal);font-weight:600}
+.prog{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.speed{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);flex:none}
+.speed input{width:96px;accent-color:var(--accent)}
+.clock .lbl{font:600 12px var(--label-font);color:var(--muted);flex:none;user-select:none;-webkit-user-select:none}
+
+/* Dialoge & Toast */
+dialog{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);color:var(--text);padding:0;max-width:min(620px,calc(100vw - 32px));width:100%;box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(46,52,64,.6)}
+.dlg{padding:18px 20px;display:grid;gap:12px;max-height:80dvh;overflow:auto}
+.dlg h3{margin:0;font-size:20px;font-weight:700}
+.dlg p,.dlg li{font-size:15px;line-height:1.55;margin:0;max-width:68ch}
+.dlg ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.dlg textarea{width:100%;min-height:200px;font:12.5px/1.45 var(--font-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:8px}
+.dlg .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.dlg small{color:var(--muted);font-size:13px}
+kbd{font:12px var(--font-mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface-2)}
+.toast{position:fixed;left:50%;bottom:96px;max-width:calc(100vw - 32px);transform:translateX(-50%);background:var(--nord0);color:var(--nord6);border:1px solid var(--nord3);padding:8px 10px 8px 14px;border-radius:var(--radius);display:flex;gap:10px;align-items:center;box-shadow:var(--shadow);font-size:14px;z-index:30}
+.toast[hidden]{display:none}
+.toast button{border:1px solid var(--nord3);background:var(--nord1);color:var(--nord8);border-radius:var(--radius);padding:3px 10px}
+
+@media (max-width:760px){
+  .main{grid-template-columns:minmax(0,1fr)}
+  .side{position:absolute;inset:0 auto 0 0;width:250px;z-index:20;box-shadow:var(--shadow);transform:translateX(-105%);transition:transform .2s}
+  .main.drawer .side{transform:none}
+  #bDrawer{display:inline-flex}
+  .brand small{display:none}
+  .speed{display:none}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12 3h8M13.5 3v8.5L6 25a3 3 0 0 0 2.6 4.5h14.8A3 3 0 0 0 26 25l-7.5-13.5V3" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M9.2 21h13.6l2.3 4.2a1.4 1.4 0 0 1-1.2 2.1H8.1a1.4 1.4 0 0 1-1.2-2.1z" fill="var(--nord14)"/><text x="16" y="25.7" text-anchor="middle" font-family="Google Sans Code,monospace" font-size="6.5" font-weight="600" fill="var(--nord0)">#</text></svg>
+    <div><b>Eigene Hash-Funktionen bauen</b><small>Hash-Labor</small></div>
+  </div>
+  <button class="btn" id="bDrawer" aria-controls="side">＋ Module</button>
+  <div class="sep"></div>
+  <div class="ctl"><span>Bitbreite</span><div class="seg" id="segW"><button data-w="8">8</button><button data-w="16">16</button><button data-w="32">32</button></div></div>
+  <div class="ctl"><span>Kodierung</span><div class="seg" id="segE"><button data-e="az" title="A=1 … Z=26">A=1</button><button data-e="ascii" title="A=65 … Z=90">ASCII</button></div></div>
+  <div class="ctl"><span>Anzeige</span><div class="seg" id="segF"><button data-f="dec">Dez</button><button data-f="hex">Hex</button><button data-f="bin">Bin</button><button data-f="abc" title="Zahlen als Buchstaben: A=1 … Z=26, AA=27">ABC</button></div></div>
+  <div class="ctl"><select class="btn" id="selPreset" aria-label="Beispiel laden">
+    <option value="">Beispiel laden …</option>
+    <optgroup label="Hash-Werkstatt (Arbeitsblätter)">
+    <option value="w1">Nr. 1 Konstante</option>
+    <option value="w2">Nr. 2 Zufallszahl</option>
+    <option value="w3">Nr. 3 Wort rückwärts (32 Bit)</option>
+    <option value="w4">Nr. 4 Wort als Zahl (32 Bit)</option>
+    <option value="w5">Nr. 5 Länge</option>
+    <option value="w6">Nr. 6 Erster Buchstabe</option>
+    <option value="w7">Nr. 7 Die ersten zwei Buchstaben (16 Bit)</option>
+    <option value="w8">Nr. 8 Anzahl Vokale</option>
+    <option value="w9">Nr. 9 Buchstabensumme</option>
+    <option value="w10">Nr. 10 Produkt (16 Bit)</option>
+    <option value="w11">Nr. 11 XOR</option>
+    <option value="w12">Nr. 12 Wert mal Position (16 Bit)</option>
+    <option value="w13">Nr. 13 Mischen mit Faktor 10 (16 Bit)</option>
+    <option value="w14">Nr. 14 Mischen mit Faktor 3 – H2 (16 Bit)</option>
+    </optgroup>
+    <optgroup label="Labor-Beispiele">
+    <option value="summe">Summe mod 101 (8 Bit)</option>
+    <option value="vokal">Anfangsbuchstabe &amp; Vokale (16 Bit)</option>
+    <option value="ausschnitt">Erste &amp; letzte zwei Buchstaben (16 Bit)</option>
+    <option value="kette">Buchstabenkette (8 Bit)</option>
+    <option value="rotxor">Rotieren &amp; XOR (16 Bit)</option>
+    <option value="djb2">djb2 von Bernstein (32 Bit)</option>
+    <option value="fnv">FNV-1a (32 Bit)</option>
+    <option value="lawine">Lawineneffekt (32 Bit)</option>
+    </optgroup>
+    <option value="leer">Leere Arbeitsfläche</option>
+  </select></div>
+  <div class="spacer"></div>
+  <button class="btn" id="bUndo" title="Rückgängig (Strg+Z)">↶ Rückgängig</button>
+  <button class="btn" id="bWireTags" aria-pressed="true" title="Werte auf den Kabeln anzeigen">Kabelwerte: an</button>
+  <button class="btn" id="bShare">Speichern / Laden</button>
+  <button class="btn" id="bVariant" title="Design-Variante wechseln">Design: Nachtlabor</button>
+  <button class="btn" id="bHelp" aria-label="Hilfe">?</button>
+</header>
+
+<div class="main" id="main">
+  <aside class="side" id="side" aria-label="Module">
+    <div id="palette"></div>
+    <div class="info" id="info" aria-live="polite"><b>So geht's</b>Module anklicken oder auf die Arbeitsfläche ziehen. Kabel von einem Ausgang <span class="mono">●</span> rechts zu einem Eingang links ziehen.</div>
+  </aside>
+  <section class="board" id="board" aria-label="Arbeitsfläche">
+    <div id="world"><svg id="wires" aria-hidden="true"></svg></div>
+    <div class="empty" id="empty" hidden><div><b>Die Arbeitsfläche ist leer</b>Ziehen Sie Module aus dem Regal hierher oder laden Sie oben ein Beispiel.</div></div>
+    <div class="zoom">
+      <button id="zOut" aria-label="Verkleinern">−</button><span id="zLbl">100%</span><button id="zIn" aria-label="Vergrössern">+</button><button id="zFit" aria-label="Alles einpassen" title="Alles einpassen">⤢</button>
+    </div>
+  </section>
+</div>
+
+<footer class="clock">
+  <span class="lbl">Taktgeber</span>
+  <div class="grp">
+    <button class="btn" id="cReset" title="Zurück zum Anfang (Pos1)" aria-label="Zurück zum Anfang">⏮</button>
+    <button class="btn" id="cBack" title="Einen Takt zurück (←)" aria-label="Einen Takt zurück">◀</button>
+    <button class="btn primary" id="cStep" title="Nächster Takt (→)">Takt ▶</button>
+    <button class="btn" id="cPlay" title="Automatisch abspielen (Leertaste)" aria-label="Abspielen">⏵</button>
+    <button class="btn" id="cEnd" title="Alle Zeichen verarbeiten (Ende)" aria-label="Bis zum Ende">⏭</button>
+  </div>
+  <div class="tape"><div class="st" id="status"></div><div class="prog"><i id="progBar"></i></div></div>
+  <label class="speed">Tempo <input type="range" id="speed" min="150" max="1500" step="50" value="700" dir="rtl" aria-label="Abspieltempo"></label>
+</footer>
+
+<dialog id="dlgHelp"><div class="dlg">
+  <h3>Willkommen im Hash-Labor</h3>
+  <p>Eine Hash-Funktion macht aus einem beliebig langen Text eine Zahl fester Länge – einen «Fingerabdruck». Hier bauen Sie solche Funktionen aus einfachen Bausteinen selbst.</p>
+  <ul>
+    <li><b>Module</b> aus dem Regal links anklicken oder auf die Arbeitsfläche ziehen. Am Kopf verschieben, mit <kbd>×</kbd> oder <kbd>Entf</kbd> entfernen.</li>
+    <li><b>Kabel</b> von einem Ausgang (Punkt rechts) zu einem Eingang (Punkt links) ziehen – oder beide Punkte nacheinander antippen. Ein Kabel am Eingang wegziehen löst es; ein angeklicktes Kabel lässt sich mit dem roten <kbd>×</kbd> löschen.</li>
+    <li><b>Offene Eingänge</b> haben ein Feld für einen festen Wert, z. B. den Faktor einer Multiplikation. Erlaubt sind <code>42</code>, <code>0x2A</code>, <code>0b101010</code> und Buchstaben wie <code>AP</code> (= 42).</li>
+    <li><b>Text</b> besteht nur aus Grossbuchstaben A–Z. Jeder Buchstabe wird zur Zahl: mit Kodierung «A=1» ist A = 1 … Z = 26, mit «ASCII» A = 65 … Z = 90. Umlaute werden zu AE, OE, UE.</li>
+    <li><b>Buchstaben statt Zahlen</b>: Die Anzeige «ABC» schreibt jede Zahl mit Buchstaben (A = 1 … Z = 26, AA = 27, AB = 28 …). Auch in Wertfeldern dürfen Sie Buchstaben eingeben, z. B. <code>Z</code> für 26.</li>
+    <li><b>Ausschnitt</b> lässt nur bestimmte Buchstaben durch, z. B. die ersten oder letzten zwei. Sein Ausgang «aktiv» kann den Eingang «an» eines Registers steuern: Dann zählen nur diese Buchstaben für den Hash.</li>
+    <li><b>Buchstabenkette</b> hängt bei jedem Takt einen Buchstaben an – so entsteht der Hash als ganze Kette, z. B. <code>QJXBM</code>.</li>
+    <li><b>Analyse-Module</b> rechnen Ihre Schaltung für viele Wörter auf einmal: <b>Doppelgänger</b> findet Wörter mit gleichem Hash, <b>Rückwärts-Suche</b> sucht ein Wort zu einem Zielwert, <b>Verteilung</b> zeigt, wie oft jeder Hashwert vorkommt, <b>Login-Prüfer</b> speichert nur H(Passwort) und prüft Eingaben.</li>
+    <li><b>Salt</b>: Verbinden Sie das Modul mit dem Eingang «Salt» des Text-Eingangs. Dann wird ein geheimer Zusatz vor oder hinter jedes Wort gehängt.</li>
+    <li><b>Der Taktgeber</b> schickt den Text Buchstabe für Buchstabe durch die Schaltung. Bei jedem Takt übernimmt ein <b>Register</b> den Wert an seinem Eingang – so entsteht die Schleife <code>h = f(h, Zeichen)</code>. Nach dem letzten Takt steht der Hash im Register.</li>
+    <li><b>Bitbreite</b>: Alle Werte haben 8, 16 oder 32 Bit. Was darüber hinausgeht, fällt weg – das ist Rechnen modulo 2<sup>n</sup>.</li>
+    <li><b>Bewegen</b>: leere Fläche ziehen oder scrollen; zoomen mit <kbd>Strg</kbd> + Mausrad oder den Knöpfen unten rechts.</li>
+    <li><b>Tastatur</b>: <kbd>→</kbd> nächster Takt (nach dem Ende wieder von vorn), <kbd>←</kbd> zurück, <kbd>Pos1</kbd>/<kbd>Ende</kbd>, <kbd>Leertaste</kbd> abspielen, <kbd>Strg</kbd>+<kbd>Z</kbd> rückgängig.</li>
+  </ul>
+  <p>Ihre Schaltung wird in diesem Browser automatisch gemerkt. Zum Weitergeben oder Abgeben: «Speichern / Laden».</p>
+  <div class="row"><button class="btn primary" data-close>Los geht's</button></div>
+</div></dialog>
+
+<dialog id="dlgShare"><div class="dlg">
+  <h3>Schaltung speichern oder laden</h3>
+  <p>Der Text unten beschreibt Ihre ganze Schaltung. Kopieren Sie ihn (z. B. für eine Abgabe) oder fügen Sie eine Schaltung ein und laden Sie sie.</p>
+  <textarea id="shareTxt" spellcheck="false" aria-label="Schaltung als JSON"></textarea>
+  <small id="shareMsg" aria-live="polite"></small>
+  <div class="row">
+    <label class="btn" style="margin-right:auto">Datei öffnen …<input type="file" id="fileIn" accept=".json,application/json,text/plain" hidden></label>
+    <button class="btn" id="bDownload">Als Datei</button>
+    <button class="btn" id="bCopy">Kopieren</button>
+    <button class="btn" id="bLoadTxt">Text laden</button>
+    <button class="btn primary" data-close>Schliessen</button>
+  </div>
+</div></dialog>
+
+<div class="toast" id="toast" hidden role="status"><span id="toastTxt"></span><button id="toastUndo">Rückgängig</button></div>
+
+<script>
+(()=>{
+// ENGINE START
+const DEFS={
+  text:{g:'in',name:'Text-Eingang',sym:'T',ins:[['Salt',null]],outs:['Zeichen','Index','Länge'],params:{text:'HALLO'},
+    desc:'Nimmt ein Wort aus Grossbuchstaben A–Z. Bei jedem Takt liefert «Zeichen» die Zahl des aktuellen Buchstabens (A=1 … Z=26 bzw. ASCII), «Index» seine Position ab 0 und «Länge» die Anzahl Buchstaben.'},
+  letter:{g:'in',name:'Buchstabe',sym:'A',ins:[],outs:['Zahl'],params:{ch:'A'},
+    desc:'Wandelt einen einzelnen Grossbuchstaben in seine Zahl um: mit Kodierung «A=1» wird A zu 1 und Z zu 26, mit «ASCII» A zu 65 und Z zu 90.'},
+  const:{g:'in',name:'Konstante',sym:'#',ins:[],outs:['Wert'],params:{v:'42'},
+    desc:'Eine feste Zahl. Erlaubt sind dezimal (42), hexadezimal (0x2A), binär (0b101010) und Buchstaben (Z = 26, AP = 42).'},
+  salt:{g:'in',name:'Salt',sym:'+S',ins:[],outs:['Salt'],params:{salt:'XQ',pos:'front'},
+    desc:'Ein geheimer Zusatz, der vor oder hinter jedes Wort gehängt wird. Verbinden Sie «Salt» mit dem Eingang «Salt» eines Text-Eingangs. Gleiche Passwörter ergeben so je nach Salt verschiedene Hashwerte.'},
+  rand:{g:'in',name:'Zufallszahl',sym:'?',ins:[],outs:['Zufall'],params:{max:'99',seed:1},
+    desc:'Liefert eine Zufallszahl von 0 bis zum eingestellten Höchstwert. Während eines Durchlaufs bleibt sie gleich; bei jedem neuen Aufruf (⏮, «Takt ↺», neues Wort oder «Neu würfeln») kommt eine neue Zahl.'},
+  add:{g:'ar',name:'Addition',sym:'+',ins:[['A','0'],['B','0']],outs:['A+B'],f:(a,b)=>a+b,
+    desc:'A + B. Ein Überlauf über die Bitbreite fällt weg (modulo 2ⁿ).'},
+  sub:{g:'ar',name:'Subtraktion',sym:'−',ins:[['A','0'],['B','0']],outs:['A−B'],f:(a,b)=>a-b,
+    desc:'A − B. Negative Ergebnisse «wickeln» sich um: 0 − 1 ergibt bei 8 Bit 255.'},
+  mul:{g:'ar',name:'Multiplikation',sym:'×',ins:[['A','0'],['B','31']],outs:['A·B'],f:(a,b,W)=>W===32?Math.imul(a,b):a*b,
+    desc:'A · B, modulo 2ⁿ. Multiplizieren mit einer ungeraden Zahl verteilt Änderungen auf viele Bits – beliebt in Hash-Funktionen (z. B. 31, 33, 16777619).'},
+  div:{g:'ar',name:'Division',sym:'÷',ins:[['A','0'],['B','2']],outs:['A÷B'],f:(a,b)=>b?Math.floor(a/b):0,err:(a,b)=>b?'':'Division durch 0 – Ergebnis 0',
+    desc:'Ganzzahlige Division A ÷ B (der Rest fällt weg).'},
+  mod:{g:'ar',name:'Modulo',sym:'mod',ins:[['A','0'],['B','101']],outs:['Rest'],f:(a,b)=>b?a%b:0,err:(a,b)=>b?'':'Modulo 0 – Ergebnis 0',
+    desc:'Rest der Division A ÷ B. Bringt jeden Wert in den Bereich 0 … B−1, z. B. für eine Hash-Tabelle mit B Plätzen.'},
+  xor:{g:'bit',name:'XOR',sym:'⊕',ins:[['A','0'],['B','0']],outs:['A⊕B'],f:(a,b)=>a^b,
+    desc:'Exklusives Oder, Bit für Bit: 1, wenn genau eines der beiden Bits 1 ist. Zweimal XOR mit demselben Wert ergibt wieder das Original.'},
+  and:{g:'bit',name:'AND',sym:'∧',ins:[['A','0'],['B','0xFF']],outs:['A∧B'],f:(a,b)=>a&b,
+    desc:'Und, Bit für Bit: 1 nur, wenn beide Bits 1 sind. Eignet sich als «Maske», um Bits herauszufiltern.'},
+  or:{g:'bit',name:'OR',sym:'∨',ins:[['A','0'],['B','0']],outs:['A∨B'],f:(a,b)=>a|b,
+    desc:'Oder, Bit für Bit: 1, wenn mindestens eines der Bits 1 ist.'},
+  not:{g:'bit',name:'NOT',sym:'¬',ins:[['A','0']],outs:['¬A'],f:a=>~a,
+    desc:'Kehrt jedes Bit um: aus 0 wird 1 und aus 1 wird 0.'},
+  cond:{g:'bit',name:'Bedingung',sym:'?',ins:[['A','0'],['B','0']],outs:['ja?'],params:{op:'='},
+    f:(a,b,W,p)=>({'=':a===b,'≠':a!==b,'<':a<b,'>':a>b,'≤':a<=b,'≥':a>=b}[p.op]?1:0),
+    desc:'Vergleicht A und B (=, ≠, <, >, ≤, ≥). Ergebnis 1, wenn die Bedingung stimmt, sonst 0. Zusammen mit der Weiche lassen sich Regeln wie «wenn …, dann …» bauen.'},
+  mux:{g:'bit',name:'Weiche',sym:'⑂',ins:[['wenn','0'],['dann','0'],['sonst','0']],outs:['Wert'],f:(w,d,e)=>w?d:e,
+    desc:'Ist «wenn» nicht 0, gibt die Weiche «dann» weiter, sonst «sonst». Beispiel: wenn Vokal, dann · 3, sonst + 1.'},
+  shl:{g:'bit',name:'Shift links',sym:'≪',ins:[['A','0'],['n','1']],outs:['A≪n'],f:(a,n,W)=>n>=W?0:a<<n,
+    desc:'Verschiebt alle Bits um n Stellen nach links; rechts kommen Nullen nach, links fallen Bits heraus. Entspricht · 2ⁿ.'},
+  shr:{g:'bit',name:'Shift rechts',sym:'≫',ins:[['A','0'],['n','1']],outs:['A≫n'],f:(a,n,W)=>n>=W?0:a>>>n,
+    desc:'Verschiebt alle Bits um n Stellen nach rechts; links kommen Nullen nach. Entspricht ganzzahligem ÷ 2ⁿ.'},
+  rotl:{g:'bit',name:'Rotation links',sym:'⟲',ins:[['A','0'],['n','5']],outs:['rotl'],f:(a,n,W)=>{n%=W;return n?(a<<n)|(a>>>(W-n)):a},
+    desc:'Wie Shift links, aber die herausfallenden Bits kommen rechts wieder hinein. Es geht keine Information verloren.'},
+  rotr:{g:'bit',name:'Rotation rechts',sym:'⟳',ins:[['A','0'],['n','5']],outs:['rotr'],f:(a,n,W)=>{n%=W;return n?(a>>>n)|(a<<(W-n)):a},
+    desc:'Wie Shift rechts, aber die herausfallenden Bits kommen links wieder hinein.'},
+  vowel:{g:'txt',name:'Vokale zählen',sym:'AEIOU',ins:[['Zeichen','0']],outs:['Vokal?','Anzahl'],
+    st:{init:()=>0,out:(s,a,enc)=>[isVowel(a,enc),s+isVowel(a,enc)],next:(s,a,enc)=>s+isVowel(a,enc)},
+    desc:'Prüft, ob der Buchstabe am Eingang ein Vokal ist (A, E, I, O, U): «Vokal?» ist dann 1, sonst 0. «Anzahl» zählt Takt für Takt mit – nach dem letzten Buchstaben steht dort die Anzahl Vokale im ganzen Wort.'},
+  first:{g:'txt',name:'Erster Buchstabe',sym:'1.',ins:[['Zeichen','0']],outs:['Erster'],
+    st:{init:()=>-1,out:(s,a)=>[s>=0?s:a],next:(s,a)=>s>=0?s:(a?a:-1)},
+    desc:'Nimmt nur den ersten Buchstaben entgegen und merkt ihn sich. In allen weiteren Takten gibt das Modul weiterhin diesen ersten Buchstaben aus.'},
+  last:{g:'txt',name:'Letzter Buchstabe',sym:'.1',ins:[['Zeichen','0']],outs:['Letzter'],
+    st:{init:()=>0,out:(s,a)=>[a?a:s],next:(s,a)=>a?a:s},
+    desc:'Merkt sich immer den zuletzt gesehenen Buchstaben. Nach dem letzten Takt steht hier der letzte Buchstabe des Wortes.'},
+  pick:{g:'txt',name:'Ausschnitt',sym:'[ ]',ins:[['Zeichen','0']],outs:['Zeichen','aktiv'],params:{mode:'first',n:'2',from:'2',to:'4'},
+    desc:'Lässt nur ausgewählte Buchstaben des Wortes durch: die ersten n, die letzten n oder die Positionen von … bis. Alle anderen werden zu 0. «aktiv» ist 1, solange ein ausgewählter Buchstabe anliegt – damit lässt sich der «an»-Eingang eines Registers steuern.'},
+  reg:{g:'mem',name:'Register',sym:'▣',ins:[['neu',null],['an',null]],outs:['Wert'],params:{init:'0'},reg:true,
+    desc:'Speicher für den Zwischenwert h. Startet mit dem Startwert; bei jedem Takt übernimmt es den Wert an «neu». Der Eingang «an» ist freiwillig: Ist er verbunden und 0, behält das Register in diesem Takt seinen Wert. Nur über ein Register darf eine Schaltung im Kreis laufen.'},
+  probe:{g:'out',name:'Bit-Anzeige',sym:'◫',ins:[['Wert','0']],outs:['Wert'],f:a=>a,params:{bits:'auto'},
+    desc:'Zeigt einen Wert als Bits, dezimal, hexadezimal und als Zeichen. Gibt den Wert unverändert weiter – lässt sich also in jedes Kabel einschlaufen.'},
+  hash:{g:'out',name:'Hash-Ausgabe',sym:'⌗',ins:[['Hash','0']],outs:[],params:{show:'abc',digits:''},
+    desc:'Zeigt das Ergebnis gross an – den Fingerabdruck des Wortes. Umschaltbar: als Zahl oder als Buchstaben (A=1 … Z=26, AA=27 …). Meist mit dem Ausgang des Registers verbunden.'},
+  chain:{g:'out',name:'Buchstabenkette',sym:'ABC',ins:[['Wert','0'],['an',null]],outs:[],
+    params:{from:0},desc:'Startet leer und hängt bei jedem Takt einen Buchstaben an: Wert mod 26, wobei 1 = A … 25 = Y und 26 bzw. 0 = Z. So wird der Hash zu einer Buchstabenkette, die mit jedem Buchstaben des Wortes wächst. «Zurücksetzen» leert die Kette; weitere Takte hängen wieder neu an. Der Eingang «an» ist freiwillig: Ist er 0, wird in diesem Takt nichts angehängt.'},
+  log:{g:'out',name:'Protokoll',sym:'☰',ins:[['Wert','0']],outs:[],
+    desc:'Schreibt pro Buchstabe eine Zeile. Hängt am Register: Startwert und der Wert nach jedem Buchstaben. Hängt direkt am Text: der Wert, solange der Buchstabe anliegt.'},
+  cmp:{g:'out',name:'Bit-Vergleich',sym:'≟',ins:[['A','0'],['B','0']],outs:['Bits≠'],f:(a,b)=>popcount(a^b),
+    desc:'Vergleicht zwei Werte Bit für Bit und zählt, wie viele Bits verschieden sind. Bei einer guten Hash-Funktion ändert ein anderer Buchstabe etwa die Hälfte aller Bits (Lawineneffekt).'},
+  dupes:{g:'ana',name:'Doppelgänger',sym:'≡',ins:[['Hash','0']],outs:[],params:{src:'both',words:'HUND MUND RUND AMOR ROMA ANNA OTTO KATZE'},
+    desc:'Rechnet die Schaltung für viele Wörter durch und zeigt Wörter mit gleichem Hashwert (Kollisionen). Verbinden Sie «Hash» mit dem Wert, der am Ende der Hash ist – meist dem Register.'},
+  search:{g:'ana',name:'Rückwärts-Suche',sym:'⟲?',ins:[['Hash','0']],outs:[],params:{target:'50'},
+    desc:'Sucht ein Wort zu einem Zielwert: zuerst in der Wortliste, dann alle Buchstabenkombinationen A, B, … ZZ, AAA … (höchstens 100 000 Versuche). Zählt die Versuche – je länger es dauert, desto eher ist die Funktion eine Einwegfunktion.'},
+  dist:{g:'ana',name:'Verteilung',sym:'▥',ins:[['Hash','0']],outs:[],params:{src:'list',words:''},
+    desc:'Zeigt als Säulendiagramm, wie oft jeder Hashwert bei vielen Wörtern vorkommt. Gut verteilt heisst: viele verschiedene Werte, keiner viel häufiger als die anderen.'},
+  login:{g:'ana',name:'Login-Prüfer',sym:'✓?',ins:[['Hash','0']],outs:[],params:{stored:'',tryw:'',skey:''},
+    desc:'Spielt eine Website: «Wort als Passwort speichern» nimmt das Wort aus dem Text-Eingang und speichert nur seinen Hashwert. Im Feld «Test-Login» probieren Sie andere Wörter aus: Ergibt ein Wort denselben Hashwert, klappt der Login.'},
+  note:{g:'misc',name:'Notiz',sym:'✎',ins:[],outs:[],params:{t:'Notiz …'},
+    desc:'Ein Zettel für Erklärungen, Aufträge oder Beobachtungen.'}
+};
+const GROUPS=[['in','Eingang'],['txt','Text-Analyse'],['ar','Arithmetik'],['bit','Bit-Operationen & Logik'],['mem','Speicher'],['out','Ausgabe & Messung'],['ana','Analyse (viele Wörter)'],['misc','Whiteboard']];
+const WORDLIST='HUND MUND RUND BUND WUND KUNDE STUNDE AMOR ROMA ANNA OTTO EMMA OMA OPA PAPA MAMA KATZE TATZE MATZE HAUS MAUS LAUS RAUS BAUM RAUM SAUM TRAUM ZAUN SAUNA HOSE ROSE DOSE NASE VASE HASE BASE REGAL LAGER NEBEL LEBEN EIS SIE TOR ROT ORT TROST NEST NETZ ESEL LESE SEELE TANNE KANNE WANNE PANNE SONNE TONNE NONNE WONNE MOND BOOT BROT TOD GOTT SCHULE KLASSE LEHRER TAFEL HEFT BUCH STIFT PAPIER PULT PAUSE NOTE TEST FRAGE ANTWORT INFORMATIK COMPUTER TASTE BILD DATEI CODE DATEN BIT BYTE HASH WERT ZAHL SUMME PASSWORT LOGIN KONTO NAME BENUTZER SCHLUESSEL GEHEIM PIN KARTE APFEL BIRNE KIRSCHE BANANE ZITRONE ORANGE TRAUBE MELONE BEERE NUSS KAESE MILCH BUTTER HONIG ZUCKER SALZ WASSER SAFT TEE KAFFEE SUPPE PIZZA PASTA REIS EI FISCH FLEISCH WURST AUTO BUS ZUG BAHN VELO TRAM SCHIFF FLUG STRASSE WEG BRUECKE TUNNEL BERG TAL SEE MEER FLUSS INSEL WALD FELD WIESE STEIN SAND ERDE LUFT FEUER WIND REGEN SCHNEE STERN TAG NACHT MORGEN ABEND WOCHE MONAT JAHR ZEIT UHR MINUTE BLAU GELB GRUEN WEISS SCHWARZ GRAU BRAUN ROSA LILA EINS ZWEI DREI VIER FUENF SECHS SIEBEN ACHT NEUN ZEHN ELF ZWOELF HUNDERT TAUSEND VATER MUTTER BRUDER SCHWESTER KIND ONKEL TANTE FREUND FREUNDIN NACHBAR HAND FUSS KOPF ARM BEIN AUGE OHR HERZ HAAR ZAHN TISCH STUHL BETT SOFA LAMPE TUER FENSTER WAND DACH BODEN KUECHE GARTEN KATER TIGER LOEWE BAER WOLF FUCHS IGEL RATTE PFERD KUH SCHAF ZIEGE HUHN ENTE GANS VOGEL ADLER EULE WAL HAI SPIEL BALL SIEG MUSIK LIED TANZ FILM KINO BRIEF POST GELD PREIS MARKT LADEN ZUERICH BERN BASEL GENF LUZERN BUELACH RHEIN AARE ALPEN LIEBE GLUECK FREUDE ANGST MUT RUHE KRAFT IDEE PLAN ZIEL REGEL ANANAS LAMA KAMEL OTTER ROTOR RADAR LAGERN LEGAL ALLE ELLE EBBE KEKS KUSS LIST STIL DIEL ROMAN MORAL MARON NORM FORM MORA RAMO OMAR'.split(' ');
+function cleanText(t){return String(t??'').toUpperCase().replace(/Ä/g,'AE').replace(/Ö/g,'OE').replace(/Ü/g,'UE').replace(/[^A-Z]/g,'')}
+function codeOf(c,enc){return enc==='ascii'?c.charCodeAt(0):c.charCodeAt(0)-64}
+function letterOf(v,enc){const c=enc==='ascii'?v:v+64;return c>=65&&c<=90?String.fromCharCode(c):''}
+function isVowel(v,enc){return 'AEIOU'.includes(letterOf(v,enc)||'-')?1:0}
+function toLetters(v){v=v>>>0;if(!v)return'–';let s='';while(v>0){v--;s=String.fromCharCode(65+v%26)+s;v=Math.floor(v/26)}return s}
+function rnd(seed){let t=(seed+0x6D2B79F5)|0;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return(t^t>>>14)>>>0}
+function chainLetter(v){return String.fromCharCode(65+((v>>>0)+25)%26)}
+function pickActive(m,step,len){
+  const p=m.params,k=step+1;
+  if(step>=len)return false;
+  if(p.mode==='last')return step>=len-parseNum(p.n);
+  if(p.mode==='range')return k>=parseNum(p.from)&&k<=parseNum(p.to);
+  return step<parseNum(p.n);
+}
+function srcText(st,idx,mid){
+  const seen=new Set();let found=null;
+  const walk=id=>{if(found||seen.has(id))return;seen.add(id);const m=idx.mods[id];if(!m)return;
+    if(m.type==='text'){found=id;return}
+    DEFS[m.type].ins.forEach((_,i)=>{const c=idx.inc[id+':'+i];if(c)walk(c.from.m)})};
+  const c=idx.inc[mid+':0'];if(c)walk(c.from.m);
+  return found;
+}
+function popcount(x){x>>>=0;let c=0;while(x){x&=x-1;c++}return c}
+function mask(x,W){x=Number(x);if(!isFinite(x))return 0;return W===32?(x>>>0):((x>>>0)&((1<<W)-1))}
+function parseNum(s){
+  s=String(s??'').trim().replace(/[\s_']/g,'');
+  let neg=false;if(s.startsWith('-')){neg=true;s=s.slice(1)}
+  let v;
+  if(/^0x[0-9a-f]+$/i.test(s))v=parseInt(s.slice(2),16);
+  else if(/^0b[01]+$/i.test(s))v=parseInt(s.slice(2),2);
+  else if(/^\d+$/.test(s))v=parseInt(s,10);
+  else if(/^[A-Za-z]+$/.test(s)){v=0;for(const c of s.toUpperCase())v=v*26+(c.charCodeAt(0)-64)}
+  else v=0;
+  return neg?-v:v;
+}
+function buildIndex(st){const inc={},mods={};for(const c of st.cables)inc[c.to.m+':'+c.to.p]=c;for(const m of st.modules)mods[m.id]=m;return{inc,mods}}
+function evalStep(st,idx,ctx){
+  const W=st.width,vals={},inVals={},errs={},visiting=new Set();
+  const inVal=(m,i)=>{
+    const c=idx.inc[m.id+':'+i];
+    if(c){const src=idx.mods[c.from.m];if(!src)return 0;const o=outs(src);return o[c.from.p]??0}
+    const d=DEFS[m.type].ins[i][1];
+    return d===null?0:mask(parseNum(m.defs?.[i]??d),W);
+  };
+  function outs(m){
+    if(vals[m.id])return vals[m.id];
+    if(visiting.has(m.id)){errs[m.id]='Kreislauf ohne Register: Fügen Sie ein Register in die Schleife ein';return[]}
+    visiting.add(m.id);
+    const D=DEFS[m.type];let o=[];
+    if(D.reg)o=[ctx.regs[m.id]??0];
+    else if(m.type==='text'){if(idx.inc[m.id+':0'])inVals[m.id]=[inVal(m,0)];const b=ctx.bytes[m.id]||[];const s=ctx.step;o=[s<b.length?b[s]:0,mask(s,W),mask(b.length,W)]}
+    else if(m.type==='letter'){const c=cleanText(m.params.ch)[0];o=[c?mask(codeOf(c,st.enc),W):0]}
+    else if(m.type==='pick'){const a=inVal(m,0);inVals[m.id]=[a];const p=ctx.pick[m.id];const on=!!p&&pickActive(m,ctx.step,p.len);o=[on?a:0,on?1:0]}
+    else if(D.st){const a=D.ins.map((_,i)=>inVal(m,i));inVals[m.id]=a;o=D.st.out(ctx.regs[m.id],...a,st.enc).map(x=>mask(x,W))}
+    else if(m.type==='const'){o=[mask(parseNum(m.params.v),W)]}
+    else if(m.type==='salt'){o=[mask(parseNum(cleanText(m.params.salt)||'0'),W)]}
+    else if(m.type==='rand'){const mx=parseNum(m.params.max);o=[mask(mx>0?rnd(m.params.seed|0)%(mx+1):0,W)]}
+    else if(D.ins.length){
+      const a=D.ins.map((_,i)=>inVal(m,i));inVals[m.id]=a;
+      if(D.f)o=[mask(D.f(...a,W,m.params),W)];
+      if(D.err){const e=D.err(...a);if(e)errs[m.id]=e}
+    }
+    visiting.delete(m.id);vals[m.id]=o;return o;
+  }
+  for(const m of st.modules){outs(m);if(!inVals[m.id]&&DEFS[m.type].ins.length)inVals[m.id]=DEFS[m.type].ins.map((_,i)=>inVal(m,i))}
+  return{vals,inVals,errs};
+}
+function simulate(st,target){
+  const idx=buildIndex(st),W=st.width,bytes={};let n=0;
+  const texts={};
+  for(const m of st.modules)if(m.type==='text'){
+    const w=cleanText(m.params.text),c=idx.inc[m.id+':0'],sm=c&&idx.mods[c.from.m],sl=sm&&sm.type==='salt'?cleanText(sm.params.salt):'',front=!sm||sm.params.pos!=='back';
+    const full=front?sl+w:w+sl;texts[m.id]={full,saltLen:sl.length,front};
+    bytes[m.id]=[...full].map(c=>codeOf(c,st.enc));n=Math.max(n,bytes[m.id].length)}
+  target=Math.max(0,Math.min(target|0,n));
+  let regs={};for(const m of st.modules){const D=DEFS[m.type];if(D.reg)regs[m.id]=mask(parseNum(m.params.init),W);else if(D.st)regs[m.id]=D.st.init()}
+  const logs={},pick={};
+  for(const m of st.modules){if(m.type==='log'||m.type==='chain')logs[m.id]=[];if(m.type==='pick'){const t=srcText(st,idx,m.id);pick[m.id]={text:t,len:t?bytes[t].length:0}}}
+  let r;
+  for(let s=0;s<=target;s++){
+    r=evalStep(st,idx,{step:s,regs,bytes,pick});
+    for(const id in logs)logs[id].push([r.inVals[id][0],idx.inc[id+':1']?r.inVals[id][1]:1]);
+    if(s===target)break;
+    const nr={};
+    for(const m of st.modules){const D=DEFS[m.type];if(D.reg)nr[m.id]=idx.inc[m.id+':0']&&(!idx.inc[m.id+':1']||r.inVals[m.id][1])?r.inVals[m.id][0]:regs[m.id];else if(D.st)nr[m.id]=D.st.next(regs[m.id],...r.inVals[m.id],st.enc)}
+    regs=nr;
+  }
+  return{...r,logs,n,step:target,bytes,regs,idx,pick,texts};
+}
+// Schaltung für viele Wörter: liefert f(wort) = Wert am Eingang von modId nach dem letzten Buchstaben
+function makeHasher(st,modId){
+  const c=JSON.parse(JSON.stringify({width:st.width,enc:st.enc,modules:st.modules,cables:st.cables}));
+  const tx=c.modules.filter(m=>m.type==='text'),rs=c.modules.filter(m=>m.type==='rand');
+  return w=>{for(const t of tx)t.params.text=w;for(const r of rs)r.params.seed=(Math.random()*4294967296)|0;
+    const r=simulate(c,1e9);return(r.inVals[modId]?.[0]??0)>>>0};
+}
+function wordsFor(p){
+  const own=[...new Set(String(p.words||'').split(/[^A-Za-zÄÖÜäöü]+/).map(cleanText).filter(Boolean))];
+  if(p.src==='own')return own;if(p.src==='list')return WORDLIST;
+  return[...new Set([...own,...WORDLIST])];
+}
+// Beispiel-Schaltungen
+function build(width,mods,cables){
+  const ids={},modules=mods.map(([k,type,x,y,params,defs])=>{const id='m_'+k;ids[k]=id;if(x<=60&&y>=280&&y<400)y+=50;return{id,type,x,y,params:{...(DEFS[type].params||{}),...(params||{})},defs:defs||{}}});
+  const cab=cables.map(([a,b],i)=>{const[am,ap]=a.split('.'),[bm,bp]=b.split('.');return{id:'c'+i,from:{m:ids[am],p:+ap},to:{m:ids[bm],p:+bp}}});
+  return{width,enc:'az',fmt:width===32?'hex':'dec',modules,cables:cab,step:0};
+}
+const PRESETS={
+  summe:()=>build(8,[
+    ['t','text',40,60,{text:'REGAL'}],['p','probe',40,300],
+    ['a','add',360,60],['m','mod',640,60,null,{1:'101'}],['r','reg',680,280],
+    ['h','hash',960,300],['l','log',940,20],
+    ['n','note',380,320,{t:'Summe aller Zeichencodes, modulo 101.\nProbieren Sie REGAL und dann LAGER. Was fällt Ihnen auf, und warum?'}]
+  ],[['t.0','p.0'],['t.0','a.0'],['r.0','a.1'],['a.0','m.0'],['m.0','r.0'],['r.0','h.0'],['r.0','l.0']]),
+  vokal:()=>build(16,[
+    ['t','text',40,60,{text:'BANANE'}],['f','first',380,40],['v','vowel',380,220],
+    ['s','shl',680,40,null,{1:'5'}],['a','add',1000,120],['h','hash',1320,100],
+    ['n','note',380,420,{t:'Hash = Anfangsbuchstabe · 32 + Anzahl Vokale\nSpielen Sie den Text bis zum Ende durch. Finden Sie zwei Wörter mit gleichem Hash? Wie viele verschiedene Hashes gibt es höchstens?'}]
+  ],[['t.0','f.0'],['t.0','v.0'],['f.0','s.0'],['s.0','a.0'],['v.1','a.1'],['a.0','h.0']]),
+  ausschnitt:()=>build(16,[
+    ['t','text',40,60,{text:'INFORMATIK'}],['p1','pick',400,20,{mode:'first',n:'2'}],['p2','pick',400,330,{mode:'last',n:'2'}],
+    ['o1','or',780,40],['o2','or',780,340],['r','reg',1080,420],['mu','mul',1080,160,null,{1:'27'}],['a','add',1400,160],
+    ['h','hash',1720,140],['l','log',1720,360],
+    ['n','note',40,380,{t:'Nur die ersten zwei und die letzten zwei Buchstaben zählen: h = h · 27 + Buchstabe.\n«aktiv» schaltet das Register nur bei diesen Buchstaben ein.\nFinden Sie ein anderes Wort mit demselben Hash wie INFORMATIK!'}]
+  ],[['t.0','p1.0'],['t.0','p2.0'],['p1.0','o1.0'],['p2.0','o1.1'],['p1.1','o2.0'],['p2.1','o2.1'],['r.0','mu.0'],['mu.0','a.0'],['o1.0','a.1'],['a.0','r.0'],['o2.0','r.1'],['r.0','h.0'],['r.0','l.0']]),
+  kette:()=>build(8,[
+    ['t','text',40,60,{text:'HALLO'}],['r','reg',40,320,{init:'3'}],['mu','mul',360,300,null,{1:'7'}],['a','add',680,180],['md','mod',1000,180,null,{1:'26'}],
+    ['c','chain',1320,120],['l','log',1320,360],
+    ['n','note',360,460,{t:'h = (h · 7 + Buchstabe) mod 26, Start 3.\nBei jedem Takt hängt die Buchstabenkette den neuen Wert als Buchstaben an (1 = A … 26 bzw. 0 = Z). Aus HALLO wird eine Kette mit 5 Buchstaben.'}]
+  ],[['r.0','mu.0'],['mu.0','a.0'],['t.0','a.1'],['a.0','md.0'],['md.0','r.0'],['md.0','c.0'],['md.0','l.0']]),
+  rotxor:()=>build(16,[
+    ['t','text',40,60,{text:'HALLO'}],['r','reg',40,300],
+    ['o','rotl',360,280,null,{1:'5'}],['x','xor',640,80],['p','probe',960,260],['h','hash',960,60],['l','log',1300,60],
+    ['n','note',360,450,{t:'h = rotl(h, 5) ⊕ Zeichen\nDie Rotation schiebt alte Bits weiter, damit sich jedes Zeichen auf andere Bits auswirkt. Vertauschen Sie zwei Buchstaben: Ändert sich der Hash jetzt?'}]
+  ],[['r.0','o.0'],['o.0','x.0'],['t.0','x.1'],['x.0','r.0'],['r.0','h.0'],['r.0','p.0'],['r.0','l.0']]),
+  djb2:()=>build(32,[
+    ['t','text',40,60,{text:'HALLO'}],['r','reg',40,320,{init:'5381'}],
+    ['s','shl',400,300,null,{1:'5'}],['a1','add',760,300],['a2','add',1120,100],['h','hash',1480,100],['l','log',1480,300],
+    ['n','note',400,480,{t:'djb2 (Daniel J. Bernstein): h = h · 33 + Zeichen, Start 5381.\nShift um 5 ist dasselbe wie · 32, dazu noch einmal h ergibt · 33.'}]
+  ],[['r.0','s.0'],['s.0','a1.0'],['r.0','a1.1'],['a1.0','a2.0'],['t.0','a2.1'],['a2.0','r.0'],['r.0','h.0'],['r.0','l.0']]),
+  fnv:()=>build(32,[
+    ['t','text',40,60,{text:'HALLO'}],['r','reg',40,320,{init:'0x811C9DC5'}],
+    ['x','xor',400,120],['mu','mul',760,120,null,{1:'0x01000193'}],['p','probe',1140,300],['h','hash',1140,100],
+    ['n','note',400,330,{t:'FNV-1a, eine echte Hash-Funktion:\nh = (h ⊕ Zeichen) · 16777619\nStartwert 0x811C9DC5. Mit Kodierung «ASCII» stimmt das Ergebnis mit dem echten FNV-1a überein.\nÄndern Sie einen Buchstaben und beobachten Sie die Bits.'}]
+  ],[['t.0','x.0'],['r.0','x.1'],['x.0','mu.0'],['mu.0','r.0'],['r.0','h.0'],['r.0','p.0']]),
+  lawine:()=>build(32,[
+    ['t1','text',40,40,{text:'HALLO'}],['r1','reg',40,320,{init:'0x811C9DC5'}],['x1','xor',400,60],['m1','mul',760,60,null,{1:'0x01000193'}],
+    ['t2','text',40,640,{text:'HALLU'}],['r2','reg',40,920,{init:'0x811C9DC5'}],['x2','xor',400,680],['m2','mul',760,680,null,{1:'0x01000193'}],
+    ['c','cmp',1140,360],['h1','hash',1140,40],['h2','hash',1140,740],
+    ['n','note',400,340,{t:'Zweimal FNV-1a, Texte unterscheiden sich in einem Buchstaben.\nDer Vergleich zählt die verschiedenen Bits – ideal wäre etwa die Hälfte.\nÄndern Sie statt des letzten den ersten Buchstaben. Was passiert, und warum?'}]
+  ],[['t1.0','x1.0'],['r1.0','x1.1'],['x1.0','m1.0'],['m1.0','r1.0'],['t2.0','x2.0'],['r2.0','x2.1'],['x2.0','m2.0'],['m2.0','r2.0'],['r1.0','c.0'],['r2.0','c.1'],['r1.0','h1.0'],['r2.0','h2.0']]),
+  leer:()=>build(8,[],[]),
+  w1:()=>ws(8,[['t','text',40,60,{text:'KATZE'}],['c','const',380,60,{v:'42'}],['h','hash',700,60,{show:'num'}],
+    ['n','note',380,250,{t:'Funktion 1 – Konstante\nH(Wort) = 42 für jedes Wort.\nÄndern Sie das Wort. Was passiert beim Login? Was, wenn jemand die gespeicherten Werte stiehlt?'}]],[['c.0','h.0']],{hv:'c.0',goal:42,login:1,y:480}),
+  w2:()=>ws(8,[['t','text',40,60,{text:'KATZE'}],['z','rand',380,60],['h','hash',700,60,{show:'num'}],
+    ['n','note',380,280,{t:'Funktion 2 – Zufallszahl\nH(Wort) = zufällige Zahl von 0 bis 99, bei jedem Aufruf neu.\nSpielen Sie das Wort durch, dann noch einmal (⏮ oder «Takt ↺»). Kann die Website so prüfen, ob Ihr Passwort stimmt?'}]],[['z.0','h.0']],{hv:'z.0',goal:50,login:1,y:520}),
+  w3:()=>ws(32,[['t','text',40,60,{text:'AMOR'}],['p','reg',40,330,{init:'1'}],['pm','mul',380,330,null,{1:'26'}],['m','mul',380,60],['a','add',720,60],['r','reg',720,300],['h','hash',1060,60,{show:'abc'}],
+    ['n','note',1060,280,{t:'Funktion 3 – Wort rückwärts\nH(AMOR) = ROMA, H(HUND) = DNUH.\nTrick: Jeder Buchstabe kommt an die nächste «Stelle» im 26er-System (· 1, · 26, · 676 …); die Hash-Ausgabe liest die Zahl als Buchstaben (ABC). Klappt bis 6 Buchstaben.'}]],
+    [['p.0','pm.0'],['pm.0','p.0'],['t.0','m.0'],['p.0','m.1'],['r.0','a.0'],['m.0','a.1'],['a.0','r.0'],['r.0','h.0']],{hv:'r.0',goal:'ROMA',login:1,y:560}),
+  w4:()=>ws(32,[['t','text',40,60,{text:'AMOR'}],['r','reg',40,330],['m','mul',380,300,null,{1:'100'}],['a','add',720,60],['h','hash',1060,60,{show:'num',digits:'8'}],['l','log',1060,260],
+    ['n','note',380,460,{t:'Funktion 4 – Wort als Zahl\nA = 01, B = 02 … aneinanderhängen: H(AMOR) = 01131518.\nh = h · 100 + Buchstabe. In der Hash-Ausgabe sind 8 Stellen eingestellt (für 4 Buchstaben). Klappt bis 5 Buchstaben.'}]],
+    [['r.0','m.0'],['m.0','a.0'],['t.0','a.1'],['a.0','r.0'],['r.0','h.0'],['r.0','l.0']],{hv:'r.0',goal:'1131518',login:1,y:640}),
+  w5:()=>ws(8,[['t','text',40,60,{text:'KATZE'}],['h','hash',380,60,{show:'num'}],
+    ['n','note',380,260,{t:'Funktion 5 – Länge\nH = Anzahl Buchstaben. H(KATZE) = 5.\nTesten Sie HUND, MUND, AMOR, ROMA. Finden Sie Doppelgänger. Rückwärts: Wort mit Hashwert 7.'}]],[['t.2','h.0']],{hv:'t.2',goal:7,y:460}),
+  w6:()=>ws(8,[['t','text',40,60,{text:'KATZE'}],['f','first',380,60],['h','hash',700,60,{show:'num'}],
+    ['n','note',380,260,{t:'Funktion 6 – Erster Buchstabe\nH = Wert des ersten Buchstabens. H(KATZE) = 11, weil K = 11.\nRückwärts: Wort mit Hashwert 26.'}]],[['t.0','f.0'],['f.0','h.0']],{hv:'f.0',goal:26,y:460}),
+  w7:()=>ws(16,[['t','text',40,60,{text:'KATZE'}],['p','pick',380,40,{mode:'first',n:'2'}],['r','reg',380,330],['mu','mul',700,330,null,{1:'26'}],['a','add',1020,60],['h','hash',1340,60,{show:'abc'}],['c','chain',1340,260],
+    ['n','note',40,330,{t:'Funktion 7 – Die ersten zwei Buchstaben\nH(KATZE) = KA.\nh = h · 26 + Buchstabe, aber nur bei den ersten zwei («aktiv» → «an»). Die Hash-Ausgabe zeigt h als Buchstaben.\nRückwärts: Wort mit Hashwert ZE.'}]],
+    [['t.0','p.0'],['r.0','mu.0'],['mu.0','a.0'],['p.0','a.1'],['a.0','r.0'],['p.1','r.1'],['r.0','h.0'],['p.0','c.0'],['p.1','c.1']],{hv:'r.0',goal:'ZE',y:620}),
+  w8:()=>ws(8,[['t','text',40,60,{text:'KATZE'}],['v','vowel',380,60],['h','hash',700,60,{show:'num'}],
+    ['n','note',380,260,{t:'Funktion 8 – Anzahl Vokale\nH = Anzahl der Vokale A, E, I, O, U. H(KATZE) = 2.\nRückwärts: Wort mit Hashwert 4.'}]],[['t.0','v.0'],['v.1','h.0']],{hv:'v.1',goal:4,y:460}),
+  w9:()=>ws(8,[['t','text',40,60,{text:'KATZE'}],['a','add',380,60],['m','mod',700,60,null,{1:'100'}],['r','reg',380,300],['h','hash',1020,60,{show:'num'}],['l','log',1020,260],
+    ['n','note',40,330,{t:'Funktion 9 – Buchstabensumme\nH = (Summe aller Werte) mod 100. H(KATZE) = 63.\nRückwärts: Wort mit Hashwert 50.'}]],
+    [['t.0','a.0'],['r.0','a.1'],['a.0','m.0'],['m.0','r.0'],['r.0','h.0'],['r.0','l.0']],{hv:'r.0',goal:50,y:560}),
+  w10:()=>ws(16,[['t','text',40,60,{text:'HUND'}],['x','mul',380,60],['m','mod',700,60,null,{1:'100'}],['r','reg',380,300,{init:'1'}],['h','hash',1020,60,{show:'num'}],['l','log',1020,260],
+    ['n','note',40,330,{t:'Funktion 10 – Produkt\np = (p · Wert) mod 100, Start p = 1. H(HUND) = 8.\nRückwärts: Wort mit Hashwert 50.'}]],
+    [['t.0','x.0'],['r.0','x.1'],['x.0','m.0'],['m.0','r.0'],['r.0','h.0'],['r.0','l.0']],{hv:'r.0',goal:50,y:560}),
+  w11:()=>ws(8,[['t','text',40,60,{text:'AB'}],['x','xor',380,60],['r','reg',380,300],['h','hash',700,60,{show:'num'}],['p','probe',700,260,{bits:'5'}],['l','log',1060,60],
+    ['n','note',40,330,{t:'Funktion 11 – XOR\nAlle Buchstabenwerte nacheinander mit XOR verknüpfen. H(AB) = 3.\nDie Bit-Anzeige ist auf 5 Bit gestellt – wie in der Tabelle.\nRückwärts: Wort mit Hashwert 20.'}]],
+    [['t.0','x.0'],['r.0','x.1'],['x.0','r.0'],['r.0','h.0'],['r.0','p.0'],['r.0','l.0']],{hv:'r.0',goal:20,y:600}),
+  w12:()=>ws(16,[['t','text',40,60,{text:'KATZE'}],['p1','add',380,60,null,{1:'1'}],['x','mul',700,60],['a','add',1020,60],['m','mod',1340,60,null,{1:'100'}],['r','reg',1020,300],['h','hash',1660,60,{show:'num'}],['l','log',1660,260],
+    ['n','note',40,330,{t:'Funktion 12 – Wert mal Position\nH = (1 · Wert1 + 2 · Wert2 + …) mod 100. H(KATZE) = 2.\n«Index» zählt ab 0, darum + 1.\nRückwärts: Wort mit Hashwert 50.'}]],
+    [['t.1','p1.0'],['p1.0','x.0'],['t.0','x.1'],['x.0','a.0'],['r.0','a.1'],['a.0','m.0'],['m.0','r.0'],['r.0','h.0'],['r.0','l.0']],{hv:'r.0',goal:50,y:600}),
+  w13:()=>mix(10,45),
+  w14:()=>mix(3,50)
+};
+function ws(width,mods,cables,o){
+  if(o){
+    const y=o.y||700;
+    mods=[...mods,['dg','dupes',40,y],['rs','search',420,y,{target:String(o.goal)}],['vt','dist',800,y]];
+    cables=[...cables,[o.hv,'dg.0'],[o.hv,'rs.0'],[o.hv,'vt.0']];
+    if(o.login){mods.push(['lg','login',1180,y]);cables.push([o.hv,'lg.0'])}
+  }
+  return{...build(width,mods,cables),fmt:'dec'};
+}
+function mix(f,goal){
+  return ws(16,[['t','text',40,60,{text:'AB'}],['r','reg',40,330],['x','mul',380,300,null,{1:String(f)}],['a','add',700,60],['m','mod',1020,60,null,{1:'100'}],['h','hash',1340,60,{show:'num'}],['l','log',1340,260],
+    ['n','note',380,460,{t:`Funktion ${f===10?13:14} – Mischen mit Faktor ${f}${f===3?' (H2)':''}\nz = (z · ${f} + Wert) mod 100, Start z = 0. H(AB) = ${f===10?12:5}.\nRückwärts: Wort mit Hashwert ${goal}.`}]],
+    [['r.0','x.0'],['x.0','a.0'],['t.0','a.1'],['a.0','m.0'],['m.0','r.0'],['r.0','h.0'],['r.0','l.0']],{hv:'r.0',goal,y:640});
+}
+
+// ENGINE END
+if(typeof window==='undefined'||typeof document==='undefined'){globalThis.__HL={DEFS,simulate,PRESETS,mask,parseNum,toLetters,cleanText,makeHasher,wordsFor,WORDLIST};return}
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const board=$('#board'),world=$('#world'),wires=$('#wires');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY='hashlabor.v1',VKEY='hashlabor.variant';
+let st,view={x:20,y:20,z:1},sim=null,selMod=null,selCable=null,pending=null,tmpWire=null,playT=null,wireTags=true;
+const undoStack=[];
+
+/* ---------- Speichern ---------- */
+function snapshot(){return JSON.stringify({width:st.width,enc:st.enc,fmt:st.fmt,modules:st.modules,cables:st.cables,step:st.step})}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({...JSON.parse(snapshot()),view,wireTags}))}catch(e){}}
+function valid(o){return o&&[8,16,32].includes(o.width)&&Array.isArray(o.modules)&&Array.isArray(o.cables)&&o.modules.every(m=>DEFS[m.type]&&m.id)}
+function normalize(o){
+  const ids=new Set(o.modules.map(m=>m.id));
+  return{width:o.width,enc:o.enc==='ascii'?'ascii':'az',fmt:['dec','hex','bin','abc'].includes(o.fmt)?o.fmt:'dec',step:o.step|0,
+    modules:o.modules.map(m=>({id:String(m.id),type:m.type,x:+m.x||0,y:+m.y||0,params:{...(DEFS[m.type].params||{}),...(m.params||{})},defs:m.defs||{}})),
+    cables:o.cables.filter(c=>ids.has(c.from?.m)&&ids.has(c.to?.m)).map((c,i)=>({id:String(c.id||'c'+i),from:{m:c.from.m,p:c.from.p|0},to:{m:c.to.m,p:c.to.p|0}}))};
+}
+function pushUndo(){undoStack.push(snapshot());if(undoStack.length>60)undoStack.shift()}
+function undo(){const s=undoStack.pop();if(!s)return;st=normalize(JSON.parse(s));renderAll();run()}
+
+/* ---------- Formatierung ---------- */
+function fmt(v,f=st.fmt){
+  const W=st.width;v=v>>>0;
+  if(f==='hex')return'0x'+v.toString(16).toUpperCase().padStart(W/4,'0');
+  if(f==='bin')return v.toString(2).padStart(W,'0').replace(/(.{4})(?=.)/g,'$1 ');
+  if(f==='abc')return toLetters(v);
+  return String(v);
+}
+const hex=v=>fmt(v,'hex');
+function charOf(v){const l=letterOf(v>>>0,st.enc);return l?'«'+l+'»':'–'}
+function bitsHTML(v,cls,nb){
+  const W=nb||st.width,grp=W%4===0;let h=grp?'':'<span class="nib">';
+  for(let i=W-1;i>=0;i--){const b=(v>>>i)&1;if(grp&&i%4===3)h+='<span class="nib">';h+=`<i class="${b?cls||'on':''}">${b}</i>`;if(grp&&i%4===0)h+='</span>'}
+  return grp?h:h+'</span>';
+}
+const fmtA=v=>st.fmt==='bin'?String(v>>>0):fmt(v);
+const anaCache={},searchState={};
+const SKIP_P=new Set(['text','seed','from','show','digits','bits','t']);
+function circuitKey(){return JSON.stringify([st.width,st.enc,st.cables.map(c=>[c.from,c.to]),st.modules.map(m=>[m.id,m.type,m.defs,DEFS[m.type].g==='ana'?0:Object.entries(m.params).filter(([k])=>!SKIP_P.has(k))])])}
+function shortKey(){let h=5381;for(const c of circuitKey())h=(Math.imul(h,33)+c.charCodeAt(0))>>>0;return h.toString(36)}
+/* Hashwert so anzeigen wie die Hash-Ausgabe am selben Kabel (ABC oder Zahl) */
+function fmtH(m,v){
+  const c=sim.idx.inc[m.id+':0'];
+  if(c){const hm=st.cables.filter(x=>x.from.m===c.from.m&&x.from.p===c.from.p).map(x=>findMod(x.to.m)).find(x=>x&&x.type==='hash');
+    if(hm&&hm.params.show!=='num')return toLetters(v);}
+  return fmtA(v);
+}
+const loginSecret={};
+function loginWord(m){const t=traceText(m.id).text||st.modules.find(x=>x.type==='text')?.id;const tm=t&&findMod(t);return tm?cleanText(tm.params.text):''}
+function srcSel(p){return`<select data-k="src" aria-label="Wörter"><option value="both"${p.src==='both'?' selected':''}>Wortliste + eigene</option><option value="list"${p.src==='list'?' selected':''}>Wortliste (${WORDLIST.length})</option><option value="own"${p.src==='own'?' selected':''}>nur eigene Wörter</option></select>`}
+
+/* ---------- Module darstellen ---------- */
+function bodyHTML(m){
+  const p=m.params;
+  switch(m.type){
+    case'text':return`<div class="mbody"><label class="fld">Wort (nur A–Z)<input data-k="text" value="${esc(cleanText(p.text))}" spellcheck="false" autocapitalize="characters" autocomplete="off"></label><div class="bytes"></div></div>`;
+    case'letter':return`<div class="mbody"><label class="fld">Buchstabe (A–Z)<input data-k="ch" value="${esc(cleanText(p.ch)[0]||'')}" maxlength="1" spellcheck="false" autocapitalize="characters" autocomplete="off"></label><div class="num conv"></div></div>`;
+    case'rand':return`<div class="mbody"><label class="fld">Zahlen von 0 bis<input data-k="max" value="${esc(p.max)}" spellcheck="false"></label><button class="btn rrst">↻ Neu würfeln</button></div>`;
+    case'const':return`<div class="mbody"><label class="fld">Wert<input data-k="v" value="${esc(p.v)}" spellcheck="false"></label></div>`;
+    case'reg':return`<div class="mbody"><label class="fld">Startwert<input data-k="init" value="${esc(p.init)}" spellcheck="false"></label><div class="regv"></div></div>`;
+    case'probe':return`<div class="mbody"><div class="row2">Bits <select data-k="bits" aria-label="Anzahl Bits">${['auto','5','8','16','32'].map(b=>`<option value="${b}"${p.bits===b?' selected':''}>${b==='auto'?'alle':b}</option>`).join('')}</select></div><div class="bits"></div><div class="num"></div></div>`;
+    case'cmp':return`<div class="mbody"><div class="bits"></div><div class="num"></div></div>`;
+    case'salt':return`<div class="mbody"><label class="fld">Salt (A–Z)<input data-k="salt" value="${esc(cleanText(p.salt))}" spellcheck="false" autocapitalize="characters" autocomplete="off"></label><div class="row2"><select data-k="pos" aria-label="Position"><option value="front"${p.pos!=='back'?' selected':''}>vor das Wort</option><option value="back"${p.pos==='back'?' selected':''}>hinter das Wort</option></select></div></div>`;
+    case'last':return`<div class="mbody"><div class="num ls"></div></div>`;
+    case'cond':return`<div class="mbody"><div class="row2">Bedingung: A <select data-k="op" aria-label="Vergleich">${['=','≠','<','>','≤','≥'].map(o=>`<option${p.op===o?' selected':''}>${o}</option>`).join('')}</select> B</div></div>`;
+    case'dupes':return`<div class="mbody ana"><div class="row2">${srcSel(p)}</div><textarea data-k="words" aria-label="Eigene Wörter" placeholder="eigene Wörter, z. B. HUND MUND">${esc(p.words)}</textarea><div class="num ds"></div><div class="dl"></div></div>`;
+    case'dist':return`<div class="mbody ana"><div class="row2">${srcSel(p)}</div><textarea data-k="words" aria-label="Eigene Wörter" placeholder="eigene Wörter">${esc(p.words)}</textarea><svg class="hist" role="img" aria-label="Verteilung der Hashwerte"></svg><div class="num vs"></div></div>`;
+    case'search':return`<div class="mbody ana"><div class="row2">Zielwert <input data-k="target" value="${esc(p.target)}" spellcheck="false" aria-label="Zielwert"><button class="btn sgo">Suche starten</button></div><div class="num sz"></div><div class="dl sr"></div></div>`;
+    case'login':return`<div class="mbody ana"><div class="row2"><button class="btn lgset">Wort als Passwort speichern</button></div><div class="num lg-st"></div><label class="fld">Test-Login: anderes Wort ausprobieren<input data-k="tryw" value="${esc(p.tryw)}" autocomplete="off" spellcheck="false" autocapitalize="characters"></label><div class="okk lg-res"></div></div>`;
+    case'hash':return`<div class="mbody"><div class="row2"><div class="hs" role="group" aria-label="Darstellung"><button data-show="abc" aria-pressed="${p.show!=='num'}">ABC</button><button data-show="num" aria-pressed="${p.show==='num'}">123</button></div><label class="hd">Stellen <input data-k="digits" value="${esc(p.digits||'')}" placeholder="–" aria-label="Mindeststellen" style="width:5ch"></label></div><div class="big"></div><div class="num"></div></div>`;
+    case'vowel':return`<div class="mbody"><div class="num vw"></div></div>`;
+    case'pick':return`<div class="mbody"><div class="pickf"><select data-k="mode" aria-label="Auswahl"><option value="first"${p.mode==='first'?' selected':''}>erste</option><option value="last"${p.mode==='last'?' selected':''}>letzte</option><option value="range"${p.mode==='range'?' selected':''}>Position</option></select><input data-k="n" class="pk-n" value="${esc(p.n)}" aria-label="Anzahl Buchstaben"><span class="pk-r">von <input data-k="from" value="${esc(p.from)}" aria-label="von Position"> bis <input data-k="to" value="${esc(p.to)}" aria-label="bis Position"></span><span class="pk-l">Buchstaben</span></div><div class="bytes"></div><div class="num pkinfo"></div></div>`;
+    case'chain':return`<div class="mbody"><div class="chain" aria-live="polite"></div><div class="crow"><div class="num"></div><button class="btn crst" title="Kette leeren – neue Buchstaben werden ab jetzt angehängt">↺ Zurücksetzen</button></div></div>`;
+    case'first':return`<div class="mbody"><div class="num fs"></div></div>`;
+    case'log':return`<div class="mbody"><div class="logt"></div></div>`;
+    case'note':return`<div class="mbody"><textarea data-k="t" rows="${Math.min(10,Math.max(4,Math.ceil(String(p.t).length/30)+(String(p.t).match(/\n/g)||[]).length))}" aria-label="Notiz">${esc(p.t)}</textarea></div>`;
+  }
+  return'';
+}
+function modHTML(m){
+  const D=DEFS[m.type];
+  const ins=D.ins.map((p,i)=>`<div class="port in" data-m="${m.id}" data-p="${i}" data-d="in"><span class="dot"></span><span class="pn">${p[0]}</span>${p[1]!==null?`<input class="def" data-i="${i}" style="width:${String(m.defs?.[i]??p[1]).length+3}ch" value="${esc(m.defs?.[i]??p[1])}" aria-label="Fester Wert für ${p[0]}" spellcheck="false">`:''}<span class="pv"></span></div>`).join('');
+  const outs=D.outs.map((p,i)=>`<div class="port out" data-m="${m.id}" data-p="${i}" data-d="out"><span class="pv"></span><span class="pn">${p}</span><span class="dot"></span></div>`).join('');
+  const op=(D.g==='ar'||D.g==='bit')?`<div class="op">${D.sym}</div>`:'<div></div>';
+  return`<div class="mod g-${D.g}" data-id="${m.id}" data-type="${m.type}" style="left:${m.x}px;top:${m.y}px">
+    <div class="mh"><span class="ic">${D.sym}</span><span class="mt">${D.name}</span><button class="mx" aria-label="${D.name} entfernen" title="Entfernen">×</button></div>
+    ${ins||outs?`<div class="mp"><div class="col">${ins}</div>${op}<div class="col">${outs}</div></div>`:''}
+    ${bodyHTML(m)}<div class="merr" hidden></div></div>`;
+}
+function renderAll(){
+  $$('.mod').forEach(e=>e.remove());
+  world.insertAdjacentHTML('beforeend',st.modules.map(modHTML).join(''));
+  $('#empty').hidden=st.modules.length>0;
+  $$('#segW button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.w===st.width));
+  $$('#segF button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.f===st.fmt));
+  $$('#segE button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.e===st.enc));
+  markSel();
+}
+const modEl=id=>world.querySelector(`.mod[data-id="${CSS.escape(id)}"]`);
+const findMod=id=>st.modules.find(m=>m.id===id);
+
+/* ---------- Simulation & Anzeige ---------- */
+function run(){sim=simulate(st,st.step);st.step=sim.step;paint();save()}
+function paint(){
+  const W=st.width;
+  for(const m of st.modules){
+    const el=modEl(m.id);if(!el)continue;
+    const D=DEFS[m.type],o=sim.vals[m.id]||[],iv=sim.inVals[m.id]||[];
+    const er=sim.errs[m.id],me=el.querySelector('.merr');
+    el.classList.toggle('err',!!er);me.hidden=!er;me.textContent=er?'⚠ '+er:'';
+    el.querySelectorAll('.port.in').forEach(pe=>{const i=+pe.dataset.p,w=!!sim.idx.inc[m.id+':'+i];pe.classList.toggle('wired',w);pe.querySelector('.pv').textContent=w?fmt(iv[i]??0):(D.ins[i][1]===null&&D.ins[i][0]==='an'?'immer':'')});
+    el.querySelectorAll('.port.out').forEach(pe=>{pe.querySelector('.pv').textContent=fmt(o[+pe.dataset.p]??0)});
+    if(m.type==='text'){
+      const bs=sim.bytes[m.id]||[],T=sim.texts[m.id]||{full:'',saltLen:0,front:true},L=T.full.length;
+      const isS=i=>T.saltLen&&(T.front?i<T.saltLen:i>=L-T.saltLen);
+      const h=[...T.full].map((ch,i)=>`<span class="${i<sim.step?'done':''}${i===sim.step?' cur':''}${isS(i)?' salt':''}" title="${isS(i)?'Salt: ':''}${ch} = ${bs[i]}"><b>${ch}</b><i>${bs[i]}</i></span>`).join('');
+      el.querySelector('.bytes').innerHTML=h||'<span><i>leer</i></span>';
+    }else if(m.type==='letter'){
+      const v=o[0]??0;el.querySelector('.conv').innerHTML=v?`${charOf(v)} → <b>${v}</b> → ${fmt(v,'bin')}`:'Geben Sie einen Grossbuchstaben ein.';
+    }else if(m.type==='pick'){
+      const P=sim.pick[m.id]||{},bs=P.text?sim.bytes[P.text]:[],rg=m.params.mode==='range';
+      el.querySelector('.pk-n').hidden=rg;el.querySelector('.pk-r').hidden=!rg;el.querySelector('.pk-l').hidden=rg;
+      const sel=bs.map((_,i)=>pickActive(m,i,bs.length));
+      el.querySelector('.bytes').innerHTML=bs.length?bs.map((b,i)=>`<span class="${sel[i]?'pk':''}${i===sim.step?' cur':''}${i<sim.step?' done':''}"><b>${esc(letterOf(b,st.enc))}</b><i>${sel[i]?'✓':'·'}</i></span>`).join(''):'<span><i>kein Text</i></span>';
+      el.querySelector('.pkinfo').innerHTML=!P.text?'Verbinden Sie «Zeichen» mit einem Text-Eingang.':`ausgewählt: <b>${sel.filter(Boolean).length}</b> von ${bs.length} Buchstaben<br>jetzt ${o[1]?'<b>aktiv</b>':'nicht aktiv'}`;
+    }else if(m.type==='chain'){
+      const L=sim.logs[m.id]||[],src=traceText(m.id),direct=src.direct||!src.text;let txt='';
+      if(sim.step===0||(m.params.from|0)>sim.step)m.params.from=Math.min(m.params.from|0,sim.step);
+      const from=m.params.from|0;
+      for(let i=from;i<sim.step;i++){const e=L[i]?.[1];if(!e)continue;const v=direct?L[i]?.[0]:L[i+1]?.[0];txt+=chainLetter(v??0)}
+      el.querySelector('.chain').textContent=txt;
+      el.querySelector('.num').innerHTML=txt?`Länge <b>${txt.length}</b> · Wert mod 26 → Buchstabe`:'leer – mit jedem Takt kommt ein Buchstabe dazu';
+      el.querySelector('.crst').disabled=!txt;
+    }else if(m.type==='vowel'){
+      const a=iv[0]??0;el.querySelector('.vw').innerHTML=`${charOf(a)} ist ${o[0]?'<b>ein Vokal</b>':'kein Vokal'}<br>Vokale bisher: <b>${o[1]??0}</b>`;
+    }else if(m.type==='last'){
+      const f=o[0]??0;el.querySelector('.ls').innerHTML=f?`zuletzt gesehen: <b>${charOf(f)}</b> = ${f}`+(sim.n&&sim.step<sim.n?' (noch nicht fertig)':''):'wartet auf Buchstaben';
+    }else if(m.type==='dupes'||m.type==='dist'||m.type==='login'||m.type==='search'){
+      paintAna(m,el);
+    }else if(m.type==='first'){
+      const f=o[0]??0;el.querySelector('.fs').innerHTML=f?`gemerkt: <b>${charOf(f)}</b> = ${f}`:'wartet auf den ersten Buchstaben';
+    }else if(m.type==='reg'){
+      const en=!sim.idx.inc[m.id+':1']||iv[1],nx=sim.idx.inc[m.id+':0']&&en?iv[0]:sim.regs[m.id];
+      el.querySelector('.regv').innerHTML=`Inhalt <b>${fmt(sim.regs[m.id]??0)}</b><br>nach Takt → ${fmt(nx??0)}`;
+    }else if(m.type==='probe'){
+      const nb=m.params.bits==='auto'||!m.params.bits?W:Math.min(+m.params.bits,32),v=iv[0]??0,b=el.querySelector('.bits');b.style.setProperty('--nibs',nb%4?1:Math.min(nb/4,4));b.innerHTML=bitsHTML(v,'',nb);
+      el.querySelector('.num').innerHTML=`dez <b>${v>>>0}</b> · hex <b>${hex(v)}</b> · ${charOf(v)}`;
+    }else if(m.type==='cmp'){
+      const a=iv[0]??0,c=iv[1]??0,d=(a^c)>>>0,n=o[0]??0,b=el.querySelector('.bits');
+      b.style.setProperty('--nibs',Math.min(W/4,4));b.innerHTML=bitsHTML(d,'diff');
+      el.querySelector('.num').innerHTML=`<b>${n}</b> von ${W} Bits verschieden (${Math.round(n/W*100)} %)<br>rot = verschiedenes Bit`;
+    }else if(m.type==='hash'){
+      const v=iv[0]??0,abc=m.params.show!=='num',numF=st.fmt==='abc'||st.fmt==='bin'?'dec':st.fmt;
+      const dg=parseInt(m.params.digits)||0;el.querySelector('.hd').hidden=abc;
+      el.querySelector('.big').textContent=abc?toLetters(v):(numF==='dec'&&dg?String(v>>>0).padStart(Math.min(dg,12),'0'):fmt(v,numF));
+      el.querySelector('.num').innerHTML=(abc?`als Zahl <b>${v>>>0}</b>`:`als Buchstaben <b>${toLetters(v)}</b>`)+` · ${W} Bit`+(sim.n&&sim.step<sim.n?' · <i>noch nicht fertig</i>':'');
+    }else if(m.type==='log'){
+      const L=(sim.logs[m.id]||[]).map(x=>x[0]),src=traceText(m.id),bs=src.text?sim.bytes[src.text]:[],last=Math.min(sim.step,bs.length);
+      let rows='',head='Wert';
+      if(src.direct){
+        for(let i=0;i<bs.length&&i<=sim.step;i++)rows+=`<tr class="${i===sim.step?'cur':''}"><td>${i+1}</td><td>${esc(charOf(bs[i]))}</td><td>${fmt(L[i]??0)}</td></tr>`;
+      }else{
+        head='Wert danach';
+        rows=`<tr class="${sim.step===0?'cur':''}"><td>Start</td><td>–</td><td>${fmt(L[0]??0)}</td></tr>`;
+        for(let i=0;i<last;i++)rows+=`<tr class="${i===sim.step-1?'cur':''}"><td>${i+1}</td><td>${esc(charOf(bs[i]))}</td><td>${fmt(L[i+1]??0)}</td></tr>`;
+      }
+      if(!src.text)rows=L.map((v,i)=>`<tr class="${i===L.length-1?'cur':''}"><td>${i}</td><td>–</td><td>${fmt(v)}</td></tr>`).join('');
+      const lt=el.querySelector('.logt');lt.innerHTML=`<table><thead><tr><th>Takt</th><th>Buchstabe</th><th>${head}</th></tr></thead><tbody>${rows}</tbody></table>`;lt.scrollTop=lt.scrollHeight;
+    }
+  }
+  drawWires();status();
+}
+/* ---------- Analyse-Module ---------- */
+function srcLabel(m){const c=sim.idx.inc[m.id+':0'];if(!c)return'';const sm=findMod(c.from.m);return sm?`prüft den Wert von <b>${esc(DEFS[sm.type].name)} → ${esc(DEFS[sm.type].outs[c.from.p]||'')}</b>`:''}
+function paintAna(m,el){
+  const wired=!!sim.idx.inc[m.id+':0'],p=m.params;
+  let sl=el.querySelector('.srcl');if(!sl){sl=document.createElement('div');sl.className='num srcl';el.querySelector('.mbody').prepend(sl)}
+  sl.innerHTML=srcLabel(m);sl.hidden=!wired;
+  if(m.type==='search'){paintSearch(m,el,wired);return}
+  if(!wired){const msg='Verbinden Sie «Hash» mit dem Wert, der am Ende der Hash ist (meist das Register).';
+    if(m.type==='login'){el.querySelector('.lg-res').className='okk wait lg-res';el.querySelector('.lg-res').textContent=msg;el.querySelector('.lg-st').textContent=''}
+    else el.querySelector(m.type==='dupes'?'.ds':'.vs').textContent=msg;
+    if(m.type==='dupes')el.querySelector('.dl').innerHTML='';if(m.type==='dist')el.querySelector('.hist').innerHTML='';
+    return}
+  if(m.type==='login'){
+    const sv=+p.stored>>>0,stale=p.stored!==''&&p.skey!==shortKey();
+    const r=el.querySelector('.lg-res'),pw=loginWord(m),w=cleanText(p.tryw);
+    el.querySelector('.lgset').disabled=!pw;el.querySelector('.lgset').textContent=pw?`Hash von ${pw} speichern`:'Wort im Text-Eingang eingeben';
+    const sec=loginSecret[m.id];
+    el.querySelector('.lg-st').innerHTML=p.stored===''?'Gespeicherter Hash: –':`Passwort: <b>${sec?esc(sec):'?'}</b> <i>(wird aber nicht gespeichert)</i><br>Gespeicherter Hash: <b class="big" style="font-size:20px;padding:0">${esc(fmtH(m,sv))}</b>`;
+    if(p.stored===''){r.className='okk wait lg-res';r.textContent=pw?`Speichern Sie zuerst den Hash von ${pw}.`:'Geben Sie im Text-Eingang ein Wort ein.';return}
+    if(stale){r.className='okk wait lg-res';r.textContent='⚠ Die Schaltung wurde geändert. Der gespeicherte Hash passt nicht mehr – speichern Sie das Passwort neu.';return}
+    if(!w){r.className='okk wait lg-res';r.textContent='Tippen Sie bei «Test-Login» ein Wort ein.';return}
+    const key=circuitKey()+'|'+w+'|'+p.stored;let h;
+    if(anaCache[m.id]?.key===key)h=anaCache[m.id].h;else{h=makeHasher(st,m.id)(w);anaCache[m.id]={key,h}}
+    const ok=h===sv;r.className='okk lg-res '+(ok?'ok':'no');
+    r.textContent=ok?`✓ Login erfolgreich – H(${w}) = ${fmtH(m,h)}`+(sec&&sec!==w?` · Achtung: ${w} ist nicht das festgelegte Passwort, sondern ein Doppelgänger!`:'')
+      :`✗ Falsches Passwort – H(${w}) = ${fmtH(m,h)} ≠ ${fmtH(m,sv)}`+(sec&&sec===w?' · Das richtige Passwort wird abgelehnt!':'');
+    return}
+  const words=wordsFor(p),key=circuitKey()+'|'+p.src+'|'+p.words;
+  let res=anaCache[m.id];
+  if(res?.key!==key){const H=makeHasher(st,m.id),map=new Map();for(const w of words){const h=H(w);if(!map.has(h))map.set(h,[]);map.get(h).push(w)}res=anaCache[m.id]={key,map,n:words.length}}
+  const map=res.map,curW=cleanText(st.modules.find(x=>x.type==='text')?.params.text);
+  if(res.curW!==curW){res.curW=curW;res.curH=curW?makeHasher(st,m.id)(curW):-1}
+  const cur=res.curH;
+  if(m.type==='dupes'){
+    const g=[...map.entries()].filter(([,ws])=>ws.length>1).sort((a,b)=>b[1].length-a[1].length||a[0]-b[0]);
+    const inD=g.reduce((s,x)=>s+x[1].length,0);
+    el.querySelector('.ds').innerHTML=`<b>${res.n}</b> Wörter → <b>${map.size}</b> verschiedene Hashwerte<br><b>${g.length}</b> Doppelgänger-Gruppen · <b>${inD}</b> Wörter haben einen Doppelgänger`;
+    el.querySelector('.dl').innerHTML=g.length?g.slice(0,60).map(([h,ws])=>`<div class="${ws.includes(curW)?'me':''}"><b>${esc(fmtA(h))}</b>${ws.slice(0,24).map(esc).join(', ')}${ws.length>24?` … (+${ws.length-24})`:''}</div>`).join(''):'<div>Keine Doppelgänger gefunden.</div>';
+  }else{
+    const vals=[...map.keys()],mx=Math.max(1,...vals),bins=mx<128?mx+1:64,bw=Math.ceil((mx+1)/bins),cnt=new Array(Math.ceil((mx+1)/bw)).fill(0);
+    for(const[h,ws]of map)cnt[Math.floor(h/bw)]+=ws.length;
+    const top=[...map.entries()].sort((a,b)=>b[1].length-a[1].length)[0],cm=Math.max(...cnt);
+    const svg=el.querySelector('.hist'),Wd=svg.clientWidth||300,Hh=120,pad=16,bwPx=(Wd-4)/cnt.length;
+    const ci=cur>=0?Math.floor(cur/bw):-1;
+    svg.setAttribute('viewBox',`0 0 ${Wd} ${Hh}`);
+    svg.innerHTML=cnt.map((c,i)=>c?`<rect class="${i===ci?'hi':'b'}" x="${2+i*bwPx}" y="${Hh-pad-(Hh-pad-6)*c/cm}" width="${Math.max(1,bwPx-1)}" height="${(Hh-pad-6)*c/cm}"><title>${bw>1?`${i*bw}–${i*bw+bw-1}`:i}: ${c}</title></rect>`:'').join('')+
+      `<line x1="0" x2="${Wd}" y1="${Hh-pad}" y2="${Hh-pad}"/><text x="2" y="${Hh-3}">0</text><text x="${Wd-2}" y="${Hh-3}" text-anchor="end">${mx}</text>`;
+    el.querySelector('.vs').innerHTML=`<b>${res.n}</b> Wörter → <b>${map.size}</b> verschiedene Werte (0 bis ${mx})<br>häufigster Wert <b>${esc(fmtA(top[0]))}</b>: ${top[1].length}-mal`+(curW?`<br>gelb = Hash von ${esc(curW)} (${esc(fmtA(cur))})`:'');
+  }
+}
+function paintSearch(m,el,wired){
+  const S=searchState[m.id],key=circuitKey()+'|'+m.params.target,btn=el.querySelector('.sgo'),tv=targetVal(m.params.target);
+  btn.disabled=!wired;
+  if(!wired){el.querySelector('.sz').textContent='Verbinden Sie «Hash» mit dem Wert, der am Ende der Hash ist.';el.querySelector('.sr').innerHTML='';return}
+  if(S&&S.key!==key&&!S.running)delete searchState[m.id];
+  const s=searchState[m.id];
+  btn.textContent=s?.running?'Stopp':'Suche starten';
+  const tl=`Ziel <b>${esc(fmtA(tv))}</b>`+(/^[A-Z]+$/i.test(String(m.params.target).trim())?` (= ${tv})`:'');
+  if(!s){el.querySelector('.sz').innerHTML=tl+' · noch nicht gesucht';el.querySelector('.sr').innerHTML='';return}
+  el.querySelector('.sz').innerHTML=`${tl} · Versuche: <b>${s.tries.toLocaleString('de-CH')}</b>`+(s.running?' · sucht …':s.hits.length?'':' · kein Treffer');
+  el.querySelector('.sr').innerHTML=s.hits.map(h=>`<div><b>${esc(h.w)}</b>nach ${h.t.toLocaleString('de-CH')} Versuchen</div>`).join('');
+}
+function targetVal(t){t=String(t??'').trim();return mask(/^[A-Za-z]+$/.test(t)?parseNum(cleanText(t)):parseNum(t),st.width)}
+function startSearch(m){
+  const S=searchState[m.id];if(S?.running){S.running=false;run();return}
+  const tv=targetVal(m.params.target);
+  const H=makeHasher(st,m.id),list=WORDLIST,MAX=100000;
+  const s=searchState[m.id]={key:circuitKey()+'|'+m.params.target,running:true,tries:0,hits:[]};
+  let i=0;const seen=new Set();
+  const step=()=>{
+    if(!s.running||searchState[m.id]!==s)return;
+    const end=performance.now()+30;
+    while(performance.now()<end&&s.tries<MAX&&s.hits.length<5){
+      const w=i<list.length?list[i]:toLetters(i-list.length+1);i++;
+      if(seen.has(w))continue;seen.add(w);s.tries++;
+      if(H(w)===tv)s.hits.push({w,t:s.tries});
+    }
+    if(s.tries>=MAX||s.hits.length>=5)s.running=false;
+    const el=modEl(m.id);if(el)paintSearch(m,el,true);
+    if(s.running)setTimeout(step,0);
+  };
+  step();
+}
+/* Woher kommt der Wert am Protokoll-Eingang? direct = hängt direkt (ohne Register) vom aktuellen Buchstaben ab */
+function traceText(mid){
+  let text=null,direct=false;const seen=new Set();
+  const walk=(id,viaReg)=>{
+    const key=id+':'+viaReg;if(seen.has(key))return;seen.add(key);
+    const m=findMod(id);if(!m)return;
+    if(m.type==='text'){if(!text||!viaReg)text=m.id;if(!viaReg)direct=true;return}
+    const D=DEFS[m.type],r=viaReg||!!D.reg;
+    D.ins.forEach((_,i)=>{const c=sim.idx.inc[id+':'+i];if(c)walk(c.from.m,r)});
+  };
+  const c=sim.idx.inc[mid+':0'];if(c)walk(c.from.m,false);
+  return{text,direct};
+}
+function status(){
+  const n=sim.n,s=sim.step,el=$('#status');
+  $('#progBar').style.width=(n?s/n*100:0)+'%';
+  if(!n){el.innerHTML='Kein Text vorhanden: Fügen Sie einen <b>Text-Eingang</b> hinzu, damit der Taktgeber Zeichen durchschicken kann.';return}
+  const first=st.modules.find(x=>x.type==='text'&&sim.bytes[x.id].length>s);
+  if(s<n){const b=first?sim.bytes[first.id][s]:0;el.innerHTML=`Takt <b>${s+1}</b> von ${n} · aktueller Buchstabe ${esc(charOf(b))} = <code>${b}</code> = <code>${b.toString(2).padStart(st.enc==='ascii'?8:5,'0')}</code> · «Takt ▶» übernimmt ihn ins Register`}
+  else el.innerHTML=`<b>Fertig</b> – alle ${n} Buchstaben verarbeitet. Im Register steht jetzt der Hash.`;
+  const cs=$('#cStep'),fin=n>0&&s>=n;cs.disabled=!n;cs.textContent=fin?'Takt ↺':'Takt ▶';
+  cs.title=fin?'Fertig – zurück zum 1. Schritt (→)':'Nächster Takt (→)';$('#cBack').disabled=s<=0;
+}
+
+/* ---------- Kabel ---------- */
+function portPos(mid,p,dir){
+  const el=world.querySelector(`.mod[data-id="${CSS.escape(mid)}"] .port[data-d="${dir}"][data-p="${p}"] .dot`);if(!el)return null;
+  const r=el.getBoundingClientRect(),b=board.getBoundingClientRect();
+  return{x:(r.left+r.width/2-b.left-view.x)/view.z,y:(r.top+r.height/2-b.top-view.y)/view.z};
+}
+function bez(a,b){const dx=Math.max(40,Math.abs(b.x-a.x)*.5);return[a,{x:a.x+dx,y:a.y},{x:b.x-dx,y:b.y},b]}
+const dOf=P=>`M${P[0].x} ${P[0].y} C${P[1].x} ${P[1].y} ${P[2].x} ${P[2].y} ${P[3].x} ${P[3].y}`;
+const mid=P=>({x:(P[0].x+3*P[1].x+3*P[2].x+P[3].x)/8,y:(P[0].y+3*P[1].y+3*P[2].y+P[3].y)/8});
+function drawWires(){
+  let h='',tags='';
+  for(const c of st.cables){
+    const a=portPos(c.from.m,c.from.p,'out'),b=portPos(c.to.m,c.to.p,'in');if(!a||!b)continue;
+    const P=bez(a,b),d=dOf(P),v=sim?.vals[c.from.m]?.[c.from.p]??0,M=mid(P),t=fmt(v);
+    h+=`<g class="wire${selCable===c.id?' sel':''}" data-c="${c.id}"><path class="hit" d="${d}"><title>${t}</title></path><path class="ln" d="${d}"/></g>`;
+    if(selCable===c.id)tags+=`<g class="wdel" data-c="${c.id}" transform="translate(${M.x} ${M.y})"><circle r="12"/><text>×</text></g>`;
+    else if(wireTags){const w=t.length*7+12;tags+=`<g class="tag" transform="translate(${M.x} ${M.y})"><rect x="${-w/2}" y="-10" width="${w}" height="20" rx="4"/><text>${t}</text></g>`}
+  }
+  if(tmpWire){const P=tmpWire.dir==='out'?bez(tmpWire.a,tmpWire.b):bez(tmpWire.b,tmpWire.a);h+=`<path class="tmp" d="${dOf(P)}"/>`}
+  wires.innerHTML=h+tags;
+}
+function connect(out,inp){
+  pushUndo();
+  st.cables=st.cables.filter(c=>!(c.to.m===inp.m&&c.to.p===inp.p));
+  st.cables.push({id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),from:{m:out.m,p:out.p},to:{m:inp.m,p:inp.p}});
+  run();
+}
+function removeCable(id){pushUndo();st.cables=st.cables.filter(c=>c.id!==id);selCable=null;run()}
+function removeModule(id){
+  pushUndo();st.modules=st.modules.filter(m=>m.id!==id);st.cables=st.cables.filter(c=>c.from.m!==id&&c.to.m!==id);
+  if(selMod===id)selMod=null;modEl(id)?.remove();$('#empty').hidden=st.modules.length>0;run();showInfo();
+}
+function setPending(p){
+  pending=p;$$('.port.pending').forEach(e=>e.classList.remove('pending'));
+  board.classList.toggle('connecting',!!p);
+  if(p)world.querySelector(`.mod[data-id="${CSS.escape(p.m)}"] .port[data-d="${p.dir}"][data-p="${p.p}"]`)?.classList.add('pending');
+}
+
+/* ---------- Ansicht ---------- */
+function applyView(){
+  world.style.transform=`translate(${view.x}px,${view.y}px) scale(${view.z})`;
+  const g=20*view.z,G=100*view.z;
+  board.style.backgroundSize=`${G}px ${G}px,${G}px ${G}px,${g}px ${g}px,${g}px ${g}px`;
+  board.style.backgroundPosition=`${view.x}px ${view.y}px`;
+  $('#zLbl').textContent=Math.round(view.z*100)+'%';
+}
+function zoomAt(cx,cy,f){
+  const b=board.getBoundingClientRect(),z2=Math.min(2,Math.max(.3,view.z*f));
+  const wx=(cx-b.left-view.x)/view.z,wy=(cy-b.top-view.y)/view.z;
+  view.x=cx-b.left-wx*z2;view.y=cy-b.top-wy*z2;view.z=z2;applyView();save();
+}
+/* Analyse-Module unter alle anderen Module schieben, damit nichts überlappt */
+function layoutAna(){
+  let bottom=0;
+  for(const m of st.modules){if(DEFS[m.type].g==='ana')continue;const e=modEl(m.id);if(e)bottom=Math.max(bottom,m.y+e.offsetHeight)}
+  const y=Math.ceil((bottom+50)/10)*10;
+  for(const m of st.modules)if(DEFS[m.type].g==='ana'&&m.y<y){m.y=y;const e=modEl(m.id);if(e)e.style.top=y+'px'}
+}
+function fit(){
+  if(!st.modules.length){view={x:20,y:20,z:1};applyView();return}
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const m of st.modules){const e=modEl(m.id);x0=Math.min(x0,m.x);y0=Math.min(y0,m.y);x1=Math.max(x1,m.x+(e?.offsetWidth||200));y1=Math.max(y1,m.y+(e?.offsetHeight||120))}
+  const bw=board.clientWidth,bh=board.clientHeight,z=Math.min(1.1,Math.max(.3,Math.min((bw-60)/(x1-x0+40),(bh-60)/(y1-y0+40))));
+  view={z,x:(bw-(x1-x0)*z)/2-x0*z,y:(bh-(y1-y0)*z)/2-y0*z};applyView();save();
+}
+function toWorld(cx,cy){const b=board.getBoundingClientRect();return{x:(cx-b.left-view.x)/view.z,y:(cy-b.top-view.y)/view.z}}
+
+/* ---------- Zeiger-Interaktion ---------- */
+function track(e,move,up){
+  const id=e.pointerId;
+  const mm=ev=>{if(ev.pointerId===id)move(ev)};
+  const uu=ev=>{if(ev.pointerId!==id)return;removeEventListener('pointermove',mm);removeEventListener('pointerup',uu);removeEventListener('pointercancel',uu);up(ev)};
+  addEventListener('pointermove',mm);addEventListener('pointerup',uu);addEventListener('pointercancel',uu);
+}
+function select(id){selMod=id;selCable=null;markSel();showInfo()}
+function markSel(){$$('.mod').forEach(e=>e.classList.toggle('sel',e.dataset.id===selMod))}
+function showInfo(type){
+  const t=type||(selMod&&findMod(selMod)?.type);const box=$('#info');
+  if(!t){box.innerHTML='<b>So geht\'s</b>Module anklicken oder auf die Arbeitsfläche ziehen. Kabel von einem Ausgang (Punkt rechts) zu einem Eingang (Punkt links) ziehen.';return}
+  const D=DEFS[t];box.innerHTML=`<b>${D.name}</b>${D.desc}`;
+}
+board.addEventListener('pointerdown',e=>{
+  const t=e.target;
+  if(t.closest('input,textarea,button,select,.logt'))return;
+  const wd=t.closest('.wdel');if(wd){e.preventDefault();removeCable(wd.dataset.c);return}
+  const port=t.closest('.port');if(port){e.preventDefault();portDown(e,port);return}
+  const mod=t.closest('.mod');if(mod){e.preventDefault();modDown(e,mod);return}
+  const w=t.closest('.wire');if(w){selCable=w.dataset.c;selMod=null;markSel();drawWires();return}
+  setPending(null);selMod=null;selCable=null;markSel();showInfo();drawWires();
+  const sx=e.clientX,sy=e.clientY,vx=view.x,vy=view.y;board.classList.add('panning');
+  track(e,ev=>{view.x=vx+ev.clientX-sx;view.y=vy+ev.clientY-sy;applyView()},()=>{board.classList.remove('panning');save()});
+});
+function modDown(e,el){
+  const m=findMod(el.dataset.id);select(m.id);world.appendChild(el);
+  const sx=e.clientX,sy=e.clientY,ox=m.x,oy=m.y;let moved=false,pushed=false;
+  track(e,ev=>{
+    const dx=(ev.clientX-sx)/view.z,dy=(ev.clientY-sy)/view.z;
+    if(!moved&&Math.hypot(dx,dy)<3)return;
+    if(!pushed){pushUndo();pushed=true}moved=true;
+    m.x=Math.round(ox+dx);m.y=Math.round(oy+dy);el.style.left=m.x+'px';el.style.top=m.y+'px';drawWires();
+  },()=>{if(moved){m.x=Math.round(m.x/10)*10;m.y=Math.round(m.y/10)*10;el.style.left=m.x+'px';el.style.top=m.y+'px';drawWires();save()}});
+}
+function portDown(e,pe){
+  const me={m:pe.dataset.m,p:+pe.dataset.p,dir:pe.dataset.d};
+  if(pending){
+    if(pending.dir!==me.dir){const o=pending.dir==='out'?pending:me,i=pending.dir==='out'?me:pending;setPending(null);connect(o,i);return}
+    setPending(null);
+  }
+  let anchor=me,detached=null;
+  if(me.dir==='in'){const c=st.cables.find(c=>c.to.m===me.m&&c.to.p===me.p);if(c){detached=c;anchor={...c.from,dir:'out'}}}
+  const a=portPos(anchor.m,anchor.p,anchor.dir),sx=e.clientX,sy=e.clientY;let moved=false;
+  track(e,ev=>{
+    if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<5)return;
+    if(!moved){moved=true;if(detached){pushUndo();st.cables=st.cables.filter(c=>c!==detached)}}
+    tmpWire={a,b:toWorld(ev.clientX,ev.clientY),dir:anchor.dir};board.classList.add('connecting');drawWires();
+  },ev=>{
+    tmpWire=null;board.classList.remove('connecting');
+    if(!moved){setPending(me);return}
+    const tp=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.port');
+    if(tp&&tp.dataset.d!==anchor.dir){
+      const other={m:tp.dataset.m,p:+tp.dataset.p};
+      if(detached)undoStack.pop();
+      anchor.dir==='out'?connect(anchor,other):connect(other,anchor);
+    }else run();
+  });
+}
+function saveLogin(el){
+  const m=findMod(el.dataset.id),w=loginWord(m);
+  if(!w||!sim.idx.inc[m.id+':0'])return;
+  pushUndo();m.params.stored=String(makeHasher(st,m.id)(w));m.params.skey=shortKey();loginSecret[m.id]=w;run();
+  const f=el.querySelector('[data-k=tryw]');f.focus();f.select();
+}
+board.addEventListener('click',e=>{
+  const x=e.target.closest('.mx');if(x){removeModule(x.closest('.mod').dataset.id);return}
+  if(e.target.closest('.rrst')){reseed();run();return}
+  const sg=e.target.closest('.sgo');if(sg){startSearch(findMod(sg.closest('.mod').dataset.id));return}
+  const ls=e.target.closest('.lgset');if(ls){saveLogin(ls.closest('.mod'));return}
+  const cr=e.target.closest('.crst');
+  if(cr){const m=findMod(cr.closest('.mod').dataset.id);pushUndo();m.params.from=sim.step;run();return}
+  const hb=e.target.closest('.hs button');
+  if(hb){const el=hb.closest('.mod'),m=findMod(el.dataset.id);pushUndo();m.params.show=hb.dataset.show;el.querySelectorAll('.hs button').forEach(b=>b.setAttribute('aria-pressed',b===hb));run()}
+});
+board.addEventListener('wheel',e=>{
+  if(e.target.closest('.logt,textarea'))return;
+  e.preventDefault();
+  if(e.ctrlKey||e.metaKey)zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.0045));
+  else{view.x-=e.deltaX;view.y-=e.deltaY;applyView();clearTimeout(board._t);board._t=setTimeout(save,300)}
+},{passive:false});
+
+/* Eingaben in Modulen */
+let editing=false;
+world.addEventListener('focusin',e=>{if(e.target.matches('input,textarea'))editing=false});
+world.addEventListener('input',e=>{
+  const t=e.target,el=t.closest('.mod');if(!el)return;const m=findMod(el.dataset.id);
+  if(t.classList.contains('lg-pw')){const c=cleanText(t.value);if(c!==t.value)t.value=c;return}
+  if(!editing){pushUndo();editing=true}
+  if(t.dataset.k==='mode'){m.params.mode=t.value}
+  else if(t.dataset.k==='tryw'||t.dataset.k==='salt'){const c=cleanText(t.value);if(c!==t.value)t.value=c;m.params[t.dataset.k]=c}
+  else if(t.dataset.k==='text'||t.dataset.k==='ch'){let c=cleanText(t.value);if(t.dataset.k==='ch')c=c.slice(-1);if(c!==t.value)t.value=c;m.params[t.dataset.k]=c}
+  else if(t.dataset.k)m.params[t.dataset.k]=t.value;
+  else if(t.classList.contains('def')){m.defs[t.dataset.i]=t.value;t.style.width=t.value.length+3+'ch'}
+  if(m.type==='note'){save();return}
+  if(m.type==='text')reseed();
+  run();
+});
+
+/* ---------- Regal ---------- */
+function buildPalette(){
+  $('#palette').innerHTML=GROUPS.map(([g,label])=>`<h2>${label}</h2><div class="pal">`+
+    Object.entries(DEFS).filter(([,D])=>D.g===g).map(([k,D])=>`<button class="pi g-${g}" data-type="${k}"><span class="ic">${D.sym}</span>${D.name}</button>`).join('')+'</div>').join('');
+}
+let suppressClick=false;
+function freeSpot(x,y){
+  const boxes=st.modules.map(m=>{const e=modEl(m.id);return[m.x,m.y,m.x+(e?.offsetWidth||220),m.y+(e?.offsetHeight||140)]});
+  const hit=(px,py)=>boxes.some(b=>px<b[2]+20&&px+240>b[0]-20&&py<b[3]+20&&py+150>b[1]-20);
+  for(let r=0;r<12;r++)for(let k=0;k<=r*2;k++){
+    const cand=[[x+r*90,y+(k-r)*60],[x-r*90,y+(k-r)*60]];
+    for(const[cx,cy]of cand)if(!hit(cx,cy))return{x:cx,y:cy};
+  }
+  return{x,y};
+}
+function addModule(type,x,y){
+  pushUndo();
+  const D=DEFS[type],m={id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),type,x:Math.round(x/10)*10,y:Math.round(y/10)*10,params:JSON.parse(JSON.stringify(D.params||{})),defs:{}};
+  st.modules.push(m);world.insertAdjacentHTML('beforeend',modHTML(m));$('#empty').hidden=true;select(m.id);run();
+  $('#main').classList.remove('drawer');
+}
+$('#palette').addEventListener('pointerover',e=>{const b=e.target.closest('.pi');if(b)showInfo(b.dataset.type)});
+$('#palette').addEventListener('focusin',e=>{const b=e.target.closest('.pi');if(b)showInfo(b.dataset.type)});
+$('#palette').addEventListener('pointerleave',()=>showInfo());
+$('#palette').addEventListener('click',e=>{
+  const b=e.target.closest('.pi');if(!b)return;if(suppressClick){suppressClick=false;return}
+  const c=toWorld(board.getBoundingClientRect().left+board.clientWidth/2,board.getBoundingClientRect().top+board.clientHeight/2);
+  const f=freeSpot(c.x-110,c.y-70);addModule(b.dataset.type,f.x,f.y);
+});
+$('#palette').addEventListener('pointerdown',e=>{
+  const b=e.target.closest('.pi');if(!b||e.button>0)return;
+  const sx=e.clientX,sy=e.clientY;let ghost=null;
+  track(e,ev=>{
+    if(!ghost&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<6)return;
+    if(!ghost){ghost=b.cloneNode(true);Object.assign(ghost.style,{position:'fixed',pointerEvents:'none',zIndex:50,width:b.offsetWidth+'px',opacity:.9,boxShadow:'var(--shadow)'});document.body.appendChild(ghost);$('#main').classList.remove('drawer')}
+    ghost.style.left=ev.clientX-20+'px';ghost.style.top=ev.clientY-18+'px';
+  },ev=>{
+    if(!ghost)return;ghost.remove();suppressClick=true;setTimeout(()=>suppressClick=false,50);
+    const r=board.getBoundingClientRect();
+    if(ev.clientX>r.left&&ev.clientX<r.right&&ev.clientY>r.top&&ev.clientY<r.bottom){const p=toWorld(ev.clientX,ev.clientY);addModule(b.dataset.type,p.x-20,p.y-18)}
+  });
+});
+
+/* ---------- Taktgeber ---------- */
+function setStep(s,pulse){
+  const before=st.step;st.step=s;run();
+  if(pulse&&st.step!==before){wires.classList.remove('pulse');void wires.getBBox;requestAnimationFrame(()=>{wires.classList.add('pulse');setTimeout(()=>wires.classList.remove('pulse'),750)})}
+}
+function stopPlay(){clearInterval(playT);playT=null;$('#cPlay').textContent='⏵';$('#cPlay').setAttribute('aria-label','Abspielen')}
+function togglePlay(){
+  if(playT){stopPlay();return}
+  if(sim.step>=sim.n)setStep(0);
+  $('#cPlay').textContent='⏸';$('#cPlay').setAttribute('aria-label','Anhalten');
+  playT=setInterval(()=>{if(sim.step>=sim.n){stopPlay();return}setStep(sim.step+1,true)},+$('#speed').value);
+}
+$('#cReset').onclick=()=>{stopPlay();reseed();setStep(0)};
+$('#cBack').onclick=()=>{stopPlay();setStep(sim.step-1)};
+function reseed(){for(const m of st.modules)if(m.type==='rand')m.params.seed=(Math.random()*4294967296)|0}
+function nextTakt(){stopPlay();if(sim.n&&sim.step>=sim.n){reseed();setStep(0)}else setStep(sim.step+1,true)}
+$('#cStep').onclick=nextTakt;
+$('#cEnd').onclick=()=>{stopPlay();setStep(sim.n,true)};
+$('#cPlay').onclick=togglePlay;
+$('#speed').oninput=()=>{if(playT){stopPlay();togglePlay()}};
+
+/* ---------- Kopfleiste ---------- */
+$('#segW').onclick=e=>{const b=e.target.closest('button');if(!b)return;pushUndo();st.width=+b.dataset.w;renderAll();run()};
+$('#segE').onclick=e=>{const b=e.target.closest('button');if(!b)return;pushUndo();st.enc=b.dataset.e;renderAll();run()};
+$('#segF').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.fmt=b.dataset.f;renderAll();run()};
+$('#selPreset').onchange=e=>{
+  const k=e.target.value;e.target.value='';if(!k)return;
+  pushUndo();stopPlay();st={...PRESETS[k](),enc:st.enc};reseed();selMod=selCable=null;renderAll();run();layoutAna();drawWires();requestAnimationFrame(()=>{fit();drawWires()});
+  toast(k==='leer'?'Arbeitsfläche geleert':'Beispiel geladen');
+};
+$('#bUndo').onclick=undo;
+/* Werkstatt-Beispiele 1–14 verstecken (samt Gruppe); dreimal auf «Taktgeber» klicken blendet sie ein bzw. wieder aus */
+const hiddenOpts=$$('#selPreset option').filter(o=>/^w\d+$/.test(o.value));
+const wsGroup=hiddenOpts[0]?.parentNode;
+const wsAnchor=wsGroup.nextSibling,wsParent=wsGroup.parentNode;
+hiddenOpts.forEach(o=>o.remove());wsGroup.remove();
+let wsShown=false,tgClicks=[];
+$('.clock .lbl').addEventListener('click',()=>{
+  const now=Date.now();tgClicks=tgClicks.filter(t=>now-t<1500);tgClicks.push(now);
+  if(tgClicks.length<3)return;tgClicks=[];
+  wsShown=!wsShown;
+  if(wsShown){hiddenOpts.forEach(o=>wsGroup.appendChild(o));wsParent.insertBefore(wsGroup,wsAnchor);toast('Beispiele Nr. 1–14 eingeblendet')}
+  else{wsGroup.remove();toast('Beispiele Nr. 1–14 ausgeblendet')}
+});
+$('#bWireTags').onclick=e=>{wireTags=!wireTags;e.currentTarget.setAttribute('aria-pressed',wireTags);e.currentTarget.textContent='Kabelwerte: '+(wireTags?'an':'aus');drawWires();save()};
+function setVariant(v){document.documentElement.dataset.variant=v;$('#bVariant').textContent='Design: '+(v==='nacht'?'Nachtlabor':'Tageslabor');try{localStorage.setItem(VKEY,v)}catch(e){}}
+$('#bVariant').onclick=()=>setVariant(document.documentElement.dataset.variant==='nacht'?'tag':'nacht');
+$('#bHelp').onclick=()=>$('#dlgHelp').showModal();
+$('#bDrawer').onclick=()=>$('#main').classList.toggle('drawer');
+$$('dialog [data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+$('#zIn').onclick=()=>{const r=board.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,1.2)};
+$('#zOut').onclick=()=>{const r=board.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,1/1.2)};
+$('#zFit').onclick=fit;
+
+/* Speichern / Laden */
+const exportTxt=()=>JSON.stringify({app:'Hash-Labor',version:1,...JSON.parse(snapshot())},null,1);
+$('#bShare').onclick=()=>{$('#shareTxt').value=exportTxt();$('#shareMsg').textContent='';$('#dlgShare').showModal()};
+$('#bCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('#shareTxt').value);$('#shareMsg').textContent='✓ In die Zwischenablage kopiert.'}catch(e){$('#shareTxt').select();$('#shareMsg').textContent='Kopieren nicht erlaubt – Text ist markiert, bitte mit Strg+C kopieren.'}};
+let dl=null;
+try{window.claude?.use?.('downloads').then(d=>{dl=d}).catch(()=>{})}catch(e){}
+$('#bDownload').onclick=async()=>{
+  const data=$('#shareTxt').value;
+  if(dl){try{await dl.save({filename:'hash-labor.json',data});$('#shareMsg').textContent='✓ Datei gespeichert.'}catch(e){$('#shareMsg').textContent='Speichern abgebrochen – alternativ «Kopieren» verwenden.'}return}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='hash-labor.json';document.body.appendChild(a);a.click();a.remove();
+    $('#shareMsg').textContent='Download gestartet. Falls nichts passiert: «Kopieren» verwenden.'}
+  catch(e){$('#shareMsg').textContent='Download hier nicht möglich – bitte «Kopieren» verwenden.'}
+};
+function loadText(txt){
+  try{const o=JSON.parse(txt);if(!valid(o))throw 0;pushUndo();stopPlay();st=normalize(o);selMod=selCable=null;renderAll();run();requestAnimationFrame(fit);$('#dlgShare').close();toast('Schaltung geladen')}
+  catch(e){$('#shareMsg').textContent='⚠ Das ist keine gültige Hash-Labor-Schaltung.'}
+}
+$('#bLoadTxt').onclick=()=>loadText($('#shareTxt').value);
+$('#fileIn').onchange=async e=>{const f=e.target.files[0];if(f)loadText(await f.text());e.target.value=''};
+
+/* Toast mit Rückgängig */
+function toast(msg){const t=$('#toast');$('#toastTxt').textContent=msg;t.hidden=false;clearTimeout(t._t);t._t=setTimeout(()=>t.hidden=true,4500)}
+$('#toastUndo').onclick=()=>{undo();$('#toast').hidden=true;requestAnimationFrame(fit)};
+
+/* Tastatur */
+addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea,select')||document.querySelector('dialog[open]'))return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();return}
+  if(e.key==='Delete'||e.key==='Backspace'){if(selCable){removeCable(selCable);e.preventDefault()}else if(selMod){removeModule(selMod);e.preventDefault()}}
+  else if(e.key==='Escape'){setPending(null);selMod=selCable=null;markSel();drawWires();showInfo()}
+  else if(e.target.closest('button')&&(e.key===' '||e.key==='Enter'))return;
+  else if(e.key==='ArrowRight')nextTakt();
+  else if(e.key==='ArrowLeft'){stopPlay();setStep(sim.step-1)}
+  else if(e.key==='Home'){stopPlay();reseed();setStep(0)}
+  else if(e.key==='End'){stopPlay();setStep(sim.n,true)}
+  else if(e.key===' '){e.preventDefault();togglePlay()}
+});
+addEventListener('resize',()=>drawWires());
+
+/* ---------- Start ---------- */
+buildPalette();
+let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+let v0='nacht';try{v0=localStorage.getItem(VKEY)||(document.documentElement.dataset.theme==='light'?'tag':'nacht')}catch(e){}
+setVariant(v0);
+if(valid(saved)){st=normalize(saved);if(saved.view)view=saved.view;if(saved.wireTags===false){wireTags=false;$('#bWireTags').setAttribute('aria-pressed','false');$('#bWireTags').textContent='Kabelwerte: aus'}}
+else st=PRESETS.summe();
+renderAll();applyView();run();
+const fresh=!valid(saved);
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{if(fresh)fit();drawWires()});
+if(fresh)setTimeout(()=>$('#dlgHelp').showModal(),300);
+})();
+</script>
+</body>
+</html>
