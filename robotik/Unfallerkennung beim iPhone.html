@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<!-- Entscheidungen:
+  Einsatztyp: Lernmaterial Informatik (Robotik, Station Hardware) · Zielgruppe: Schüler:innen · du-Form wie die übrigen Robotik-Seiten · Schweizer Rechtschreibung
+  Gerät: gemischt (Desktop + Handy)
+  Interaktivität: Szenario-Simulator (6 Szenarien + eigene Werte durch Antippen der Sensoren), Ablauf-Animation mit Abbrechen, 3 Denkfragen mit einblendbarer Antwort (inkl. «Ist ein iPhone ein Roboter?»)
+  Datenhaltung: keine · Export: keiner
+  Design: nur Variante «Technik», nur Dunkelmodus (wie die übrigen Robotik-Seiten): Polar-Night-Kopf, Monospace-Labels, nummerierte Abschnitte, eckig; Farbe je Sensor bleibt zur Unterscheidung. Variante «Freundlich» entfernt. Keine langen Gedankenstriche
+  Hinweis: Entscheidungsregel im Simulator ist ein vereinfachtes Modell, nicht Apples echter Algorithmus
+-->
+<html lang="de-CH" style="color-scheme:dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPhone – Unfallerkennung</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght@0,400;0,600;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  /* Layout: eine Spalte, Sensoren → Simulator → Ablauf → Fehlalarme */
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;
+  --nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;
+  --nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --bg:var(--nord0);--surface:var(--nord1);--surface-2:var(--nord2);
+  --text:var(--nord6);--text-muted:var(--nord4);
+  --accent:var(--nord8);--accent-soft:var(--nord9);
+  --ok:var(--nord14);--warn:var(--nord13);--bad:var(--nord11);--special:var(--nord15);--info:var(--nord8);
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"Cascadia Code",Consolas,"SF Mono",monospace;
+  --radius:6px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.6}
+button{font:inherit;color:inherit}
+a{color:var(--accent);text-decoration:underline}
+:focus-visible{outline:3px solid var(--accent-soft);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+h1,h2,h3{text-wrap:balance;line-height:1.25;margin:0}
+h1{font-weight:700;font-size:1.9rem}
+h2{font-weight:600;font-size:1.35rem}
+h3{font-weight:600;font-size:1.05rem}
+p{margin:0;max-width:70ch}
+.muted{color:var(--text-muted)}
+section{display:grid;gap:14px;padding:28px 0;border-top:1px solid var(--surface-2)}
+
+/* Kopf */
+header.top{padding:20px 0 26px}
+header.top .wrap{display:grid;gap:12px}
+
+/* Sensor-Karten */
+.sensors{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.sensor{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius);padding:14px;display:grid;gap:6px;align-content:start;border-top:4px solid var(--sc)}
+.sensor .head{display:flex;gap:10px;align-items:center}
+.ico{width:34px;height:34px;flex:none;border-radius:8px;display:grid;place-items:center;background:var(--sc);color:var(--nord0)}
+.ico svg{width:20px;height:20px}
+.sensor p{font-size:.92rem}
+.sensor .sig{font-size:.85rem;color:var(--text-muted)}
+
+/* Simulator */
+.scen{display:flex;flex-wrap:wrap;gap:8px}
+.scen button{border:1px solid var(--surface-2);background:var(--surface);border-radius:var(--radius);padding:7px 12px;cursor:pointer;font-size:.92rem}
+.scen button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent);font-weight:600}
+.sim{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius);padding:16px;display:grid;gap:14px}
+.note{font-size:.95rem}
+.rows{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;background:var(--bg);border:1px solid var(--surface-2);border-radius:var(--radius);padding:8px 10px;cursor:pointer;text-align:left;width:100%}
+.row:hover{border-color:var(--accent-soft)}
+.row .lbl{font-weight:600;font-size:.92rem;display:flex;gap:8px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--sc);flex:none}
+.meter{display:grid;gap:4px}
+.bars{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.bars i{height:10px;border-radius:3px;background:var(--surface-2)}
+.bars i.on{background:var(--sc)}
+.why{font-size:.84rem;color:var(--text-muted);line-height:1.4}
+.lvl{font-weight:600;color:var(--text)}
+.hint{font-size:.82rem;color:var(--text-muted)}
+@media (max-width:480px){.row{grid-template-columns:1fr}}
+
+.rules{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.rules li{display:flex;gap:10px;align-items:flex-start;font-size:.95rem}
+.mark{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.85rem;color:var(--nord0)}
+.mark.y{background:var(--ok)}.mark.n{background:var(--bad)}.mark.s{background:var(--surface-2);color:var(--text-muted)}
+.verdict{border-radius:var(--radius);padding:12px 14px;display:grid;gap:4px;color:var(--nord0)}
+.verdict strong{font-size:1.1rem}
+.verdict.alarm{background:var(--nord12)}
+.verdict.calm{background:var(--nord14)}
+.verdict .tag{font-size:.88rem}
+
+/* Ablauf */
+.flow{display:grid;gap:8px;margin:0;padding:0;list-style:none;counter-reset:s}
+.flow li{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:start;background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius);padding:10px 12px;transition:border-color .2s,background .2s}
+.flow li::before{counter-increment:s;content:counter(s);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-weight:700}
+.flow li.active{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.flow li.active::before{background:var(--accent);color:var(--nord0)}
+.flow li.done::before{background:var(--ok);color:var(--nord0);content:"✓"}
+.ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:0;background:var(--accent);color:var(--nord0);padding:9px 16px;border-radius:var(--radius);cursor:pointer;font-weight:600}
+.btn.sec{background:var(--surface-2);color:var(--text)}
+.btn:disabled{opacity:.5;cursor:default}
+.count{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:1.6rem;font-weight:600;min-width:3ch}
+.status{font-size:.95rem}
+
+/* Fehlalarme */
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.fact{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius);padding:14px;display:grid;gap:4px;align-content:start;border-left:4px solid var(--fc,var(--warn))}
+.fact .big{font-family:var(--font-mono);font-size:1.5rem;font-weight:600;font-variant-numeric:tabular-nums}
+.fact p{font-size:.9rem}
+details{background:var(--surface);border:1px solid var(--surface-2);border-radius:var(--radius);padding:12px 14px}
+details summary{cursor:pointer;font-weight:600}
+details p{margin-top:8px;font-size:.95rem}
+.tip{background:var(--surface);border-left:4px solid var(--special);border-radius:var(--radius);padding:12px 14px}
+footer{padding:24px 0 40px;font-size:.85rem;color:var(--text-muted);border-top:1px solid var(--surface-2)}
+footer ul{margin:6px 0 0;padding-left:18px}
+
+
+/* ===== Design: Technik, dunkel (wie die übrigen Robotik-Seiten) ===== */
+header.top{background:var(--nord0);color:var(--nord6);border-bottom:1px solid var(--nord2);padding:22px 0 18px}
+header.top .wrap{gap:4px}
+.kicker{margin:0;font-family:var(--font-mono);font-size:.8rem;letter-spacing:.06em;color:var(--nord8);text-transform:uppercase}
+h1{font-size:2rem;margin:2px 0 4px}
+.lead{color:var(--nord4);max-width:62ch}
+main{padding:6px 0 40px}
+section{border-top:0;padding:20px 0 8px}
+h2.sec{font-size:1.35rem;font-weight:700;margin:14px 0 0}
+.sec-no{font-family:var(--font-mono);color:var(--accent);margin-right:8px;font-weight:600;font-size:.85em}
+.row .lbl,.fact .big,.flow li::before,.hint,.count{font-family:var(--font-mono)}
+.hint{font-size:.8rem}
+.stage{background-color:var(--nord0);background-image:linear-gradient(rgba(76,86,106,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(76,86,106,.35) 1px,transparent 1px);background-size:24px 24px}
+.sim .rows{background:transparent}
+.row{background:var(--nord0)}
+.scen button{border-width:2px;font-weight:600}
+.scen button[aria-pressed="true"]{border-color:var(--accent);box-shadow:none;background:var(--nord0)}
+[data-s="acc"]{--sc:var(--nord12)}
+[data-s="gyro"]{--sc:var(--nord15)}
+[data-s="baro"]{--sc:var(--nord8)}
+[data-s="gps"]{--sc:var(--nord14)}
+[data-s="mic"]{--sc:var(--nord13)}
+[data-s="drive"]{--sc:var(--nord9)}
+.sensor{border-top-width:3px}
+.ico{border-radius:6px}
+footer{border-top:1px solid var(--nord2)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">iPhone // Sensoren im Alltag</p>
+    <h1>Wie dein iPhone einen Unfall erkennt</h1>
+    <p class="lead">Ab dem iPhone 14 (und der Apple Watch ab Series 8) kann dein Gerät einen schweren Autounfall erkennen und selbst den Notruf wählen. Dafür reicht kein einzelner Sensor: Erst wenn mehrere Messungen zusammenpassen, schlägt es Alarm.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section aria-labelledby="h-sens">
+    <h2 class="sec" id="h-sens"><span class="sec-no">01</span>Fünf Sensoren, fünf Blickwinkel</h2>
+    <p>Jeder Sensor sieht nur einen Teil des Geschehens. Ein Unfall hinterlässt aber in allen fünf gleichzeitig Spuren.</p>
+    <div class="sensors" id="sensorCards"></div>
+  </section>
+
+  <section aria-labelledby="h-sim">
+    <h2 class="sec" id="h-sim"><span class="sec-no">02</span>Probier aus, wann Alarm ausgelöst wird</h2>
+    <p>Wähl ein Szenario. Du siehst, wie stark jeder Sensor anschlägt und wie die Entscheidung zustande kommt. Tipp einen Sensor an, um seinen Wert selbst zu verändern.</p>
+    <div class="scen" id="scen" role="group" aria-label="Szenario wählen"></div>
+    <div class="sim stage">
+      <p class="note" id="note"></p>
+      <div class="rows" id="rows"></div>
+      <p class="hint">Antippen wechselt: kein → schwach → stark</p>
+      <div>
+        <h3>Entscheidung</h3>
+        <ul class="rules" id="rules" style="margin-top:8px"></ul>
+      </div>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+      <p class="hint" style="font-family:var(--font)">Vereinfachtes Modell zum Verstehen. Apples echter Algorithmus ist ein Machine-Learning-Modell, das mit über einer Million Stunden Fahr- und Crashdaten trainiert wurde, und wertet die Rohdaten viel feiner aus.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-flow">
+    <h2 class="sec" id="h-flow"><span class="sec-no">03</span>Was in den Sekunden danach passiert</h2>
+    <ol class="flow" id="flow">
+      <li><div><h3>Warnung mit Alarmton</h3><p class="muted">Auf dem Display erscheint eine Meldung, dazu ein lauter Ton. Du kannst sofort selbst den Notruf wählen oder abbrechen.</p></div></li>
+      <li><div><h3>20 Sekunden Countdown</h3><p class="muted">Reagierst du nicht, läuft ein Countdown. Das ist deine Chance, einen Fehlalarm zu stoppen.</p></div></li>
+      <li><div><h3>Automatischer Notruf</h3><p class="muted">Das iPhone ruft den lokalen Notruf an. Eine Ansage meldet einen schweren Unfall und deinen ungefähren Standort, mehrmals hintereinander.</p></div></li>
+      <li><div><h3>Notfallkontakte informiert</h3><p class="muted">Deine Notfallkontakte bekommen eine Nachricht mit deinem Standort.</p></div></li>
+    </ol>
+    <div class="ctrl">
+      <button class="btn" id="play" type="button">Ablauf abspielen</button>
+      <button class="btn sec" id="cancel" type="button" disabled>Abbrechen</button>
+      <span class="count" id="count" aria-hidden="true"></span>
+    </div>
+    <p class="status muted" id="flowStatus" aria-live="polite">Der Countdown läuft hier vierfach beschleunigt.</p>
+  </section>
+
+  <section aria-labelledby="h-fa">
+    <h2 class="sec" id="h-fa"><span class="sec-no">04</span>Wenn der Alarm falsch liegt</h2>
+    <p>Kurz nach der Einführung 2022 merkten Rettungsdienste schnell: Manche Freizeitaktivitäten sehen für die Sensoren aus wie ein Autounfall. Probier im Simulator die Achterbahn oder den Skisturz aus.</p>
+    <div class="facts">
+      <div class="fact" style="--fc:var(--nord12)"><span class="big">≥ 6</span><p>Fehlalarme im ersten Monat allein aus einem Freizeitpark in Ohio, ausgelöst durch Achterbahnfahrten.</p></div>
+      <div class="fact" style="--fc:var(--nord15)"><span class="big">134</span><p>Fehlalarme in fünf Wochen bei einer Feuerwehr in Nagano (Japan), vor allem von Skifahrenden.</p></div>
+      <div class="fact" style="--fc:var(--nord13)"><span class="big">+15–25 %</span><p>mehr Notrufe meldeten US-Skigebiete im ersten Winter.</p></div>
+      <div class="fact" style="--fc:var(--nord8)"><span class="big">Juli 2026</span><p>In Vermont meldete die Funktion sogar einen Flugzeugabsturz, den es nie gab.</p></div>
+    </div>
+    <p>Apple hat den Algorithmus mehrfach per Update nachgeschärft, zum Beispiel mit iOS 16.3.1. Ganz verschwunden sind die Fehlalarme nicht. Gleichzeitig hat die Funktion nachweislich schon Leben gerettet. Eine Hauptursache: Viele hören den Countdown nicht, etwa weil das Handy beim Skifahren in der Jackentasche steckt.</p>
+    <div class="tip"><strong>Wenn es dir passiert:</strong> Leg nicht auf. Sag der Notrufzentrale kurz, dass alles in Ordnung ist. Sonst rückt womöglich trotzdem jemand aus.</div>
+
+    <h3 style="margin-top:6px">Denkfragen</h3>
+    <details>
+      <summary>Warum setzt Apple die Schwelle nicht einfach höher, damit es keine Fehlalarme mehr gibt?</summary>
+      <p>Jede Erkennung macht zwei Arten von Fehlern: Fehlalarme (Alarm ohne Unfall) und verpasste Unfälle (Unfall ohne Alarm). Wird die Schwelle strenger, gibt es weniger Fehlalarme, aber mehr verpasste Unfälle. Ein verpasster Unfall kann ein Leben kosten, ein Fehlalarm kostet «nur» Zeit der Rettungskräfte. Deshalb nimmt Apple lieber einige Fehlalarme in Kauf. In der Informatik nennt man das den Zielkonflikt zwischen Sensitivität und Spezifität.</p>
+    </details>
+    <details>
+      <summary>Warum ist ein Skisturz für das iPhone so schwer von einem Autounfall zu unterscheiden?</summary>
+      <p>Beim Skifahren bist du ähnlich schnell unterwegs wie ein Auto in der Stadt, also sieht das GPS eine «Fahrt». Bei einem Sturz gibt es einen harten Aufprall, wildes Drehen und danach abrupten Stillstand. Das sind genau die Muster, die auch ein Crash erzeugt. Was fehlt, ist vor allem der Druckstoss der Airbags. Weil das Barometer aber auch auf Höhenunterschiede reagiert, ist selbst dieses Signal am Berg nicht eindeutig.</p>
+    </details>
+    <details>
+      <summary>Ist ein iPhone mit Unfallerkennung ein Roboter?</summary>
+      <p>Nach der üblichen Definition nicht. Ein Roboter arbeitet nach dem Prinzip <strong>Wahrnehmen → Entscheiden → Handeln</strong>. «Handeln» heisst dabei, dass er sich selbst bewegt oder die physische Welt verändert, zum Beispiel mit Motoren, Rädern oder Greifarmen (sogenannten Aktoren).</p>
+      <p>Das iPhone schafft die ersten zwei Schritte: Es nimmt mit seinen Sensoren wahr und entscheidet mit einem Algorithmus, ob ein Unfall passiert ist. Danach handelt es aber nur digital. Es ruft an, zeigt eine Warnung an und spielt einen Ton ab. Bewegen oder etwas anfassen kann es nicht. Deshalb ist es ein intelligentes, sensorbasiertes System, aber kein Roboter.</p>
+      <p>Zum Vergleich: Ein Saugroboter ist ein Roboter. Ein smartes Thermostat, das ein Heizungsventil öffnet, liegt im Grenzbereich. Manche zählen auch reine Software-«Bots» zu den Robotern. Im engeren technischen Sinn gehört die physische Handlung aber dazu.</p>
+    </details>
+    <p class="muted" style="font-size:.92rem">Ein- und ausschalten kannst du die Funktion unter Einstellungen → Notruf SOS → «Anruf nach schwerem Unfall».</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    Quellen zu den Fehlalarmen:
+    <ul>
+      <li><a href="https://www.macrumors.com/2022/10/09/iphone-14-crash-detection-on-rollercoaster/">MacRumors: Achterbahnen</a></li>
+      <li><a href="https://digitaltrends.com/mobile/iphones-crash-detection-is-still-firing-off-false-calls">Digital Trends: Nagano</a></li>
+      <li><a href="https://futurezone.at/amp/produkte/iphone-14-autounfallerkennung-notruf-skifahren-snowboarden-fehlalarme/402293978">futurezone: US-Skigebiete</a></li>
+      <li><a href="https://www.wcax.com/2026/07/14/iphone-feature-that-triggered-false-vermont-plane-crash-alert-has-also-saved-lives/?outputType=amp">WCAX: Vermont 2026</a></li>
+      <li><a href="https://www.apfelpatient.de/news/iphone-14-unfallerkennung-ios-16-3-1-soll-fehlalarme-verhindern">Apfelpatient: iOS 16.3.1</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var ICONS={
+    acc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h13M12 7l5 5-5 5M20 5v14"/></svg>',
+    gyro:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-3-6.2"/><path d="M17 2v4h4"/><circle cx="12" cy="12" r="2"/></svg>',
+    baro:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l4-4M8 17h8"/></svg>',
+    gps:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>',
+    mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+    drive:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 16V11l2-5h12l2 5v5H4z"/><circle cx="8" cy="16" r="2"/><circle cx="16" cy="16" r="2"/></svg>'
+  };
+  var SENSORS=[
+    {id:'acc',name:'Beschleunigung',what:'Misst, wie stark das Handy abgebremst oder gestossen wird, bis zu 256 g (das 256-Fache der Erdanziehung).',sig:'Beim Unfall: extrem kurzer, sehr harter Stoss.'},
+    {id:'gyro',name:'Gyroskop',what:'Misst Drehungen um alle drei Achsen.',sig:'Beim Unfall: abruptes Schleudern oder ein Überschlag.'},
+    {id:'baro',name:'Barometer',what:'Misst den Luftdruck.',sig:'Beim Unfall: Druckstoss in der Kabine, wenn die Airbags auslösen.'},
+    {id:'gps',name:'GPS',what:'Bestimmt Position und Geschwindigkeit.',sig:'Beim Unfall: eben noch schnell, plötzlich Stillstand.'},
+    {id:'mic',name:'Mikrofon',what:'Hört auf typische Geräusche, aber nur während einer erkannten Autofahrt und direkt auf dem Gerät.',sig:'Beim Unfall: lauter Knall, splitterndes Glas.'}
+  ];
+  var LV=['kein','schwach','stark'];
+  var SCEN=[
+    {id:'crash',name:'Autounfall',truth:true,drive:true,
+     note:'Frontalaufprall mit 70 km/h, die Airbags lösen aus.',
+     lv:{acc:2,gyro:2,baro:2,gps:2,mic:2},
+     why:{drive:'Typisches Tempo und Fahrmuster eines Autos.',acc:'Harter Stoss beim Aufprall.',gyro:'Das Auto wird herumgeschleudert.',baro:'Airbags erzeugen einen Druckstoss.',gps:'Von 70 km/h auf 0 in Sekundenbruchteilen.',mic:'Lauter Knall und Glas.'}},
+    {id:'brake',name:'Vollbremsung',truth:false,drive:true,
+     note:'Ein Kind rennt auf die Strasse, das Auto stoppt gerade noch rechtzeitig.',
+     lv:{acc:1,gyro:0,baro:0,gps:2,mic:1},
+     why:{drive:'Normale Autofahrt.',acc:'Spürbar, aber weit weg von einem Aufprall.',gyro:'Das Auto bleibt in der Spur.',baro:'Keine Airbags, kein Druckstoss.',gps:'Schneller Halt, das allein reicht nicht.',mic:'Quietschende Reifen.'}},
+    {id:'coaster',name:'Achterbahn',truth:false,drive:true,
+     note:'Eine schnelle Achterbahn mit harten Bremsabschnitten, das Handy steckt in der Hosentasche.',
+     lv:{acc:2,gyro:2,baro:1,gps:2,mic:2},
+     why:{drive:'Tempo wie ein Auto auf der Autobahn.',acc:'Harte Stösse in den Kurven und beim Bremsen.',gyro:'Loopings und Schrauben.',baro:'Höhenunterschiede verändern den Luftdruck.',gps:'Abrupter Stopp am Ende.',mic:'Lautes Kreischen und Rattern.'}},
+    {id:'ski',name:'Skisturz',truth:false,drive:true,
+     note:'Sturz bei schneller Abfahrt. Danach steht die Person auf und fährt weiter.',
+     lv:{acc:2,gyro:2,baro:1,gps:2,mic:1},
+     why:{drive:'Mit 60 km/h ähnlich schnell wie ein Auto.',acc:'Harter Aufprall auf der Piste.',gyro:'Überschlag im Schnee.',baro:'Höhenänderung am Berg, keine Airbags.',gps:'Von schnell auf Stillstand.',mic:'Wind und Aufprall, gedämpft durch die Jacke.'}},
+    {id:'moto',name:'Handy fliegt aus Halterung',truth:false,drive:true,
+     note:'Das iPhone löst sich bei voller Fahrt aus der Lenkerhalterung eines Motorrads und schlägt auf der Strasse auf.',
+     lv:{acc:2,gyro:2,baro:0,gps:2,mic:2},
+     why:{drive:'Das Handy war eben noch mit Motorradtempo unterwegs.',acc:'Aufprall auf dem Asphalt.',gyro:'Das Handy überschlägt sich.',baro:'Kein Fahrzeuginnenraum, kein Druckstoss.',gps:'Das Handy bleibt liegen.',mic:'Lautes Schleifen auf dem Belag.'}},
+    {id:'desk',name:'Handy fällt vom Tisch',truth:false,drive:false,
+     note:'Im Klassenzimmer rutscht das iPhone vom Pult auf den Boden.',
+     lv:{acc:2,gyro:2,baro:0,gps:0,mic:1},
+     why:{drive:'Keine Bewegung, keine Fahrt.',acc:'Kurzer harter Aufprall auf dem Boden.',gyro:'Das Handy dreht sich im Fall.',baro:'Kein Druckstoss.',gps:'Keine Geschwindigkeit.',mic:'Das Mikrofon hört gar nicht hin, weil keine Fahrt erkannt ist.'}}
+  ];
+
+  var state={scen:SCEN[0],drive:true,lv:{},custom:false};
+  var $=function(id){return document.getElementById(id)};
+
+  // Sensor-Karten
+  $('sensorCards').innerHTML=SENSORS.map(function(s){
+    return '<article class="sensor" data-s="'+s.id+'"><div class="head"><span class="ico">'+ICONS[s.id]+'</span><h3>'+s.name+'</h3></div><p>'+s.what+'</p><p class="sig">'+s.sig+'</p></article>';
+  }).join('');
+
+  // Szenario-Knöpfe
+  $('scen').innerHTML=SCEN.map(function(s){return '<button type="button" data-id="'+s.id+'" aria-pressed="false">'+s.name+'</button>'}).join('');
+  $('scen').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    var sc=SCEN.filter(function(x){return x.id===b.dataset.id})[0];
+    load(sc);
+  });
+
+  function load(sc){
+    state.scen=sc;state.drive=sc.drive;state.custom=false;
+    state.lv=Object.assign({},sc.lv);
+    render();
+  }
+
+  function rowHTML(id,name,level,max,why){
+    var bars='';for(var i=1;i<=max;i++)bars+='<i class="'+(level>=i?'on':'')+'"></i>';
+    var label=id==='drive'?(level?'ja':'nein'):LV[level];
+    return '<button type="button" class="row" data-s="'+id+'" aria-label="'+name+': '+label+', antippen zum Ändern"><span class="lbl"><span class="dot"></span>'+name+'</span><span class="meter"><span class="bars" style="grid-template-columns:repeat('+max+',1fr)">'+bars+'</span><span class="why"><span class="lvl">'+label+'</span>'+(why?' · '+why:'')+'</span></span></button>';
+  }
+
+  function render(){
+    document.querySelectorAll('#scen button').forEach(function(b){b.setAttribute('aria-pressed',String(!state.custom&&b.dataset.id===state.scen.id))});
+    var sc=state.scen,w=state.custom?{}:sc.why;
+    $('note').innerHTML=state.custom?'<strong>Eigene Werte.</strong> Du hast die Sensoren selbst eingestellt.':'<strong>'+sc.name+':</strong> '+sc.note;
+    var html=rowHTML('drive','Fahrt erkannt',state.drive?1:0,1,w.drive);
+    SENSORS.forEach(function(s){html+=rowHTML(s.id,s.name,state.lv[s.id],2,w[s.id])});
+    $('rows').innerHTML=html;
+
+    // Entscheidung
+    var others=['gyro','baro','gps','mic'].filter(function(k){return state.lv[k]===2});
+    var r1=state.drive,r2=state.lv.acc===2,r3=others.length>=2;
+    var names={gyro:'Gyroskop',baro:'Barometer',gps:'GPS',mic:'Mikrofon'};
+    var rules=[
+      [r1,'Fährst du gerade? Das System sucht nur während einer erkannten Fahrt nach Unfällen.'],
+      [r1?r2:null,'Gab es einen sehr harten Stoss? (Beschleunigung «stark»)'],
+      [r1&&r2?r3:null,'Bestätigen mindestens zwei weitere Sensoren den Unfall? '+(others.length?'Stark: '+others.map(function(k){return names[k]}).join(', ')+'.':'Keiner ist stark.')]
+    ];
+    $('rules').innerHTML=rules.map(function(r){
+      var c=r[0]===null?'s':(r[0]?'y':'n'),t=r[0]===null?'–':(r[0]?'✓':'✗');
+      return '<li><span class="mark '+c+'" aria-label="'+(r[0]===null?'nicht geprüft':(r[0]?'erfüllt':'nicht erfüllt'))+'">'+t+'</span><span>'+r[1]+'</span></li>';
+    }).join('');
+    var alarm=r1&&r2&&r3,v=$('verdict');
+    v.className='verdict '+(alarm?'alarm':'calm');
+    var tag='';
+    if(!state.custom){
+      if(alarm&&sc.truth)tag='✓ Richtig erkannt: Es war wirklich ein Unfall.';
+      else if(alarm&&!sc.truth)tag='✗ Fehlalarm: Es gab gar keinen Autounfall. Genau solche Fälle haben Rettungsdienste beschäftigt.';
+      else if(!alarm&&!sc.truth)tag='✓ Richtig: Kein Unfall, kein Alarm.';
+      else tag='✗ Verpasster Unfall: Hier hätte Alarm ausgelöst werden müssen.';
+    }else tag='Vergleich mit einem Szenario: Wähl oben eines aus.';
+    v.innerHTML='<strong>'+(alarm?'⚠ Alarm: Unfall erkannt':'○ Kein Alarm')+'</strong><span class="tag">'+tag+'</span>';
+  }
+
+  $('rows').addEventListener('click',function(e){
+    var b=e.target.closest('.row');if(!b)return;
+    var id=b.dataset.s;
+    if(id==='drive')state.drive=!state.drive;else state.lv[id]=(state.lv[id]+1)%3;
+    state.custom=true;render();
+    var nb=document.querySelector('.row[data-s="'+id+'"]');if(nb)nb.focus();
+  });
+
+  load(SCEN[0]);
+
+  // Ablauf
+  var timer=null,items=document.querySelectorAll('#flow li');
+  function setStep(n){items.forEach(function(li,i){li.classList.toggle('active',i===n);li.classList.toggle('done',i<n)})}
+  function stop(msg){clearInterval(timer);timer=null;$('play').disabled=false;$('cancel').disabled=true;$('flowStatus').textContent=msg}
+  $('play').addEventListener('click',function(){
+    var t=20;$('play').disabled=true;$('cancel').disabled=false;
+    setStep(0);$('count').textContent='';$('flowStatus').textContent='Alarmton! Die Warnung erscheint.';
+    var phase=0,tick=0;
+    timer=setInterval(function(){
+      tick++;
+      if(phase===0&&tick>=4){phase=1;setStep(1);}
+      if(phase===1){
+        $('count').textContent=t+' s';$('flowStatus').textContent='Countdown läuft. Tippst du «Abbrechen», passiert nichts weiter.';
+        t--;if(t<0){phase=2;tick=0;setStep(2);$('count').textContent='';$('flowStatus').textContent='Keine Reaktion: Das iPhone wählt den Notruf und spielt die Ansage mit deinem Standort ab.';}
+      }else if(phase===2&&tick>=8){setStep(3);$('flowStatus').textContent='Deine Notfallkontakte erhalten eine Nachricht mit deinem Standort.';phase=3;tick=0;}
+      else if(phase===3&&tick>=8){setStep(4);stop('Ablauf beendet. Hilfe ist unterwegs.');}
+    },250);
+  });
+  $('cancel').addEventListener('click',function(){
+    var during=items[1].classList.contains('active')||items[0].classList.contains('active');
+    setStep(-1);$('count').textContent='';
+    stop(during?'Abgebrochen: Kein Notruf. So stoppst du einen Fehlalarm.':'Der Notruf läuft schon. Leg nicht auf, sondern sag der Zentrale, dass alles in Ordnung ist.');
+  });
+
+})();
+</script>
+</body>
+</html>
