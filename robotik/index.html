@@ -1,148 +1,187 @@
 <!DOCTYPE html>
-<html lang="de">
+<!-- Entscheidungen:
+  Einsatztyp: Übersichtsseite Lernmaterial Informatik · Zielgruppe: Schüler:innen · Gerät: gemischt
+  Design: technisch (Polar-Night-Kopf mit animiertem micro:bit-Board, Lernpfad mit nummerierten Stationen,
+    Karten mit eigenen Icons, Farbe je Bereich: Einstieg nord8, Hardware nord12, Programmieren nord14, iPad nord15)
+  Funktionen: LED-Matrix im Kopf zeigt wechselnde Muster, Tasten A/B schalten um; ohne Animation bei reduzierter Bewegung
+  Datenhaltung: keine
+-->
+<html lang="de-CH">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Robotik</title>
-<meta name="description" content="Interaktive Lernmaterialien zur Robotik mit dem micro:bit V2: Einführung in die Robotik, Fortbewegung von Robotern, Sensoren und Aktoren, erste Programme mit MakeCode-Blöcken und Verbindung mit dem iPad.">
+<meta name="description" content="Interaktive Lernmaterialien zur Robotik mit dem micro:bit V2: Einführung in die Robotik, Sensoren und Aktoren, Fortbewegung von Robotern, erste Programme mit MakeCode-Blöcken und Verbindung mit dem iPad.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;600&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --nord0:#2E3440; --nord1:#3B4252; --nord2:#434C5E; --nord3:#4C566A;
-    --nord4:#D8DEE9; --nord5:#E5E9F0; --nord6:#ECEFF4;
-    --nord7:#8FBCBB; --nord8:#88C0D0; --nord9:#81A1C1; --nord10:#5E81AC;
-    --nord11:#BF616A; --nord12:#D08770; --nord13:#EBCB8B; --nord14:#A3BE8C; --nord15:#B48EAD;
+:root{
+  --nord0:#2E3440;--nord1:#3B4252;--nord2:#434C5E;--nord3:#4C566A;--nord4:#D8DEE9;--nord5:#E5E9F0;--nord6:#ECEFF4;
+  --nord7:#8FBCBB;--nord8:#88C0D0;--nord9:#81A1C1;--nord10:#5E81AC;--nord11:#BF616A;--nord12:#D08770;--nord13:#EBCB8B;--nord14:#A3BE8C;--nord15:#B48EAD;
+  --bg:var(--nord6);--surface:#fff;--line:var(--nord4);--text:var(--nord0);--muted:var(--nord3);--accent:var(--nord10);
+  --font:"Open Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Google Sans Code",ui-monospace,"SF Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{--bg:var(--nord0);--surface:var(--nord1);--line:var(--nord2);--text:var(--nord6);--muted:var(--nord4);--accent:var(--nord8)}}
+*{box-sizing:border-box;margin:0;padding:0;min-width:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;font-size:17px;overflow-x:clip}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
 
-    --bg: var(--nord6);
-    --surface: #fff;
-    --line: var(--nord4);
-    --text: var(--nord0);
-    --muted: var(--nord3);
-    --accent: var(--nord10);
-    --accent-wash: rgba(94,129,172,.10);
-    --font: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-mono: "Google Sans Code", ui-monospace, "SF Mono", Consolas, monospace;
-    --radius: 10px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: var(--nord0);
-      --surface: var(--nord1);
-      --line: var(--nord2);
-      --text: var(--nord6);
-      --muted: var(--nord4);
-      --accent: var(--nord8);
-      --accent-wash: rgba(136,192,208,.10);
-    }
-  }
+/* Kopf */
+.hero{background:var(--nord0);color:var(--nord6);position:relative;overflow:hidden;border-bottom:1px solid var(--nord2)}
+.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--nord1) 1px,transparent 1px),linear-gradient(90deg,var(--nord1) 1px,transparent 1px);background-size:32px 32px;opacity:.7}
+.hero .wrap{position:relative;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:32px;align-items:center;padding-top:clamp(36px,6vw,72px);padding-bottom:clamp(36px,6vw,72px)}
+.kicker{font-family:var(--font-mono);font-size:14px;color:var(--nord8);margin-bottom:10px}
+h1{font-size:clamp(40px,7vw,72px);line-height:1;font-weight:700;margin-bottom:16px;letter-spacing:-.01em}
+.lead{color:var(--nord4);max-width:52ch;font-size:18px}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.stats span{font-family:var(--font-mono);font-size:14px;border:1px solid var(--nord3);border-radius:4px;padding:6px 10px;color:var(--nord4)}
+.stats b{color:var(--nord6);font-weight:600}
+.board{width:100%;max-width:380px;justify-self:center}
+.board svg{width:100%;height:auto;display:block;filter:drop-shadow(0 18px 30px rgba(0,0,0,.35))}
+.board button{cursor:pointer}
+.board .hint{font-family:var(--font-mono);font-size:13px;color:var(--nord4);text-align:center;margin-top:10px}
+@media(max-width:720px){.hero .wrap{grid-template-columns:minmax(0,1fr)}.board{max-width:300px;order:-1}}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.55;
-    padding: 48px 16px 64px;
-  }
-  main { max-width: 860px; margin: 0 auto; }
-
-  header { margin-bottom: 40px; }
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: .8rem;
-    color: var(--accent);
-    letter-spacing: .04em;
-    margin-bottom: 8px;
-  }
-  h1 { font-size: clamp(2rem, 5vw, 2.6rem); line-height: 1.15; margin-bottom: 12px; }
-  .lead { color: var(--muted); max-width: 60ch; }
-
-  section { margin-bottom: 36px; }
-  .group-head {
-    display: flex; align-items: baseline; gap: 12px;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 8px; margin-bottom: 14px;
-  }
-  .group-head .num {
-    font-family: var(--font-mono); font-size: .85rem; color: var(--accent);
-  }
-  h2 { font-size: 1.2rem; }
-  .group-desc { color: var(--muted); font-size: .95rem; margin-bottom: 14px; }
-
-  .cards {
-    list-style: none;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 12px;
-  }
-  .cards a {
-    display: block; height: 100%;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    color: inherit; text-decoration: none;
-    transition: border-color .15s, background .15s, transform .15s;
-  }
-  .cards a:hover, .cards a:focus-visible {
-    border-color: var(--accent);
-    background: var(--accent-wash);
-    transform: translateY(-1px);
-    outline: none;
-  }
-  .cards strong { display: block; font-size: 1rem; margin-bottom: 4px; }
-  .cards .mnr { display: block; font-family: var(--font-mono); font-size: .8rem; font-weight: 600; color: var(--accent); margin-bottom: 2px; font-variant-numeric: tabular-nums; }
-  .cards span { color: var(--muted); font-size: .9rem; }
-
-  footer { margin-top: 48px; color: var(--muted); font-size: .85rem; }
+/* Lernpfad */
+main{padding:clamp(32px,5vw,56px) 0 64px}
+.path{position:relative}
+.path::before{content:"";position:absolute;left:23px;top:24px;bottom:24px;width:2px;background:repeating-linear-gradient(var(--line) 0 8px,transparent 8px 14px)}
+.station{position:relative;display:grid;grid-template-columns:48px minmax(0,1fr);gap:18px;margin-bottom:40px}
+.node{width:48px;height:48px;border-radius:12px;background:var(--c);color:var(--nord0);display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:16px;position:relative;z-index:1;box-shadow:0 0 0 6px var(--bg)}
+.st-head h2{font-size:clamp(22px,3vw,28px);line-height:1.15;margin:4px 0 4px}
+.st-head p{color:var(--muted);max-width:60ch;margin-bottom:16px}
+.cards{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:14px}
+.cards a{display:flex;flex-direction:column;height:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;color:inherit;text-decoration:none;overflow:hidden;transition:border-color .15s,transform .15s,box-shadow .15s}
+.cards a:hover,.cards a:focus-visible{border-color:var(--c);transform:translateY(-3px);box-shadow:0 10px 24px rgba(46,52,64,.14);outline:none}
+.cards a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.ico{height:96px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 22%,var(--surface));border-bottom:1px solid var(--line);position:relative}
+.ico svg{width:64px;height:64px;stroke:var(--text);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.ico .f{fill:var(--c);stroke:var(--text)}
+.ico small{position:absolute;top:8px;left:10px;font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--text)}
+.ico .new{position:absolute;top:8px;right:10px;font-family:var(--font-mono);font-size:12px;font-weight:600;background:var(--nord13);color:var(--nord0);border-radius:4px;padding:1px 7px}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px;flex:1}
+.body strong{font-size:17px;line-height:1.3}
+.body span{color:var(--muted);font-size:15px;line-height:1.45}
+.body em{margin-top:auto;padding-top:8px;font-style:normal;font-family:var(--font-mono);font-size:13px;color:var(--accent)}
+footer{color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:16px}
+@media(prefers-reduced-motion:reduce){.cards a{transition:none}.cards a:hover{transform:none}}
 </style>
 </head>
 <body>
+<header class="hero">
+ <div class="wrap">
+  <div>
+   <p class="kicker">Informatik · Robotik mit dem micro:bit V2</p>
+   <h1>Robotik</h1>
+   <p class="lead">Verstehen, was einen Roboter ausmacht, Sensoren und Antriebe kennenlernen, mit MakeCode-Blöcken programmieren und Programme vom iPad auf den micro:bit übertragen.</p>
+   <div class="stats"><span><b>4</b> Stationen</span><span><b>7</b> interaktive Seiten</span><span><b>Sense → Think → Act</b></span></div>
+  </div>
+  <div class="board">
+   <svg viewBox="0 0 320 250" role="img" aria-label="micro:bit-Board mit LED-Anzeige">
+    <defs><linearGradient id="pcb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#434C5E"/><stop offset="1" stop-color="#3B4252"/></linearGradient></defs>
+    <rect x="6" y="6" width="308" height="200" rx="22" fill="url(#pcb)" stroke="#4C566A" stroke-width="2"/>
+    <rect x="6" y="6" width="308" height="200" rx="22" fill="none" stroke="#88C0D0" stroke-opacity=".25" stroke-width="1"/>
+    <!-- Anschlussleiste -->
+    <g fill="#EBCB8B">
+     <rect x="20" y="200" width="44" height="40" rx="6"/><rect x="96" y="200" width="44" height="40" rx="6"/><rect x="172" y="200" width="44" height="40" rx="6"/><rect x="248" y="200" width="52" height="40" rx="6"/>
+    </g>
+    <g fill="#D08770" opacity=".9"><circle cx="42" cy="214" r="7"/><circle cx="118" cy="214" r="7"/><circle cx="194" cy="214" r="7"/><circle cx="274" cy="214" r="7"/></g>
+    <g font-family="Google Sans Code,monospace" font-size="12" fill="#2E3440" font-weight="600" text-anchor="middle"><text x="42" y="236">0</text><text x="118" y="236">1</text><text x="194" y="236">2</text><text x="274" y="236">GND</text></g>
+    <g id="leds"></g>
+    <!-- Tasten -->
+    <g id="btnA" tabindex="0" role="button" aria-label="Taste A: vorheriges Muster" style="cursor:pointer">
+     <circle cx="44" cy="104" r="26" fill="#2E3440" stroke="#4C566A" stroke-width="2"/><circle cx="44" cy="104" r="15" fill="#4C566A"/>
+     <text x="44" y="154" text-anchor="middle" font-family="Google Sans Code,monospace" font-size="16" fill="#ECEFF4" font-weight="600">A</text>
+    </g>
+    <g id="btnB" tabindex="0" role="button" aria-label="Taste B: nächstes Muster" style="cursor:pointer">
+     <circle cx="276" cy="104" r="26" fill="#2E3440" stroke="#4C566A" stroke-width="2"/><circle cx="276" cy="104" r="15" fill="#4C566A"/>
+     <text x="276" y="154" text-anchor="middle" font-family="Google Sans Code,monospace" font-size="16" fill="#ECEFF4" font-weight="600">B</text>
+    </g>
+    <text x="160" y="30" text-anchor="middle" font-family="Google Sans Code,monospace" font-size="12" fill="#D8DEE9" opacity=".7">micro:bit</text>
+   </svg>
+   <p class="hint" id="hint">Tippe auf A oder B</p>
+  </div>
+ </div>
+</header>
+
 <main>
-  <header>
-    <p class="eyebrow">Informatik · Robotik mit dem micro:bit V2</p>
-    <h1>Robotik</h1>
-    <p class="lead">Verstehen, was ein Roboter ist, den Mini-Computer kennenlernen, mit MakeCode-Blöcken programmieren und Programme vom iPad aus übertragen.</p>
-  </header>
+ <div class="wrap">
+  <div class="path">
 
-  <section>
-    <div class="group-head"><span class="num">01</span><h2>Einstieg: Robotik</h2></div>
-    <p class="group-desc">Was macht eine Maschine zum Roboter, und welche Wissenschaften stecken darin?</p>
-    <ul class="cards">
-      <li><a href="Was%20ist%20ein%20Roboter.html"><small class="mnr">1.1</small><strong>Was ist ein Roboter?</strong><span>Begriff, Sense-Think-Act, Arten, beteiligte Wissenschaften und Quiz</span></a></li>
-      <li><a href="Roboter%20in%20Film%20und%20Fernsehen.html"><small class="mnr">1.2</small><strong>Roboter in Film und Fernsehen</strong><span>26 Filmroboter von 1927 bis 2024 mit Zeitleiste und Realitätscheck</span></a></li>
-      <li><a href="Industrie-%20und%20Logistikroboter.html"><small class="mnr">1.3</small><strong>Industrie- und Logistikroboter</strong><span>Bauformen, Greifarm- und Lager-Simulation, Zahlen zur Roboterdichte</span></a></li>
-      <li><a href="Fortbewegung%20von%20Robotern.html"><small class="mnr">1.4</small><strong>Fortbewegung von Robotern</strong><span>Räder, Raupen und Beine im Prüfstand, Laufenlernen bei Mensch und Roboter, Quiz</span></a></li>
-    </ul>
-  </section>
+   <section class="station" style="--c:var(--nord8)">
+    <div class="node">01</div>
+    <div>
+     <div class="st-head"><h2>Einstieg: Robotik</h2><p>Was macht eine Maschine zum Roboter, wo begegnen uns Roboter, und welche Wissenschaften stecken darin?</p></div>
+     <ul class="cards">
+      <li><a href="Was%20ist%20ein%20Roboter.html"><div class="ico"><small>1.1</small><svg viewBox="0 0 64 64"><rect class="f" x="14" y="20" width="36" height="28" rx="6"/><circle cx="25" cy="33" r="4"/><circle cx="39" cy="33" r="4"/><path d="M26 42h12M32 20v-8M28 10h8M10 30v10M54 30v10"/></svg></div><div class="body"><strong>Was ist ein Roboter?</strong><span>Begriff, Sense-Think-Act, Arten, beteiligte Wissenschaften und Quiz</span><em>Grundlagen →</em></div></a></li>
+      <li><a href="Roboter%20in%20Film%20und%20Fernsehen.html"><div class="ico"><small>1.2</small><svg viewBox="0 0 64 64"><rect class="f" x="10" y="24" width="44" height="28" rx="3"/><path d="M10 24l4-12 40 0-4 12M20 12l-4 12M32 12l-4 12M44 12l-4 12"/><path d="M28 32l10 6-10 6z"/></svg></div><div class="body"><strong>Roboter in Film und Fernsehen</strong><span>26 Filmroboter von 1927 bis 2024 mit Zeitleiste und Realitätscheck</span><em>Zeitleiste →</em></div></a></li>
+      <li><a href="Industrie-%20und%20Logistikroboter.html"><div class="ico"><small>1.3</small><svg viewBox="0 0 64 64"><rect class="f" x="12" y="48" width="22" height="8" rx="2"/><path d="M23 48V36l14-14 10 6"/><circle cx="23" cy="36" r="4"/><circle cx="37" cy="22" r="4"/><path d="M47 28l5 6M47 28l-1 8"/></svg></div><div class="body"><strong>Industrie- und Logistikroboter</strong><span>Bauformen, Greifarm- und Lager-Simulation, Zahlen zur Roboterdichte</span><em>Simulation →</em></div></a></li>
+     </ul>
+    </div>
+   </section>
 
-  <section>
-    <div class="group-head"><span class="num">02</span><h2>Hardware</h2></div>
-    <p class="group-desc">Was steckt auf dem Board, und was kann es messen oder bewirken?</p>
-    <ul class="cards">
-      <li><a href="Sensoren%20und%20Aktoren.html"><small class="mnr">2.1</small><strong>Sensoren und Aktoren</strong><span>Klickbares Board mit allen eingebauten Bauteilen und passenden Blöcken</span></a></li>
-    </ul>
-  </section>
+   <section class="station" style="--c:var(--nord12)">
+    <div class="node">02</div>
+    <div>
+     <div class="st-head"><h2>Hardware</h2><p>Womit nimmt ein Roboter seine Umgebung wahr, und wie bewegt er sich darin fort?</p></div>
+     <ul class="cards">
+      <li><a href="Sensoren%20und%20Aktoren.html"><div class="ico"><small>2.1</small><svg viewBox="0 0 64 64"><rect class="f" x="18" y="18" width="28" height="28" rx="3"/><rect x="26" y="26" width="12" height="12" rx="1"/><path d="M24 18v-6M32 18v-6M40 18v-6M24 46v6M32 46v6M40 46v6M18 24h-6M18 32h-6M18 40h-6M46 24h6M46 32h6M46 40h6"/></svg></div><div class="body"><strong>Sensoren und Aktoren</strong><span>Klickbares Board mit allen eingebauten Bauteilen und passenden Blöcken</span><em>Board erkunden →</em></div></a></li>
+      <li><a href="Fortbewegung%20von%20Robotern.html"><div class="ico"><small>2.2</small><span class="new">neu</span><svg viewBox="0 0 64 64"><rect class="f" x="14" y="18" width="36" height="14" rx="4"/><path d="M20 32l-6 12 4 8M44 32l6 12-4 8"/><circle cx="32" cy="46" r="8"/><path d="M32 38v16M24 46h16"/></svg></div><div class="body"><strong>Fortbewegung von Robotern</strong><span>Räder, Raupen und Beine im Prüfstand, Laufenlernen bei Mensch und Roboter, Quiz</span><em>Prüfstand →</em></div></a></li>
+     </ul>
+    </div>
+   </section>
 
-  <section>
-    <div class="group-head"><span class="num">03</span><h2>Programmieren</h2></div>
-    <p class="group-desc">Sieben kleine Programme, die Schritt für Schritt ablaufen: von Sequenz bis Wiederholung.</p>
-    <ul class="cards">
-      <li><a href="Erste%20Programme.html"><small class="mnr">3.1</small><strong>Erste Programme</strong><span>Sequenz, Schleife, Ereignis, Variable, Zufall, Bedingung und Zählschleife mit Übungen</span></a></li>
-    </ul>
-  </section>
+   <section class="station" style="--c:var(--nord14)">
+    <div class="node">03</div>
+    <div>
+     <div class="st-head"><h2>Programmieren</h2><p>Sieben kleine Programme, die Schritt für Schritt ablaufen: von der Sequenz bis zur Wiederholung.</p></div>
+     <ul class="cards">
+      <li><a href="Erste%20Programme.html"><div class="ico"><small>3.1</small><svg viewBox="0 0 64 64"><path class="f" d="M12 14h18v4h6v-4h16v12H12z"/><path class="f" d="M20 30h18v4h6v-4h8v12H20z"/><path d="M12 46h24v6H12z"/></svg></div><div class="body"><strong>Erste Programme</strong><span>Sequenz, Schleife, Ereignis, Variable, Zufall, Bedingung und Zählschleife mit Übungen</span><em>Blöcke →</em></div></a></li>
+     </ul>
+    </div>
+   </section>
 
-  <section>
-    <div class="group-head"><span class="num">04</span><h2>Mit dem iPad arbeiten</h2></div>
-    <p class="group-desc">Programme drahtlos über Bluetooth auf den micro:bit übertragen.</p>
-    <ul class="cards">
-      <li><a href="iPad%20verbinden.html"><small class="mnr">4.1</small><strong>iPad verbinden</strong><span>App einrichten, micro:bit koppeln und Programm übertragen</span></a></li>
-    </ul>
-  </section>
+   <section class="station" style="--c:var(--nord15)">
+    <div class="node">04</div>
+    <div>
+     <div class="st-head"><h2>Mit dem iPad arbeiten</h2><p>Programme drahtlos über Bluetooth auf den micro:bit übertragen.</p></div>
+     <ul class="cards">
+      <li><a href="iPad%20verbinden.html"><div class="ico"><small>4.1</small><svg viewBox="0 0 64 64"><rect class="f" x="10" y="12" width="30" height="42" rx="4"/><path d="M22 48h6"/><path d="M46 24l8 8-6 5 6 5-8 8V24zM42 30l12 12M42 44l12-12"/></svg></div><div class="body"><strong>iPad verbinden</strong><span>App einrichten, micro:bit koppeln und Programm übertragen</span><em>Anleitung →</em></div></a></li>
+     </ul>
+    </div>
+   </section>
 
+  </div>
   <footer>Kantonsschule Zürcher Unterland · Informatik</footer>
+ </div>
 </main>
+
+<script>
+{
+const P={
+ Herz:"0101011111111110111000100",
+ Smiley:"0000001010000001000101110",
+ Roboter:"1111110101111111000111111",
+ Pfeil:"0010001110101010010000100",
+ Haken:"0000000001000100101000100",
+ Rad:"0111010101111111010101110"
+};
+const names=Object.keys(P);
+const g=document.getElementById('leds'),hint=document.getElementById('hint');
+let html='';
+for(let i=0;i<25;i++){const x=96+(i%5)*28,y=42+Math.floor(i/5)*28;html+=`<rect id="l${i}" x="${x}" y="${y}" width="16" height="16" rx="3" fill="#2E3440"/>`}
+g.innerHTML=html;
+let k=0;
+const show=()=>{const p=P[names[k]];for(let i=0;i<25;i++){const r=document.getElementById('l'+i);const on=p[i]==='1';r.setAttribute('fill',on?'#BF616A':'#2E3440');r.style.filter=on?'drop-shadow(0 0 5px #BF616A)':'none'}hint.textContent='Anzeige: '+names[k]+' · Tippe auf A oder B'};
+const go=d=>{k=(k+d+names.length)%names.length;show()};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let timer=reduce?null:setInterval(()=>go(1),2200);
+const press=d=>{clearInterval(timer);timer=null;go(d)};
+for(const [id,d] of [['btnA',-1],['btnB',1]]){const b=document.getElementById(id);b.addEventListener('click',()=>press(d));b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();press(d)}})}
+show();
+}
+</script>
 </body>
 </html>
