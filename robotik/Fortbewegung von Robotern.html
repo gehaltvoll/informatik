@@ -80,6 +80,9 @@ input[type=range]{width:100%;height:44px;accent-color:var(--nord10)}
 .bar .track{height:22px;background:var(--surface-2);border-radius:6px;overflow:hidden}
 .bar .track i{display:block;height:100%;border-radius:6px;transition:width .3s}
 .bar span:last-child{text-align:right;font-family:var(--font-mono);white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:15px;color:var(--text)}
+.legend span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.legend i{display:inline-block;width:14px;height:14px;flex:none}
 /* Kästen */
 .merke{border:2px solid var(--nord15);border-radius:var(--r);padding:16px 18px;margin:16px 0;background:light-dark(rgba(180,142,173,.12),rgba(180,142,173,.15))}
 .merke strong:first-child{display:block;margin-bottom:4px}
@@ -228,6 +231,7 @@ footer{font-size:14px;color:var(--muted)}
   </div>
   <div class="card">
    <div class="fig" style="height:320px"><svg id="hex" role="img" aria-label="Draufsicht eines Sechsbeiners im Dreifussgang mit Stützdreieck und Schwerpunkt"></svg></div>
+    <div class="legend" aria-hidden="true"><span><i style="background:var(--nord11);border-radius:50%"></i>Schwerpunkt</span><span><i style="background:rgba(163,190,140,.35);border:2px solid var(--nord14)"></i>Stützdreieck</span><span><i style="background:var(--nord6);border:2px solid var(--nord3);border-radius:50%"></i>Fuss am Boden</span><span><i style="border:2px solid var(--nord9);border-radius:50%"></i>Fuss in der Luft</span><span>Laufrichtung →</span></div>
    <p id="hexinfo" style="margin:12px 0 8px;font-size:16px"></p>
    <div class="row">
     <button class="btn" id="hprev">◀ Schritt zurück</button>
@@ -443,8 +447,6 @@ const drawHex=()=>{
  o+=`<rect x="${cx-52*s}" y="${cy-22*s}" width="${104*s}" height="${44*s}" rx="${14*s}" fill="${C[15]}"/>`;
  o+=`<path d="M${cx+46*s} ${cy} l${-12*s} ${-8*s} v${16*s}z" fill="${C[0]}"/>`;
  o+=`<circle cx="${cx}" cy="${cy}" r="${7*s}" fill="${C[11]}" stroke="${C[6]}" stroke-width="2"/>`;
- o+=`<text x="${cx+12*s}" y="${cy+5}" font-size="13" font-family="Open Sans,sans-serif" fill="${C[0]}" font-weight="600">Schwerpunkt</text>`;
- o+=`<text x="10" y="${H-12}" font-size="13" font-family="Open Sans,sans-serif" fill="${dark?C[4]:C[3]}">Laufrichtung →</text>`;
  hex.innerHTML=o;
  const grp=ph<.5?'A':'B';
  $('#hexinfo').innerHTML=`<b>Phase ${Math.floor(ph*8)+1}/8:</b> Gruppe ${grp} (${grp==='A'?'links vorn, rechts Mitte, links hinten':'rechts vorn, links Mitte, rechts hinten'}) steht am Boden und schiebt, die andere Gruppe schwingt nach vorn. ✓ Der Schwerpunkt (rot) liegt im grünen Stützdreieck.`;
