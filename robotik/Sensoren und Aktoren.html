@@ -7,6 +7,7 @@
   Datenhaltung: keine
   Export: keiner
   Design: nur Variante «Technik» (Polar-Night-Kopf, Monospace-Labels, eckig), nur Dunkelmodus – Variante «Freundlich» und Hell-Modus entfernt
+  Navigation: gut sichtbarer Link «← Übersicht Robotik» oben auf der Seite
 -->
 <html lang="de-CH" style="color-scheme:dark">
 <head>
@@ -162,8 +163,20 @@ footer{padding:20px 0 40px;font-size:.88rem;color:var(--text-muted)}
   .stage{position:static}
 }
 </style>
+<style>
+/* Navigation zur Robotik-Übersicht */
+.homebar{background:#2E3440;border-bottom:1px solid #434C5E}
+.homebar-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.homebar a{display:inline-flex;align-items:center;gap:8px;background:#88C0D0;color:#2E3440;text-decoration:none;font:600 15px/1.2 "Google Sans Code",ui-monospace,Consolas,monospace;padding:8px 14px;border-radius:6px;border:2px solid #88C0D0}
+.homebar a:hover{background:#2E3440;color:#88C0D0}
+.homebar a:focus-visible{outline:3px solid #81A1C1;outline-offset:2px}
+.homebar span{color:#D8DEE9;font:400 14px/1.2 "Google Sans Code",ui-monospace,Consolas,monospace}
+</style>
 </head>
 <body>
+<nav class="homebar" aria-label="Navigation">
+  <div class="homebar-in"><a href="index.html">← Übersicht Robotik</a><span>Informatik · Robotik</span></div>
+</nav>
 <header class="top">
   <div class="wrap top-inner">
     <div>
